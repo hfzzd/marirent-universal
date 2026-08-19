@@ -28,11 +28,17 @@ class Phone extends Model
 
     public function category() { return $this->belongsTo(Category::class); }
     public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
-    public function reviews() { return $this->morphMany(Review::class, 'reviewable'); }
+
+    public function reviews()
+    {
+        $q = $this->hasMany(Review::class, 'vehicle_id');
+        $q->whereRaw('1 = 0');
+        return $q;
+    }
 
     public function getAverageRating(): float
     {
-        return $this->reviews()->avg('rating') ?? 0;
+        return 0;
     }
 
     public function getRouteKeyName(): string

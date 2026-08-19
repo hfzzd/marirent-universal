@@ -29,6 +29,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/profile', [DashboardController::class, 'profile'])->name('dashboard.profile');
+    Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('dashboard.profile.update');
+    Route::put('/password', [DashboardController::class, 'updatePassword'])->name('dashboard.password.update');
 });
 
 // Superadmin Routes

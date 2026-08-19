@@ -1,4 +1,5 @@
-@extends('layouts.dashboard')
+@extends(auth()->user()->role === 'user' ? 'layouts.user' : 'layouts.dashboard')
+@section('title', 'Detail Invoice - MariRent')
 @section('page-title', 'Detail Invoice - ' . $invoice->invoice_number)
 @section('content')
 <div class="max-w-4xl">

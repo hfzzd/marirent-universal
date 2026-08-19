@@ -1,4 +1,5 @@
-@extends('layouts.dashboard')
+@extends(auth()->user()->role === 'user' ? 'layouts.user' : 'layouts.dashboard')
+@section('title', 'Detail Booking - MariRent')
 @section('page-title', 'Detail Booking - ' . $booking->booking_code)
 @section('content')
 <div class="max-w-4xl">

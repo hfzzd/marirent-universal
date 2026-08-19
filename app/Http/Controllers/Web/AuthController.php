@@ -11,7 +11,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return $this->dashboardRedirect();
         }
         return view('auth.login');
     }
@@ -32,7 +32,7 @@ class AuthController extends Controller
                 return back()->withErrors(['email' => 'Akun tidak aktif']);
             }
 
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended($this->dashboardRedirect());
         }
 
         return back()->withErrors(['email' => 'Email atau password salah'])->onlyInput('email');
@@ -41,7 +41,7 @@ class AuthController extends Controller
     public function showRegister()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return $this->dashboardRedirect();
         }
         return view('auth.register');
     }
@@ -70,5 +70,15 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function dashboardRedirect()
+    {
+        $role = Auth::user()->role;
+
+        return match($role) {
+            'user' => route('home'),
+            default => route('dashboard'),
+        };
     }
 }

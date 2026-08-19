@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard - MariRent')</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
@@ -72,9 +73,11 @@
             @php $role = auth()->user()->role; @endphp
 
             <nav class="space-y-0.5">
+                @if($role !== 'user')
                 <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home w-5 mr-2.5 text-sm"></i> Beranda
                 </a>
+                @endif
 
                 @if($role === 'superadmin')
                 <div class="sidebar-group-title mt-4">Monitoring</div>
@@ -170,12 +173,16 @@
                 </a>
 
                 @else
+                <div class="sidebar-group-title mt-4">Akun</div>
+                <a href="{{ route('dashboard.profile') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}">
+                    <i class="fas fa-user-circle w-5 mr-2.5 text-sm"></i> Profil Saya
+                </a>
                 <div class="sidebar-group-title mt-4">Menu</div>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Booking Saya
                 </a>
                 <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice
+                    <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice Saya
                 </a>
                 @endif
             </nav>

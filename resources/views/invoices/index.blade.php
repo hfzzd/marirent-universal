@@ -1,13 +1,30 @@
-﻿@extends('layouts.dashboard')
-@section('page-title', 'Invoice')
+﻿@extends(auth()->user()->role === 'user' ? 'layouts.user' : 'layouts.dashboard')
+@section('title', 'Invoice Saya - MariRent')
+@section('page-title', 'Invoice Saya')
 
 @section('content')
+@php $isUser = auth()->user()->role === 'user'; @endphp
+
+<div class="mb-5">
+    <h2 class="text-[14px] font-semibold text-navy-800">{{ $isUser ? 'Riwayat Invoice Saya' : 'Semua Invoice' }}</h2>
+    <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Lihat detail tagihan dan status pembayaran Anda' : 'Kelola seluruh invoice' }}</p>
+</div>
+
 <div class="flex items-center gap-2 mb-5 flex-wrap">
-    <a href="{{ route('invoices.index') }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !request('status') ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Semua</a>
-    @foreach(['draft','sent','paid','partial','overdue'] as $s)
-    <a href="{{ route('invoices.index', ['status' => $s]) }}"
-       class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == $s ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
-        {{ ucfirst($s) }}
+    @php
+        $statusLabels = [
+            '' => 'Semua',
+            'draft' => 'Draft',
+            'sent' => 'Terkirim',
+            'paid' => 'Lunas',
+            'partial' => 'Sebagian',
+            'overdue' => 'Terlambat'
+        ];
+    @endphp
+    @foreach($statusLabels as $val => $label)
+    <a href="{{ route('invoices.index', array_merge(request()->query(), ['status' => $val ?: null])) }}"
+       class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status', '') == $val ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
+        {{ $label }}
     </a>
     @endforeach
 </div>
@@ -17,11 +34,19 @@
         <table class="w-full text-[13px]">
             <thead>
                 <tr class="bg-sky-50/50 border-b border-sky-100/50">
-                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Nomor</th>
+                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Nomor Invoice</th>
+                    @if(!$isUser)
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Tipe</th>
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Pengguna</th>
+                    @else
+                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Booking</th>
+                    @endif
                     <th class="text-right py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Total</th>
+                    @if(!$isUser)
                     <th class="text-right py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Dibayar</th>
+                    @else
+                    <th class="text-right py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Sisa Bayar</th>
+                    @endif
                     <th class="text-center py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Status</th>
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Jatuh Tempo</th>
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Aksi</th>
@@ -29,18 +54,40 @@
             </thead>
             <tbody>
                 @forelse($invoices as $inv)
-                <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30">
+                <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30 transition-colors">
                     <td class="py-3 px-5 font-medium text-sky-600">{{ $inv->invoice_number }}</td>
+                    @if(!$isUser)
                     <td class="py-3 px-5 text-[12px] text-navy-600">
-                        @if($inv->type == 'rental') Sewa
-                        @elseif($inv->type == 'driver_salary') Gaji
-                        @elseif($inv->type == 'replacement') Penggantian
-                        @elseif($inv->type == 'damage') Kerusakan
-                        @else Lainnya @endif
+                        @if($inv->type == 'rental') <span class="inline-flex items-center gap-1"><i class="fas fa-car text-sky-400"></i> Sewa</span>
+                        @elseif($inv->type == 'driver_salary') <span class="inline-flex items-center gap-1"><i class="fas fa-id-card text-emerald-400"></i> Gaji</span>
+                        @elseif($inv->type == 'replacement') <span class="inline-flex items-center gap-1"><i class="fas fa-exchange-alt text-amber-400"></i> Penggantian</span>
+                        @elseif($inv->type == 'damage') <span class="inline-flex items-center gap-1"><i class="fas fa-tools text-red-400"></i> Kerusakan</span>
+                        @else <span class="inline-flex items-center gap-1"><i class="fas fa-file text-gray-400"></i> Lainnya</span>
+                        @endif
                     </td>
                     <td class="py-3 px-5 text-navy-700">{{ $inv->user->name }}</td>
+                    @else
+                    <td class="py-3 px-5">
+                        <div>
+                            <span class="text-navy-700 font-medium">{{ $inv->booking->booking_code ?? '-' }}</span>
+                            @if($inv->booking)
+                            <p class="text-[11px] text-gray-400">{{ $inv->booking->vehicle->name ?? $inv->booking->category->name ?? '-' }}</p>
+                            @endif
+                        </div>
+                    </td>
+                    @endif
                     <td class="py-3 px-5 text-right font-medium text-navy-700">Rp {{ number_format($inv->total_amount,0,',','.') }}</td>
+                    @if(!$isUser)
                     <td class="py-3 px-5 text-right text-navy-600">Rp {{ number_format($inv->paid_amount,0,',','.') }}</td>
+                    @else
+                    <td class="py-3 px-5 text-right">
+                        @if($inv->getRemainingAmount() > 0)
+                        <span class="text-amber-600 font-medium">Rp {{ number_format($inv->getRemainingAmount(),0,',','.') }}</span>
+                        @else
+                        <span class="text-emerald-600 font-medium">Rp 0</span>
+                        @endif
+                    </td>
+                    @endif
                     <td class="py-3 px-5 text-center">
                         @if($inv->status == 'paid') <span class="badge badge-green">Lunas</span>
                         @elseif($inv->status == 'partial') <span class="badge badge-yellow">Sebagian</span>
@@ -49,11 +96,32 @@
                         @else <span class="badge badge-gray">Draft</span>
                         @endif
                     </td>
-                    <td class="py-3 px-5 text-[12px] {{ $inv->isOverdue() ? 'text-red-500 font-semibold' : 'text-navy-500' }}">{{ $inv->due_date->format('d M Y') }}</td>
-                    <td class="py-3 px-5"><a href="{{ route('invoices.show', $inv) }}" class="text-sky-600 text-[12px] font-medium">Detail</a></td>
+                    <td class="py-3 px-5 text-[12px] {{ $inv->isOverdue() ? 'text-red-500 font-semibold' : 'text-navy-500' }}">
+                        <div class="flex items-center gap-1.5">
+                            @if($inv->isOverdue()) <i class="fas fa-exclamation-circle text-[10px]"></i> @endif
+                            {{ $inv->due_date->format('d M Y') }}
+                        </div>
+                    </td>
+                    <td class="py-3 px-5">
+                        <a href="{{ route('invoices.show', $inv) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
+                            <i class="fas fa-eye text-[10px]"></i> Detail
+                        </a>
+                    </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="py-10 text-center text-gray-300">Belum ada invoice</td></tr>
+                <tr>
+                    <td colspan="{{ $isUser ? '7' : '8' }}" class="py-14 text-center">
+                        <div class="flex flex-col items-center gap-3">
+                            <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center">
+                                <i class="fas fa-file-invoice text-sky-300 text-2xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-[13px] font-medium text-navy-700">{{ $isUser ? 'Belum ada invoice' : 'Tidak ada data invoice' }}</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Invoice akan muncul setelah pemesanan dikonfirmasi' : '' }}</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
