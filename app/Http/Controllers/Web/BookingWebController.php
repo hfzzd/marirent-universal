@@ -8,19 +8,48 @@ use App\Models\Vehicle;
 use App\Models\Driver;
 use App\Models\User;
 use App\Models\Camera;
+use App\Models\Invoice;
 use App\Models\Phone;
 use App\Models\CampingEquipment;
 use App\Models\VehicleReplacement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class BookingWebController extends Controller
 {
+    /**
+     * Buat invoice otomatis untuk booking user + arahkan ke halaman pembayaran.
+     * payment_plan: full = lunasi sekarang, dp50 = DP 50% (sisa saat serah terima).
+     */
+    private function createAutoInvoice(Booking $booking): Invoice
+    {
+        $invoice = Invoice::create([
+            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
+            'booking_id' => $booking->id,
+            'user_id' => $booking->user_id,
+            'owner_id' => User::where('role', 'owner')->value('id'),
+            'type' => 'rental',
+            'subtotal' => (float) $booking->final_price,
+            'tax_amount' => 0,
+            'discount_amount' => 0,
+            'total_amount' => (float) $booking->final_price,
+            'paid_amount' => 0,
+            'due_amount' => (float) $booking->final_price,
+            'status' => 'sent',
+            'due_date' => $booking->start_date,
+            'notes' => 'Invoice otomatis booking ' . $booking->booking_code . '.',
+        ]);
+
+        $invoice->bookings()->attach($booking->id);
+
+        return $invoice;
+    }
     public function index(Request $request)
     {
-        $query = Booking::with(['vehicle', 'driver.user', 'category', 'user']);
+        $query = Booking::with(['vehicle', 'driver.user', 'category', 'user', 'item']);
 
         if (Auth::user()->role === 'user') {
             $query->where('user_id', Auth::id());
@@ -53,13 +82,139 @@ class BookingWebController extends Controller
             return back()->with('error', 'Kendaraan ini sedang tidak tersedia');
         }
 
-        $drivers = Driver::where('status', 'off_duty')->with('user')->get();
+        return view('bookings.create', compact('vehicle'));
+    }
 
-        return view('bookings.create', compact('vehicle', 'drivers'));
+    public function createDriver(Request $request)
+    {
+        $vehicle = Vehicle::with(['category', 'owner'])->where('slug', $request->vehicle)->orWhere('id', $request->vehicle)->firstOrFail();
+
+        if ($vehicle->status !== 'available') {
+            return back()->with('error', 'Kendaraan ini sedang tidak tersedia');
+        }
+        if (!$vehicle->with_driver) {
+            return redirect()->route('bookings.create', ['vehicle' => $vehicle->slug])
+                ->with('error', 'Kendaraan ini tidak melayani sewa dengan driver');
+        }
+
+        $drivers = Driver::where('status', 'off_duty')->orWhere('status', 'active')->with('user')->get();
+
+        return view('bookings.create-driver', compact('vehicle', 'drivers'));
+    }
+
+    protected function itemConfig(string $type): array
+    {
+        return match ($type) {
+            'hp' => ['class' => Phone::class, 'label' => 'Sewa HP', 'icon' => 'fa-mobile-alt',
+                'subtitle' => fn($i) => $i->phone_model],
+            'kamera' => ['class' => Camera::class, 'label' => 'Sewa Kamera', 'icon' => 'fa-camera',
+                'subtitle' => fn($i) => $i->camera_model],
+            'tenda' => ['class' => CampingEquipment::class, 'label' => 'Sewa Alat Camping', 'icon' => 'fa-campground',
+                'subtitle' => fn($i) => $i->equipment_model],
+            default => abort(404),
+        };
+    }
+
+    public function createItem(string $type, string $slug)
+    {
+        $type = match ($type) {
+            'phone', 'hp' => 'hp',
+            'camera', 'kamera' => 'kamera',
+            'camping', 'tenda' => 'tenda',
+            default => abort(404),
+        };
+
+        $config = $this->itemConfig($type);
+        $item = $config['class']::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        if ($item->status !== 'available') {
+            return back()->with('error', 'Unit ini sedang tidak tersedia');
+        }
+
+        return view('bookings.create-item', [
+            'item' => $item,
+            'type' => $type,
+            'config' => $config,
+        ]);
+    }
+
+    public function storeItem(Request $request, string $type)
+    {
+        $type = match ($type) {
+            'phone', 'hp' => 'hp',
+            'camera', 'kamera' => 'kamera',
+            'camping', 'tenda' => 'tenda',
+            default => abort(404),
+        };
+
+        $config = $this->itemConfig($type);
+
+        $validated = $request->validate([
+            'item_id' => 'required|integer',
+            'rental_type' => 'required|in:hourly,daily,weekly,monthly',
+            'start_date' => 'required|date|after:now',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'pickup_location' => 'nullable|string|max:255',
+            'dropoff_location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+            'ktp_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'payment_plan' => 'required|in:full,dp50',
+        ], [
+            'ktp_photo.required' => 'Foto KTP wajib diunggah untuk pemesanan barang sewa',
+        ]);
+
+        $modelClass = $config['class'];
+        $item = $modelClass::findOrFail($validated['item_id']);
+
+        if ($item->status !== 'available') {
+            return back()->with('error', 'Unit tidak tersedia')->withInput();
+        }
+
+        $pricing = $this->computePricing($validated['rental_type'], $validated['start_date'], $validated['end_date'], (float) $item->getPriceForType($validated['rental_type']), (float) ($item->hourly_price ?? 0));
+
+        [$booking, $invoice] = DB::transaction(function () use ($request, $validated, $pricing, $modelClass, $item, $config) {
+            $booking = Booking::create([
+                'booking_code' => Booking::generateBookingCode(),
+                'user_id' => Auth::id(),
+                'vehicle_id' => null,
+                'item_type' => $modelClass,
+                'item_id' => $item->id,
+                'category_id' => $item->category_id,
+                'rental_type' => $validated['rental_type'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'pickup_location' => $validated['pickup_location'] ?? null,
+                'dropoff_location' => $validated['dropoff_location'] ?? null,
+                'with_driver' => false,
+                'base_price' => $pricing['total'],
+                'driver_price' => 0,
+                'total_price' => $pricing['total'],
+                'discount' => 0,
+                'final_price' => $pricing['total'],
+                'status' => 'pending',
+                'payment_status' => 'unpaid',
+                'payment_due_date' => \Carbon\Carbon::parse($validated['start_date'])->toDateString(),
+                'notes' => trim(($config['label'] . '. ' . $pricing['duration_label'] . '. ' . ($validated['notes'] ?? ''))) ?: null,
+                'ktp_photo' => $request->file('ktp_photo')->store('ktp', 'public'),
+            ]);
+
+            $item->update(['status' => 'reserved']);
+
+            $invoice = $this->createAutoInvoice($booking);
+
+            return [$booking, $invoice];
+        });
+
+        $msg = $validated['payment_plan'] === 'dp50'
+            ? 'Booking berhasil! Silakan bayar DP 50% (' . number_format((float) $booking->final_price / 2, 0, ',', '.') . ') untuk mengunci unit.'
+            : 'Booking berhasil! Silakan lakukan pembayaran penuh.';
+
+        return redirect()->route('invoices.show', $invoice)->with('success', $msg);
     }
 
     public function store(Request $request)
     {
+        // Form Lepas Kunci: tanpa driver, wajib identitas (KTP)
         $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'rental_type' => 'required|in:hourly,daily,weekly,monthly',
@@ -67,9 +222,11 @@ class BookingWebController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'pickup_location' => 'nullable|string|max:255',
             'dropoff_location' => 'nullable|string|max:255',
-            'with_driver' => 'boolean',
             'notes' => 'nullable|string|max:1000',
-            'ktp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ktp_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'payment_plan' => 'required|in:full,dp50',
+        ], [
+            'ktp_photo.required' => 'Foto KTP wajib diunggah untuk sewa lepas kunci',
         ]);
 
         $vehicle = Vehicle::findOrFail($validated['vehicle_id']);
@@ -78,63 +235,148 @@ class BookingWebController extends Controller
             return back()->with('error', 'Kendaraan tidak tersedia')->withInput();
         }
 
-        $basePrice = $vehicle->getPriceForType($validated['rental_type']);
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $pricing = $this->computePricing($validated['rental_type'], $validated['start_date'], $validated['end_date'], (float) $vehicle->getPriceForType($validated['rental_type']), (float) ($vehicle->hourly_price ?? 0));
 
-        if ($validated['rental_type'] === 'hourly') {
-            $hours = max(1, $startDate->diffInHours($endDate));
-            $totalPrice = $vehicle->hourly_price * $hours;
-            $days = 0;
-        } else {
-            $days = max(1, $startDate->diffInDays($endDate));
-            $totalPrice = $basePrice * $days;
-        }
+        [$booking, $invoice] = DB::transaction(function () use ($request, $validated, $pricing, $vehicle) {
+            $booking = Booking::create([
+                'booking_code' => Booking::generateBookingCode(),
+                'user_id' => Auth::id(),
+                'vehicle_id' => $vehicle->id,
+                'driver_id' => null,
+                'category_id' => $vehicle->category_id,
+                'rental_type' => $validated['rental_type'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'pickup_location' => $validated['pickup_location'] ?? null,
+                'dropoff_location' => $validated['dropoff_location'] ?? null,
+                'with_driver' => false,
+                'base_price' => $pricing['total'],
+                'driver_price' => 0,
+                'total_price' => $pricing['total'],
+                'discount' => 0,
+                'final_price' => $pricing['total'],
+                'status' => 'pending',
+                'payment_status' => 'unpaid',
+                'payment_due_date' => \Carbon\Carbon::parse($validated['start_date'])->toDateString(),
+                'notes' => trim(($pricing['duration_label'] . '. ' . ($validated['notes'] ?? ''))) ?: null,
+                'ktp_photo' => $request->file('ktp_photo')->store('ktp', 'public'),
+            ]);
 
-        $driverPrice = 0;
-        if (!empty($validated['with_driver']) && $vehicle->with_driver) {
-            $driverDays = max(1, $startDate->diffInDays($endDate));
-            $driverPrice = ($vehicle->with_driver_daily_price ?? 0) * $driverDays;
-        }
+            $vehicle->update(['status' => 'reserved']);
 
-        $finalPrice = $totalPrice + $driverPrice;
+            $invoice = $this->createAutoInvoice($booking);
 
-        $ktpPath = null;
-        if ($request->hasFile('ktp_photo')) {
-            $ktpPath = $request->file('ktp_photo')->store('ktp', 'public');
-        }
+            return [$booking, $invoice];
+        });
 
-        $booking = Booking::create([
-            'booking_code' => Booking::generateBookingCode(),
-            'user_id' => Auth::id(),
-            'vehicle_id' => $vehicle->id,
-            'driver_id' => null,
-            'category_id' => $vehicle->category_id,
-            'rental_type' => $validated['rental_type'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'pickup_location' => $validated['pickup_location'] ?? null,
-            'dropoff_location' => $validated['dropoff_location'] ?? null,
-            'with_driver' => $validated['with_driver'] ?? false,
-            'base_price' => $totalPrice,
-            'driver_price' => $driverPrice,
-            'total_price' => $totalPrice,
-            'discount' => 0,
-            'final_price' => $finalPrice,
-            'status' => 'pending',
-            'payment_status' => 'unpaid',
-            'notes' => $validated['notes'] ?? null,
-            'ktp_photo' => $ktpPath,
+        $msg = $validated['payment_plan'] === 'dp50'
+            ? 'Booking lepas kunci berhasil! Silakan bayar DP 50% (' . number_format((float) $booking->final_price / 2, 0, ',', '.') . '), sisa saat serah terima.'
+            : 'Booking lepas kunci berhasil! Silakan lakukan pembayaran penuh.';
+
+        return redirect()->route('invoices.show', $invoice)->with('success', $msg);
+    }
+
+    public function storeDriver(Request $request)
+    {
+        // Form Dengan Driver: pilih driver aktif, KTP tetap wajib
+        $validated = $request->validate([
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'driver_id' => 'required|exists:drivers,id',
+            'rental_type' => 'required|in:hourly,daily,weekly,monthly',
+            'start_date' => 'required|date|after:now',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'pickup_location' => 'nullable|string|max:255',
+            'dropoff_location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+            'ktp_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'payment_plan' => 'required|in:full,dp50',
+        ], [
+            'ktp_photo.required' => 'Foto KTP wajib diunggah untuk pemesanan',
+            'driver_id.required' => 'Silakan pilih driver',
         ]);
 
-        $vehicle->update(['status' => 'reserved']);
+        $vehicle = Vehicle::findOrFail($validated['vehicle_id']);
+        $driver = Driver::with('user')->findOrFail($validated['driver_id']);
 
-        return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
+        if ($vehicle->status !== 'available') {
+            return back()->with('error', 'Kendaraan tidak tersedia')->withInput();
+        }
+        if (!$vehicle->with_driver) {
+            return back()->with('error', 'Kendaraan ini tidak melayani sewa dengan driver')->withInput();
+        }
+        if (!in_array($driver->status, ['off_duty', 'active'])) {
+            return back()->with('error', 'Driver yang dipilih sedang bertugas')->withInput();
+        }
+
+        $days = max(1, (int) ceil(\Carbon\Carbon::parse($validated['start_date'])->diffInHours(\Carbon\Carbon::parse($validated['end_date'])) / 24));
+        $pricing = $this->computePricing($validated['rental_type'], $validated['start_date'], $validated['end_date'], (float) $vehicle->getPriceForType($validated['rental_type']), (float) ($vehicle->hourly_price ?? 0));
+        $driverPrice = (float) ($vehicle->with_driver_daily_price ?? 0) * $days;
+        $total = $pricing['total'] + $driverPrice;
+
+        [$booking, $invoice] = DB::transaction(function () use ($request, $validated, $pricing, $driverPrice, $total, $vehicle, $driver) {
+            $booking = Booking::create([
+                'booking_code' => Booking::generateBookingCode(),
+                'user_id' => Auth::id(),
+                'vehicle_id' => $vehicle->id,
+                'driver_id' => $driver->id,
+                'category_id' => $vehicle->category_id,
+                'rental_type' => $validated['rental_type'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'pickup_location' => $validated['pickup_location'] ?? null,
+                'dropoff_location' => $validated['dropoff_location'] ?? null,
+                'with_driver' => true,
+                'base_price' => $pricing['total'],
+                'driver_price' => $driverPrice,
+                'total_price' => $pricing['total'],
+                'discount' => 0,
+                'final_price' => $total,
+                'status' => 'pending',
+                'payment_status' => 'unpaid',
+                'payment_due_date' => \Carbon\Carbon::parse($validated['start_date'])->toDateString(),
+                'notes' => trim(('Dengan driver: ' . ($driver->user->name ?? '-') . '. ' . ($validated['notes'] ?? ''))) ?: null,
+                'ktp_photo' => $request->file('ktp_photo')->store('ktp', 'public'),
+            ]);
+
+            $vehicle->update(['status' => 'reserved']);
+            $driver->update(['status' => 'on_trip']);
+
+            $invoice = $this->createAutoInvoice($booking);
+
+            return [$booking, $invoice];
+        });
+
+        $msg = $validated['payment_plan'] === 'dp50'
+            ? 'Booking dengan driver berhasil! Silakan bayar DP 50% (' . number_format((float) $booking->final_price / 2, 0, ',', '.') . '), sisa saat serah terima.'
+            : 'Booking dengan driver berhasil! Silakan lakukan pembayaran penuh.';
+
+        return redirect()->route('invoices.show', $invoice)->with('success', $msg);
+    }
+
+    private function computePricing(string $rentalType, string $startDate, string $endDate, float $baseRate, float $hourlyRate): array
+    {
+        $start = \Carbon\Carbon::parse($startDate);
+        $end = \Carbon\Carbon::parse($endDate);
+
+        if ($rentalType === 'hourly') {
+            $qty = max(1, (int) ceil($start->diffInHours($end)));
+            return ['total' => $hourlyRate * $qty, 'qty' => $qty, 'duration_label' => "Durasi sewa: {$qty} jam"];
+        }
+
+        $days = max(1, (int) ceil($start->diffInHours($end) / 24));
+        [$multiplier, $label] = match ($rentalType) {
+            'weekly' => [7, 'minggu'],
+            'monthly' => [30, 'bulan'],
+            default => [1, 'hari'],
+        };
+        $qty = max(1, (int) ceil($days / $multiplier));
+
+        return ['total' => $baseRate * $qty, 'qty' => $qty, 'duration_label' => "Durasi sewa: {$qty} {$label} ({$days} hari)"];
     }
 
     public function show(Booking $booking)
     {
-        $booking->load(['vehicle', 'driver.user', 'category', 'user', 'invoice', 'tripReport', 'inspection', 'payments']);
+        $booking->load(['vehicle', 'driver.user', 'category', 'user', 'item', 'invoice', 'invoices', 'tripReport', 'inspection', 'payments', 'replacements.originalVehicle', 'replacements.replacementVehicle']);
 
         $swappableVehicles = collect();
         if ($booking->vehicle_id
@@ -149,6 +391,25 @@ class BookingWebController extends Controller
         }
 
         return view('bookings.show', compact('booking', 'swappableVehicles'));
+    }
+
+    public function proof(Booking $booking)
+    {
+        $this->authorizeAccess($booking);
+        $booking->load(['vehicle.category', 'item.category', 'driver.user', 'category', 'user', 'payments']);
+
+        return view('bookings.proof', compact('booking'));
+    }
+
+    private function authorizeAccess(Booking $booking): void
+    {
+        $role = Auth::user()->role;
+        if ($booking->user_id === Auth::id()) {
+            return;
+        }
+        if (!in_array($role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
     }
 
     public function uploadKtp(Request $request, Booking $booking)
@@ -176,6 +437,8 @@ class BookingWebController extends Controller
         $booking->update(['status' => 'confirmed']);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'reserved']);
+        } elseif ($booking->item) {
+            $booking->item->update(['status' => 'reserved']);
         }
 
         return back()->with('success', 'Booking berhasil dikonfirmasi');
@@ -190,6 +453,11 @@ class BookingWebController extends Controller
         $booking->update(['status' => 'cancelled']);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'available']);
+        } elseif ($booking->item) {
+            $booking->item->update(['status' => 'available']);
+        }
+        if ($booking->driver_id) {
+            Driver::where('id', $booking->driver_id)->update(['status' => 'off_duty']);
         }
 
         return back()->with('success', 'Booking berhasil dibatalkan');
@@ -204,6 +472,8 @@ class BookingWebController extends Controller
         $booking->update(['status' => 'ongoing', 'actual_start_date' => now()]);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'rented']);
+        } elseif ($booking->item) {
+            $booking->item->update(['status' => 'rented']);
         }
 
         return back()->with('success', 'Perjalanan dimulai');
@@ -218,6 +488,8 @@ class BookingWebController extends Controller
         $booking->update(['status' => 'completed', 'actual_end_date' => now()]);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'available']);
+        } elseif ($booking->item) {
+            $booking->item->update(['status' => 'available']);
         }
 
         if ($booking->driver_id) {

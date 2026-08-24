@@ -79,26 +79,40 @@
 
         @if($invoice->status !== 'paid' && $invoice->due_amount > 0)
         <div class="border-t mt-8 pt-6">
-            <h4 class="font-bold text-navy-800 mb-4">Bayar Tagihan</h4>
+            <h4 class="font-bold text-navy-800 mb-1">Bayar Tagihan</h4>
+            <p class="text-xs text-navy-500 mb-4">Pilih cepat: lunasi sekaligus atau bayar DP 50% (sisa dibayar saat serah terima). Non-tunai diverifikasi admin.</p>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button type="button" onclick="setAmount({{ (float) $invoice->due_amount }}, this)"
+                    class="px-4 py-2 rounded-xl text-[12px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
+                    <i class="fas fa-money-bill-wave mr-1"></i> Bayar Penuh &bull; Rp {{ number_format($invoice->due_amount, 0, ',', '.') }}
+                </button>
+                @php $dpAmount = round((float) $invoice->total_amount * 0.5); @endphp
+                @if($dpAmount > 0 && $dpAmount < (float) $invoice->due_amount)
+                <button type="button" onclick="setAmount({{ min($dpAmount, (float) $invoice->due_amount) }}, this)"
+                    class="px-4 py-2 rounded-xl text-[12px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+                    <i class="fas fa-hand-holding-dollar mr-1"></i> DP 50% &bull; Rp {{ number_format(min($dpAmount, (float) $invoice->due_amount), 0, ',', '.') }}
+                </button>
+                @endif
+            </div>
             <form method="POST" action="{{ route('invoices.pay', $invoice) }}">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-xs text-navy-500 mb-1">Jumlah (Rp)</label>
-                        <input type="number" name="amount" value="{{ $invoice->due_amount }}" min="1" max="{{ $invoice->due_amount }}" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                        <input type="number" id="pay-amount" name="amount" value="{{ $invoice->due_amount }}" min="1" max="{{ $invoice->due_amount }}" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                     </div>
                     <div>
                         <label class="block text-xs text-navy-500 mb-1">Metode</label>
                         <select name="method" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
-                            <option value="cash">Cash</option><option value="transfer">Transfer</option><option value="ewallet">E-Wallet</option><option value="credit_card">Kartu Kredit</option><option value="other">Lainnya</option>
+                            <option value="transfer">Transfer Bank</option><option value="ewallet">E-Wallet</option><option value="cash">Cash di Kantor</option><option value="credit_card">Kartu Kredit</option><option value="other">Lainnya</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs text-navy-500 mb-1">Referensi</label>
-                        <input type="text" name="reference_number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500" placeholder="No. Ref">
+                        <input type="text" name="reference_number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500" placeholder="No. rekening/pengirim">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-semibold"><i class="fas fa-money-check-alt mr-1"></i> Bayar Sekarang</button>
+                <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-semibold"><i class="fas fa-money-check-alt mr-1"></i> Kirim Pembayaran</button>
             </form>
         </div>
         @endif
@@ -107,15 +121,33 @@
         <div class="border-t mt-6 pt-6">
             <h4 class="font-bold text-navy-800 mb-3">Riwayat Pembayaran</h4>
             @foreach($invoice->payments as $p)
-            <div class="flex items-center justify-between py-2 border-b last:border-0 text-sm">
+            <div class="flex items-center justify-between gap-3 py-2.5 border-b last:border-0 text-sm flex-wrap">
                 <div>
                     <span class="font-medium text-navy-800">{{ $p->payment_code }}</span>
-                    <span class="text-navy-500 ml-2">{{ ucfirst($p->method) }}</span>
-                    <span class="text-navy-400 ml-2">{{ $p->paid_at->format('d M Y H:i') }}</span>
+                    <span class="text-navy-500 ml-2">{{ ucfirst(str_replace('_', ' ', $p->method)) }}</span>
+                    <span class="text-navy-400 ml-2">{{ $p->paid_at?->format('d M Y H:i') ?? '-' }}</span>
+                    @if($p->reference_number) <span class="text-navy-400 ml-2">&bull; Ref: {{ $p->reference_number }}</span> @endif
                 </div>
-                <div>
-                    <span class="status-{{ $p->status }} px-2 py-0.5 rounded-full text-xs font-medium">{{ ucfirst($p->status) }}</span>
-                    <span class="font-medium ml-2">Rp {{ number_format($p->amount,0,',','.') }}</span>
+                <div class="flex items-center gap-2">
+                    <span class="status-{{ $p->status }} px-2 py-0.5 rounded-full text-xs font-medium">{{ match($p->status) { 'pending' => 'Menunggu Verifikasi', 'verified' => 'Terverifikasi', default => ucfirst($p->status) } }}</span>
+                    @if(in_array(auth()->user()->role, ['superadmin', 'owner']) && $p->status !== 'rejected')
+                    <form method="POST" action="{{ route('invoices.payments.verify', [$invoice, $p]) }}" class="inline">
+                        @csrf
+                        <button type="submit" {{ $p->status === 'verified' ? 'disabled' : '' }} class="px-2.5 py-1 rounded-lg text-[11px] font-bold {{ $p->status === 'verified' ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' }}">
+                            <i class="fas fa-check mr-0.5"></i> Verifikasi
+                        </button>
+                    </form>
+                    @if($p->status !== 'verified')
+                    <form method="POST" action="{{ route('invoices.payments.reject', [$invoice, $p]) }}" class="inline"
+                        onsubmit="return confirm('Tolak pembayaran ini?')">
+                        @csrf
+                        <button type="submit" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-50 text-red-600 hover:bg-red-100">
+                            <i class="fas fa-times mr-0.5"></i> Tolak
+                        </button>
+                    </form>
+                    @endif
+                    @endif
+                    <span class="font-medium ml-1">Rp {{ number_format($p->amount,0,',','.') }}</span>
                 </div>
             </div>
             @endforeach
@@ -130,4 +162,13 @@
         @endif
     </div>
 </div>
+
+<script>
+function setAmount(val, btn) {
+    const input = document.getElementById('pay-amount');
+    if (input) input.value = val;
+    document.querySelectorAll('button[onclick^="setAmount"]').forEach(b => b.classList.remove('ring-2', 'ring-offset-1'));
+    if (btn) { btn.classList.add('ring-2', 'ring-offset-1'); }
+}
+</script>
 @endsection

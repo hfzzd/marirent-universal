@@ -55,4 +55,47 @@ class Invoice extends Model
     {
         return $this->total_amount - $this->paid_amount;
     }
+
+    /**
+     * Sinkronkan payment_status booking terkait dengan kondisi invoice ini,
+     * agar datasheet/monitoring selalu mencerminkan pembayaran terbaru.
+     */
+    public function syncBookingPaymentStatus(): void
+    {
+        $bookings = $this->bookings;
+        if ($bookings->isEmpty() && $this->booking) {
+            $bookings = collect([$this->booking]);
+        }
+
+        foreach ($bookings as $b) {
+            if (!$b || $b->payment_status === 'refunded') {
+                continue;
+            }
+            if ($this->status === 'paid') {
+                $b->update(['payment_status' => 'paid']);
+            } elseif ((float) $this->paid_amount > 0 && $b->payment_status !== 'partial') {
+                $b->update(['payment_status' => 'partial']);
+            } elseif ((float) $this->paid_amount <= 0 && $b->payment_status === 'partial') {
+                $b->update(['payment_status' => 'unpaid']);
+            }
+        }
+    }
+
+    /**
+     * Hitung ulang paid/due/status dari seluruh payment verified lalu
+     * sinkronkan ke booking.
+     */
+    public function recalcFromPayments(): void
+    {
+        $paid = min((float) $this->payments()->where('status', 'verified')->sum('amount'), (float) $this->total_amount);
+
+        $this->update([
+            'paid_amount' => $paid,
+            'due_amount' => max(0, (float) $this->total_amount - $paid),
+            'status' => $paid >= (float) $this->total_amount && $paid > 0 ? 'paid' : ($paid > 0 ? 'partial' : ($this->status === 'draft' ? 'draft' : 'sent')),
+            'paid_at' => $paid > 0 ? ($this->paid_at ?? now()) : null,
+        ]);
+
+        $this->syncBookingPaymentStatus();
+    }
 }

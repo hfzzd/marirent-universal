@@ -51,7 +51,7 @@ class InvoiceWebController extends Controller
 
         $customers = User::where('role', 'user')->orderBy('name')->get();
 
-        $eligible = Booking::with(['vehicle', 'category'])
+        $eligible = Booking::with(['vehicle', 'category', 'item'])
             ->whereIn('status', ['confirmed', 'ongoing'])
             ->whereDoesntHave('invoice')
             ->whereDoesntHave('invoices')
@@ -177,6 +177,16 @@ class InvoiceWebController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        $remaining = max(0, (float) $invoice->due_amount);
+        if ((float) $validated['amount'] > $remaining + 0.001) {
+            return back()->with('error', 'Jumlah pembayaran melebihi sisa tagihan (Rp ' . number_format($remaining, 0, ',', '.') . ')');
+        }
+
+        // Pembeli hanya boleh membayar invoice miliknya
+        if (Auth::user()->role === 'user' && $invoice->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $payment = Payment::create([
             'payment_code' => Payment::generatePaymentCode(),
             'invoice_id' => $invoice->id,
@@ -190,14 +200,50 @@ class InvoiceWebController extends Controller
         ]);
 
         if ($payment->status === 'verified') {
-            $newPaid = $invoice->paid_amount + $payment->amount;
-            $invoice->update([
-                'paid_amount' => $newPaid,
-                'due_amount' => max(0, $invoice->total_amount - $newPaid),
-                'status' => $newPaid >= $invoice->total_amount ? 'paid' : 'partial',
-            ]);
+            $invoice->recalcFromPayments();
         }
 
-        return back()->with('success', 'Pembayaran berhasil dicatat');
+        $msg = $payment->status === 'verified'
+            ? 'Pembayaran ' . number_format((float) $payment->amount, 0, ',', '.') . ' tercatat & terverifikasi.'
+            : 'Pembayaran tercatat, menunggu verifikasi admin.';
+
+        return back()->with('success', $msg);
+    }
+
+    /**
+     * Verifikasi pembayaran non-tunai oleh superadmin/owner.
+     * Setelah verified: invoice dihitung ulang & status booking ikut berubah.
+     */
+    public function verifyPayment(Request $request, Invoice $invoice, Payment $payment)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+        abort_unless($payment->invoice_id === $invoice->id, 404);
+
+        if ($payment->status === 'pending') {
+            $payment->update(['status' => 'verified', 'paid_at' => $payment->paid_at ?? now()]);
+            $invoice->recalcFromPayments();
+        }
+
+        return back()->with('success', 'Pembayaran ' . $payment->payment_code . ' diverifikasi.');
+    }
+
+    public function rejectPayment(Request $request, Invoice $invoice, Payment $payment)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+        abort_unless($payment->invoice_id === $invoice->id, 404);
+
+        if ($payment->status !== 'rejected') {
+            $wasVerified = $payment->status === 'verified';
+            $payment->update(['status' => 'rejected']);
+            if ($wasVerified) {
+                $invoice->recalcFromPayments();
+            }
+        }
+
+        return back()->with('success', 'Pembayaran ' . $payment->payment_code . ' ditolak.');
     }
 }

@@ -24,7 +24,8 @@ Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
 Route::get('/produk', [PublicController::class, 'products'])->name('products');
 Route::get('/kontak', [PublicController::class, 'contact'])->name('contact');
 Route::post('/kontak', [ContactWebController::class, 'submit'])->name('contact.submit');
-Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.vehicle');
+    Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.vehicle');
+    Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('public.item');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -111,7 +112,12 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('bookings')->group(
 Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::get('/', [BookingWebController::class, 'index'])->name('bookings.index');
     Route::get('/create', [BookingWebController::class, 'create'])->name('bookings.create');
+    Route::get('/create-driver', [BookingWebController::class, 'createDriver'])->name('bookings.create-driver');
+    Route::get('/item/{type}/{slug}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
+    Route::post('/item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
+    Route::post('/dengan-driver', [BookingWebController::class, 'storeDriver'])->name('bookings.store-driver');
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
+    Route::get('/{booking}/proof', [BookingWebController::class, 'proof'])->name('bookings.proof');
     Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
     Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm');
@@ -140,6 +146,10 @@ Route::middleware('auth')->prefix('invoices')->group(function () {
     Route::post('/', [InvoiceWebController::class, 'store'])->name('invoices.store')->middleware('role:superadmin,owner');
     Route::get('/{invoice}', [InvoiceWebController::class, 'show'])->name('invoices.show');
     Route::post('/{invoice}/pay', [InvoiceWebController::class, 'pay'])->name('invoices.pay');
+    Route::post('/{invoice}/payments/{payment}/verify', [InvoiceWebController::class, 'verifyPayment'])
+        ->middleware('role:superadmin,owner')->name('invoices.payments.verify');
+    Route::post('/{invoice}/payments/{payment}/reject', [InvoiceWebController::class, 'rejectPayment'])
+        ->middleware('role:superadmin,owner')->name('invoices.payments.reject');
 });
 
 Route::middleware('auth')->prefix('inspections')->group(function () {
