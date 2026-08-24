@@ -1,33 +1,11 @@
 @extends('layouts.public')
-@section('title', 'Booking ' . $vehicle->name . ' - MariRent')
+@section('title', 'Booking ' . $item->name . ' - MariRent')
 
 @section('content')
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <a href="{{ route('public.vehicle', $vehicle->slug) }}" class="text-sky-600 hover:text-sky-700 text-sm mb-6 inline-flex items-center transition">
-        <i class="fas fa-arrow-left mr-1.5"></i> Kembali ke {{ $vehicle->name }}
+    <a href="{{ route('public.item', [$type, $item->slug]) }}" class="text-sky-600 hover:text-sky-700 text-sm mb-6 inline-flex items-center transition">
+        <i class="fas fa-arrow-left mr-1.5"></i> Kembali ke {{ $item->name }}
     </a>
-
-    {{-- Pilihan jenis sewa --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <div class="border-2 border-sky-500 bg-sky-50 rounded-xl p-3 flex items-center gap-3">
-            <div class="w-9 h-9 bg-sky-500 rounded-lg flex items-center justify-center"><i class="fas fa-key text-white text-[13px]"></i></div>
-            <div>
-                <p class="text-[13px] font-bold text-navy-800">Lepas Kunci</p>
-                <p class="text-[11px] text-gray-400">Anda mengemudi sendiri &bull; SIM wajib</p>
-            </div>
-            <i class="fas fa-check-circle text-sky-500 ml-auto"></i>
-        </div>
-        @if($vehicle->with_driver)
-        <a href="{{ route('bookings.create-driver', ['vehicle' => $vehicle->slug]) }}" class="border-2 border-gray-200 hover:border-sky-300 rounded-xl p-3 flex items-center gap-3 transition group">
-            <div class="w-9 h-9 bg-gray-100 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition"><i class="fas fa-user-tie text-gray-400 group-hover:text-sky-500 text-[13px]"></i></div>
-            <div>
-                <p class="text-[13px] font-bold text-navy-800">Dengan Driver</p>
-                <p class="text-[11px] text-gray-400">+Rp {{ number_format($vehicle->with_driver_daily_price ?? 0, 0, ',', '.') }}/hari</p>
-            </div>
-            <i class="fas fa-chevron-right text-gray-300 ml-auto text-[12px]"></i>
-        </a>
-        @endif
-    </div>
 
     @if(session('error'))
     <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-5 text-[13px] flex items-center gap-2">
@@ -51,17 +29,17 @@
             <div class="bg-white rounded-2xl shadow-sm p-6">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="w-11 h-11 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
-                        <i class="fas fa-calendar-check text-white"></i>
+                        <i class="fas {{ $config['icon'] }} text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-navy-900">Form Booking — Lepas Kunci</h1>
-                        <p class="text-[12px] text-gray-400">Anda mengemudi sendiri. Wajib melampirkan KTP & SIM yang masih berlaku</p>
+                        <h1 class="text-lg font-bold text-navy-900">Form Booking — {{ $config['label'] }}</h1>
+                        <p class="text-[12px] text-gray-400">Ambil di kantor kami &bull; wajib melampirkan KTP untuk verifikasi</p>
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('bookings.store') }}" enctype="multipart/form-data" id="booking-form">
+                <form method="POST" action="{{ route('bookings.store-item', $type) }}" enctype="multipart/form-data" id="booking-form">
                     @csrf
-                    <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
+                    <input type="hidden" name="item_id" value="{{ $item->id }}">
 
                     <div class="space-y-5">
                         {{-- Rental Type --}}
@@ -71,35 +49,35 @@
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="rental_type" value="hourly" x-model="type" class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition-all hover:border-sky-300">
-                                        <i class="fas fa-clock text-gray-400 peer-checked:text-sky-500 text-lg mb-1"></i>
+                                        <i class="fas fa-clock text-gray-400 text-lg mb-1"></i>
                                         <p class="text-[12px] font-semibold text-navy-700">Per Jam</p>
-                                        @if($vehicle->hourly_price)
-                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($vehicle->hourly_price, 0, ',', '.') }}</p>
+                                        @if($item->hourly_price)
+                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($item->hourly_price, 0, ',', '.') }}</p>
                                         @endif
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="rental_type" value="daily" x-model="type" class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition-all hover:border-sky-300">
-                                        <i class="fas fa-calendar-day text-gray-400 peer-checked:text-sky-500 text-lg mb-1"></i>
+                                        <i class="fas fa-calendar-day text-gray-400 text-lg mb-1"></i>
                                         <p class="text-[12px] font-semibold text-navy-700">Per Hari</p>
-                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($vehicle->daily_price, 0, ',', '.') }}</p>
+                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($item->daily_price, 0, ',', '.') }}</p>
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="rental_type" value="weekly" x-model="type" class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition-all hover:border-sky-300">
-                                        <i class="fas fa-calendar-week text-gray-400 peer-checked:text-sky-500 text-lg mb-1"></i>
+                                        <i class="fas fa-calendar-week text-gray-400 text-lg mb-1"></i>
                                         <p class="text-[12px] font-semibold text-navy-700">Per Minggu</p>
-                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($vehicle->weekly_price ?? $vehicle->daily_price * 7, 0, ',', '.') }}</p>
+                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($item->weekly_price ?? $item->daily_price * 7, 0, ',', '.') }}</p>
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="rental_type" value="monthly" x-model="type" class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition-all hover:border-sky-300">
-                                        <i class="fas fa-calendar-alt text-gray-400 peer-checked:text-sky-500 text-lg mb-1"></i>
+                                        <i class="fas fa-calendar-alt text-gray-400 text-lg mb-1"></i>
                                         <p class="text-[12px] font-semibold text-navy-700">Per Bulan</p>
-                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($vehicle->monthly_price ?? $vehicle->daily_price * 30, 0, ',', '.') }}</p>
+                                        <p class="text-[11px] text-gray-400">Rp {{ number_format($item->monthly_price ?? $item->daily_price * 30, 0, ',', '.') }}</p>
                                     </div>
                                 </label>
                             </div>
@@ -121,28 +99,13 @@
                             </div>
                         </div>
 
-                        {{-- Info lepas kunci --}}
-                        <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-4">
-                            <p class="text-[12px] font-semibold text-amber-700 mb-1"><i class="fas fa-info-circle mr-1"></i> Syarat Lepas Kunci</p>
+                        {{-- Info pengambilan --}}
+                        <div class="bg-emerald-50/60 border border-emerald-100 rounded-xl p-4">
+                            <p class="text-[12px] font-semibold text-emerald-700 mb-1"><i class="fas fa-store mr-1"></i> Pengambilan & Pengembalian</p>
                             <ul class="text-[11.5px] text-gray-500 space-y-0.5 list-disc list-inside">
-                                <li>Foto KTP wajib diunggah (identitas penyewa)</li>
-                                <li>SIM A/C asli sesuai jenis kendaraan ditunjukkan saat serah terima</li>
-                                <li>Kendaraan diserah dengan kondisi terinspeksi & BBM sesuai kesepakatan</li>
+                                <li>Unit diambil & dikembalikan di kantor MariRent</li>
+                                <li>Kondisi unit diperiksa bersama saat serah terima (foto kelengkapan dicatat)</li>
                             </ul>
-                        </div>
-
-                        {{-- Locations --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Lokasi Jemput</label>
-                                <input type="text" name="pickup_location" value="{{ old('pickup_location') }}" placeholder="Alamat penjemputan"
-                                    class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
-                            </div>
-                            <div>
-                                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Lokasi Pengembalian</label>
-                                <input type="text" name="dropoff_location" value="{{ old('dropoff_location') }}" placeholder="Alamat pengembalian"
-                                    class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
-                            </div>
                         </div>
 
                         {{-- KTP --}}
@@ -185,7 +148,7 @@
                                     <input type="radio" name="payment_plan" value="dp50" {{ old('payment_plan') === 'dp50' ? 'checked' : '' }} @change="$dispatch('plan-changed')" class="mt-0.5 accent-sky-600">
                                     <span>
                                         <span class="block text-[13px] font-bold text-navy-800"><i class="fas fa-hand-holding-dollar text-amber-500 mr-1 text-[11px]"></i> DP 50%</span>
-                                        <span class="block text-[11px] text-gray-400 mt-0.5">Sisa dibayar saat serah terima</span>
+                                        <span class="block text-[11px] text-gray-400 mt-0.5">Sisa dibayar saat pengambilan unit</span>
                                     </span>
                                 </label>
                             </div>
@@ -197,7 +160,7 @@
                         <button type="submit" class="btn-primary text-white px-8 py-3 rounded-xl font-semibold text-[14px] shadow-lg shadow-sky-500/25 transition flex items-center justify-center gap-2 flex-1">
                             <i class="fas fa-check-circle"></i> Konfirmasi Booking
                         </button>
-                        <a href="{{ route('public.vehicle', $vehicle->slug) }}" class="bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl text-[13px] font-medium text-navy-700 transition text-center">
+                        <a href="{{ route('public.item', [$type, $item->slug]) }}" class="bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl text-[13px] font-medium text-navy-700 transition text-center">
                             Batal
                         </a>
                     </div>
@@ -211,35 +174,28 @@
                 <h3 class="text-[14px] font-bold text-navy-800 mb-4"><i class="fas fa-receipt text-sky-500 mr-2"></i>Ringkasan Booking</h3>
 
                 <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                    <div class="w-14 h-14 {{ $vehicle->category->slug == 'mobil' ? 'bg-sky-50' : ($vehicle->category->slug == 'motor' ? 'bg-amber-50' : 'bg-violet-50') }} rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        @if($vehicle->image)
-                            <img src="{{ asset('storage/' . $vehicle->image) }}" alt="{{ $vehicle->name }}" class="w-full h-full object-cover">
+                    <div class="w-14 h-14 bg-sky-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        @if($item->image)
+                            <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" class="w-full h-full object-cover">
                         @else
-                            @if($vehicle->category->slug == 'mobil') <i class="fas fa-car text-sky-400"></i>
-                            @elseif($vehicle->category->slug == 'motor') <i class="fas fa-motorcycle text-amber-400"></i>
-                            @else <i class="fas fa-camera text-violet-400"></i>
-                            @endif
+                            <i class="fas {{ $config['icon'] }} text-sky-400"></i>
                         @endif
                     </div>
                     <div>
-                        <p class="font-bold text-navy-800 text-[14px]">{{ $vehicle->name }}</p>
-                        <p class="text-[11px] text-gray-400">{{ $vehicle->brand }} {{ $vehicle->model }}</p>
-                        <p class="text-[11px] text-sky-500 font-medium">{{ $vehicle->category->name }}</p>
+                        <p class="font-bold text-navy-800 text-[14px]">{{ $item->name }}</p>
+                        <p class="text-[11px] text-gray-400">{{ $item->brand }} {{ ($config['subtitle'])($item) }}</p>
+                        <p class="text-[11px] text-sky-500 font-medium">{{ $config['label'] }}</p>
                     </div>
                 </div>
 
                 <div class="space-y-2.5 text-[13px]" x-data="bookingSummary()" @input.window="tick()" @change.window="tick()" @plan-changed.window="tick()">
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Jenis Sewa</span>
-                        <span class="font-medium text-sky-600"><i class="fas fa-key mr-1 text-[10px]"></i>Lepas Kunci</span>
-                    </div>
                     <div class="flex justify-between">
                         <span class="text-gray-400">Tipe Sewa</span>
                         <span class="font-medium text-navy-700" x-text="rentalTypeLabel()">Per Hari</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-400">Harga Satuan</span>
-                        <span class="font-medium text-navy-700" x-text="formatRupiah(unitPrice())">Rp {{ number_format($vehicle->daily_price, 0, ',', '.') }}</span>
+                        <span class="font-medium text-navy-700" x-text="formatRupiah(unitPrice())">Rp {{ number_format($item->daily_price, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-400">Durasi</span>
@@ -265,13 +221,10 @@
 
                 <div class="mt-5 space-y-2">
                     <div class="flex items-center text-[12px] text-gray-500">
-                        <i class="fas fa-shield-alt text-sky-400 mr-2"></i> Asuransi kendaraan termasuk
+                        <i class="fas fa-shield-alt text-sky-400 mr-2"></i> Unit diperiksa sebelum & sesudah sewa
                     </div>
                     <div class="flex items-center text-[12px] text-gray-500">
-                        <i class="fas fa-headset text-sky-400 mr-2"></i> Dukungan 24/7
-                    </div>
-                    <div class="flex items-center text-[12px] text-gray-500">
-                        <i class="fas fa-times-circle text-sky-400 mr-2"></i> Gratis pembatalan 24 jam
+                        <i class="fas fa-box-open text-sky-400 mr-2"></i> Kelengkapan tercatat saat serah terima
                     </div>
                 </div>
             </div>
@@ -300,10 +253,10 @@ function cancelKTP() {
 
 <script>
 function bookingSummary() {
-    const hourlyPrice = {{ $vehicle->hourly_price ?? 0 }};
-    const dailyPrice = {{ $vehicle->daily_price }};
-    const weeklyPrice = {{ $vehicle->weekly_price ?? $vehicle->daily_price * 7 }};
-    const monthlyPrice = {{ $vehicle->monthly_price ?? $vehicle->daily_price * 30 }};
+    const hourlyPrice = {{ $item->hourly_price ?? 0 }};
+    const dailyPrice = {{ $item->daily_price }};
+    const weeklyPrice = {{ $item->weekly_price ?? $item->daily_price * 7 }};
+    const monthlyPrice = {{ $item->monthly_price ?? $item->daily_price * 30 }};
 
     return {
         tickValue: 0,

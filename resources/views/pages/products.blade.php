@@ -158,8 +158,8 @@
                             <span>Detail</span> <i class="fas fa-arrow-right text-[10px]"></i>
                         </a>
                     @else
-                        <a href="{{ route('products', ['category' => $p['category']->slug ?? '']) }}" class="bg-sky-50 hover:bg-sky-100 text-sky-700 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
-                            <span>Lihat</span> <i class="fas fa-arrow-right text-[10px]"></i>
+                        <a href="{{ route('public.item', [$p['type'], $p['slug']]) }}" class="btn-primary text-white px-5 py-2.5 rounded-xl text-[12px] font-semibold shadow-md shadow-sky-500/20 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
+                            <span>Detail</span> <i class="fas fa-arrow-right text-[10px]"></i>
                         </a>
                     @endif
                 </div>

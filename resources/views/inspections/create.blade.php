@@ -21,7 +21,7 @@
                         @foreach($bookings as $b)
                         @php
                             $bScope = in_array($b->category->slug ?? '', ['sewa-kamera','sewa-hp']) ? 'elektronik' : (($b->category->slug ?? '') === 'sewa-tenda' ? 'camping' : 'kendaraan');
-                            $itemName = $b->vehicle?->name ?? ($b->category->name ?? 'Unit Sewa');
+                            $itemName = $b->vehicle?->name ?? ($b->item?->name ?? ($b->category->name ?? 'Unit Sewa'));
                         @endphp
                         <option value="{{ $b->id }}" data-scope="{{ $bScope }}" {{ ($booking?->id ?? old('booking_id')) == $b->id ? 'selected' : '' }}>
                             {{ $b->booking_code }} - {{ $itemName }} | {{ $b->user?->name ?? '-' }} ({{ \Carbon\Carbon::parse($b->start_date)->format('d/m/y') }})

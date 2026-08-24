@@ -68,6 +68,60 @@ class PublicController extends Controller
         return view('public.show', compact('vehicle', 'relatedVehicles'));
     }
 
+    public function showItem(string $type, string $slug)
+    {
+        $type = match ($type) {
+            'phone', 'hp' => 'hp',
+            'camera', 'kamera' => 'kamera',
+            'camping', 'tenda' => 'tenda',
+            default => abort(404),
+        };
+
+        $config = $this->itemConfig($type);
+
+        $modelClass = $config['class'];
+        $item = $modelClass::with('category')
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $related = collect();
+        if ($item->category) {
+            $related = $modelClass::where('category_id', $item->category_id)
+                ->where('id', '!=', $item->id)
+                ->where('is_active', true)
+                ->where('status', 'available')
+                ->limit(4)
+                ->get();
+        }
+
+        return view('public.show-item', [
+            'item' => $item,
+            'type' => $type,
+            'config' => $config,
+            'related' => $related,
+        ]);
+    }
+
+    private function itemConfig(string $type): array
+    {
+        return match ($type) {
+            'hp' => ['class' => Phone::class, 'label' => 'Sewa HP', 'icon' => 'fa-mobile-alt', 'color' => 'blue',
+                'subtitle' => fn($i) => $i->phone_model, 'specs' => fn($i) => array_filter([
+                    'Kapasitas: ' . $i->storage_capacity, 'RAM: ' . $i->ram, 'Warna: ' . $i->color,
+                ])],
+            'kamera' => ['class' => Camera::class, 'label' => 'Sewa Kamera', 'icon' => 'fa-camera', 'color' => 'violet',
+                'subtitle' => fn($i) => $i->camera_model, 'specs' => fn($i) => array_filter([
+                    'Sensor: ' . $i->sensor_size, 'Lensa: ' . $i->lens_included,
+                ])],
+            'tenda' => ['class' => CampingEquipment::class, 'label' => 'Sewa Alat Camping', 'icon' => 'fa-campground', 'color' => 'emerald',
+                'subtitle' => fn($i) => $i->equipment_model, 'specs' => fn($i) => array_filter([
+                    'Jenis: ' . $i->type, $i->capacity ? 'Kapasitas: ' . $i->capacity . ' Orang' : null, 'Berat: ' . $i->weight, 'Material: ' . $i->material,
+                ])],
+            default => abort(404),
+        };
+    }
+
     public function getAllProducts(Request $request, int $limit = 12)
     {
         $products = collect();

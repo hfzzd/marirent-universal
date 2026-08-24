@@ -49,12 +49,12 @@ class InspectionWebController extends Controller
 
     public function create(Request $request)
     {
-        $bookings = Booking::with(['user', 'vehicle.category', 'category'])
+        $bookings = Booking::with(['user', 'vehicle.category', 'category', 'item'])
             ->whereIn('status', ['confirmed', 'ongoing'])
             ->orderByDesc('start_date')
             ->get();
 
-        $booking = $request->booking_id ? Booking::with(['vehicle.category', 'category'])->find($request->booking_id) : null;
+        $booking = $request->booking_id ? Booking::with(['vehicle.category', 'category', 'item'])->find($request->booking_id) : null;
 
         return view('inspections.create', [
             'bookings' => $bookings,

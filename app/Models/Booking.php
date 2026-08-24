@@ -45,7 +45,23 @@ class Booking extends Model
     public function tripReport() { return $this->hasOne(TripReport::class); }
     public function invoice() { return $this->hasOne(Invoice::class); }
     public function invoices() { return $this->belongsToMany(Invoice::class, 'booking_invoice')->withTimestamps(); }
+    public function replacements() { return $this->hasMany(VehicleReplacement::class)->latest(); }
+
+    public function unitName(): string
+    {
+        return $this->vehicle?->name
+            ?? ($this->item && !$this->item instanceof Booking ? ($this->item->name ?? null) : null)
+            ?? $this->category?->name
+            ?? 'Unit Sewa';
+    }
+
+    public function isVehicleBooking(): bool
+    {
+        return $this->vehicle_id !== null;
+    }
+
     public function replacement() { return $this->hasOne(VehicleReplacement::class); }
+    public function latestReplacement() { return $this->hasOne(VehicleReplacement::class)->latestOfMany(); }
     public function review() { return $this->hasOne(Review::class); }
     public function payments() { return $this->hasManyThrough(Payment::class, Invoice::class); }
 

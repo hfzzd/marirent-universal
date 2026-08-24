@@ -36,6 +36,17 @@ class Camera extends Model
         return $q;
     }
 
+    public function getPriceForType(string $type): float
+    {
+        return match($type) {
+            'hourly' => $this->hourly_price ?? 0,
+            'daily' => $this->daily_price,
+            'weekly' => $this->weekly_price ?? ($this->daily_price * 7),
+            'monthly' => $this->monthly_price ?? ($this->daily_price * 30),
+            default => $this->daily_price,
+        };
+    }
+
     public function getAverageRating(): float
     {
         return 0;

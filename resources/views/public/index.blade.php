@@ -203,7 +203,7 @@
                         <p class="text-[11px] text-gray-400">Mulai dari</p>
                         <p class="text-lg font-bold text-sky-600">Rp {{ number_format($p['daily_price'], 0, ',', '.') }}<span class="text-[11px] font-normal text-gray-400">/hari</span></p>
                     </div>
-                    <a href="{{ route('products', ['category' => $p['category']->slug ?? '']) }}" class="bg-sky-50 hover:bg-sky-100 text-sky-700 px-4 py-2 rounded-xl text-[12px] font-semibold transition">Detail</a>
+                    <a href="{{ $p['type'] == 'vehicle' ? route('public.vehicle', $p['slug']) : route('public.item', [$p['type'], $p['slug']]) }}" class="bg-sky-50 hover:bg-sky-100 text-sky-700 px-4 py-2 rounded-xl text-[12px] font-semibold transition">Detail</a>
                 </div>
             </div>
         </div>

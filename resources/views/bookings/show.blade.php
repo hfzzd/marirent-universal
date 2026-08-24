@@ -45,6 +45,9 @@
                         @if($booking->vehicle)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->vehicle->name }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->vehicle->brand }} {{ $booking->vehicle->model }} {{ $booking->vehicle->year }}</p>
+                        @elseif($booking->item)
+                        <p class="font-bold text-navy-800 text-[15px]">{{ $booking->item->name }}</p>
+                        <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->item->brand ?? '' }} {{ class_basename($booking->item_type) }} &bull; Barang sewa</p>
                         @elseif($booking->category)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->category->name }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->item_type ? class_basename($booking->item_type) : '-' }}</p>
@@ -68,15 +71,18 @@
                         <p class="text-[11px] text-sky-600 font-medium mt-1">{{ $booking->start_date->diffInDays($booking->end_date) }} hari</p>
                     </div>
 
-                    {{-- Driver --}}
+                    {{-- Jenis Sewa / Driver --}}
                     <div class="bg-sky-50/50 p-4 rounded-xl">
-                        <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Driver</p>
-                        @if($booking->driver)
-                        <p class="font-bold text-navy-800 text-[15px]">{{ $booking->driver->user->name ?? '-' }}</p>
-                        <p class="text-[12px] text-gray-400 mt-0.5">SIM {{ $booking->driver->license_type ?? '-' }}</p>
+                        <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Jenis Sewa</p>
+                        @if(!$booking->isVehicleBooking())
+                        <p class="font-bold text-navy-800 text-[15px]"><i class="fas fa-box-open text-sky-500 mr-1 text-[12px]"></i> Barang Sewa</p>
+                        <p class="text-[12px] text-gray-400 mt-0.5">Pengambilan di kantor</p>
+                        @elseif($booking->with_driver)
+                        <p class="font-bold text-navy-800 text-[15px]"><i class="fas fa-user-tie text-sky-500 mr-1 text-[12px]"></i> Dengan Driver</p>
+                        <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->driver?->user?->name ?? 'Driver ditentukan' }}</p>
                         @else
-                        <p class="font-bold text-navy-800 text-[15px]">Tanpa Driver</p>
-                        <p class="text-[12px] text-gray-400 mt-0.5">{{ ucfirst($booking->rental_type) }}</p>
+                        <p class="font-bold text-navy-800 text-[15px]"><i class="fas fa-key text-sky-500 mr-1 text-[12px]"></i> Lepas Kunci</p>
+                        <p class="text-[12px] text-gray-400 mt-0.5">Penyewa mengemudi sendiri (SIM wajib)</p>
                         @endif
                     </div>
                 </div>
@@ -106,8 +112,12 @@
                 @endif
 
                 {{-- Aksi --}}
-                @if(in_array(auth()->user()->role, ['superadmin','owner']))
+                @if(in_array(auth()->user()->role, ['superadmin','owner']) || auth()->user()->id == $booking->user_id)
                 <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+                    <a href="{{ route('bookings.proof', $booking) }}" target="_blank" class="bg-navy-800 hover:bg-navy-900 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-file-lines"></i> Cetak Bukti Serah Terima
+                    </a>
+                    @if(in_array(auth()->user()->role, ['superadmin','owner']))
                     @if($booking->status == 'pending')
                     <form method="POST" action="{{ route('bookings.confirm', $booking) }}">@csrf
                         <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-check"></i> Konfirmasi</button>
@@ -127,6 +137,7 @@
                     <form method="POST" action="{{ route('bookings.cancel', $booking) }}" onsubmit="return confirm('Yakin batalkan booking ini?')">@csrf
                         <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-times"></i> Batalkan</button>
                     </form>
+                    @endif
                     @endif
                 </div>
                 @endif
@@ -165,6 +176,25 @@
                             <span class="text-[10px] text-gray-400">Unit lama otomatis tersedia kembali.</span>
                         </div>
                     </form>
+                </div>
+                @endif
+
+                {{-- Riwayat Penggantian Kendaraan --}}
+                @if($booking->replacements->count())
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <p class="text-[12px] font-bold text-navy-800 flex items-center gap-2 mb-3"><i class="fas fa-clock-rotate-left text-sky-500"></i> Riwayat Penggantian Kendaraan</p>
+                    <div class="space-y-2">
+                        @foreach($booking->replacements as $rp)
+                        <div class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3">
+                            <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fas fa-right-left text-sky-600 text-[11px]"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-[12.5px] text-navy-800 font-semibold">{{ $rp->originalVehicle?->name ?? '-' }} <i class="fas fa-arrow-right text-[9px] text-gray-300 mx-1"></i> {{ $rp->replacementVehicle?->name ?? '-' }}</p>
+                                <p class="text-[11px] text-gray-400">{{ $rp->created_at->format('d M Y H:i') }}@if($rp->reason) &bull; {{ $rp->reason }}@endif @if($rp->price_difference !== null) &bull; Selisih: <span class="{{ (float)$rp->price_difference >= 0 ? 'text-red-500' : 'text-emerald-600' }} font-medium">Rp {{ number_format(abs((float)$rp->price_difference),0,',','.') }}{{ (float)$rp->price_difference >= 0 ? '' : ' (refund)' }}</span>@endif</p>
+                            </div>
+                            <span class="ml-auto badge {{ $rp->status === 'approved' ? 'badge-green' : ($rp->status === 'rejected' ? 'badge-red' : 'badge-yellow') }} text-[10px] flex-shrink-0">{{ ucfirst($rp->status ?? '-') }}</span>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
                 @endif
             </div>
@@ -277,6 +307,16 @@
                         @if($isOverdue) (Terlambat) @else ({{ now()->diffInDays($due) }} hari lagi) @endif
                     </span>
                 </div>
+                @endif
+                @php
+                    $payInvoice = $booking->invoices->first() ?? $booking->invoice;
+                    $canPayNow = $booking->payment_status != 'paid' && $payInvoice && (float) $payInvoice->due_amount > 0;
+                @endphp
+                @if($canPayNow)
+                <a href="{{ route('invoices.show', $payInvoice) }}" class="mt-4 w-full btn-primary text-white py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25">
+                    <i class="fas fa-money-bill-wave"></i> {{ $booking->payment_status == 'partial' ? 'Bayar Sisa Tagihan' : 'Bayar Sekarang' }}
+                </a>
+                <p class="text-center text-[10.5px] text-gray-400 mt-1.5">Bisa lunas sekaligus atau DP 50%</p>
                 @endif
             </div>
 
