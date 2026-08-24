@@ -53,14 +53,20 @@
 
                 {{-- Desktop Nav --}}
                 <div class="hidden md:flex items-center gap-1">
-                    <a href="{{ route('dashboard.profile') }}" class="nav-link px-4 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('dashboard.profile') ? 'active text-sky-600' : '' }}">
+                    <a href="{{ route('dashboard.profile') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('dashboard.profile') ? 'active text-sky-600' : '' }}">
                         <i class="fas fa-user-circle mr-1.5 text-[11px]"></i> Profil
                     </a>
-                    <a href="{{ route('bookings.index') }}" class="nav-link px-4 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('bookings.*') ? 'active text-sky-600' : '' }}">
+                    <a href="{{ route('bookings.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('bookings.*') ? 'active text-sky-600' : '' }}">
                         <i class="fas fa-calendar-check mr-1.5 text-[11px]"></i> Booking
                     </a>
-                    <a href="{{ route('invoices.index') }}" class="nav-link px-4 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('invoices.*') ? 'active text-sky-600' : '' }}">
+                    <a href="{{ route('invoices.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('invoices.*') ? 'active text-sky-600' : '' }}">
                         <i class="fas fa-file-invoice-dollar mr-1.5 text-[11px]"></i> Invoice
+                    </a>
+                    <a href="{{ route('chat.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('chat.*') ? 'active text-sky-600' : '' }}">
+                        <i class="fas fa-comments mr-1.5 text-[11px]"></i> Chat
+                    </a>
+                    <a href="{{ route('mail.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('mail.*') ? 'active text-sky-600' : '' }}">
+                        <i class="fas fa-envelope mr-1.5 text-[11px]"></i> Pesan
                     </a>
                 </div>
 

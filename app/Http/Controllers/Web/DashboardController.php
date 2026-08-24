@@ -21,6 +21,7 @@ class DashboardController extends Controller
             'superadmin' => view('dashboard.superadmin'),
             'owner' => view('dashboard.owner'),
             'driver' => view('dashboard.driver'),
+            'inspector' => view('dashboard.inspector'),
             default => redirect()->route('home'),
         };
     }

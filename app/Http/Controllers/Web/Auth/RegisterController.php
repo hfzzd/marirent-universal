@@ -42,7 +42,7 @@ class RegisterController extends Controller
 
             Auth::login($user);
 
-            return redirect()->route('dashboard')->with('success', 'Registrasi berhasil! Selamat datang.');
+            return redirect()->route('home')->with('success', 'Registrasi berhasil! Selamat datang.');
         } catch (\Exception $e) {
             return back()
                 ->withInput($request->except('password', 'password_confirmation'))

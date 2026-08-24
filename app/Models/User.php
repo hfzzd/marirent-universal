@@ -32,6 +32,12 @@ class User extends Authenticatable
     public function isOwner(): bool { return $this->role === 'owner'; }
     public function isUser(): bool { return $this->role === 'user'; }
     public function isDriver(): bool { return $this->role === 'driver'; }
+    public function isInspector(): bool { return $this->role === 'inspector'; }
+
+    public function inspections()
+    {
+        return $this->hasMany(Inspection::class, 'inspector_id');
+    }
 
     public function vehicles()
     {

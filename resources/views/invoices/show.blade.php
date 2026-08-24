@@ -27,8 +27,16 @@
             <div class="text-right">
                 <p class="text-xs text-navy-500 mb-1">Jatuh Tempo</p>
                 <p class="font-bold text-navy-800">{{ $invoice->due_date->format('d M Y') }}</p>
-                @if($invoice->booking)
-                <p class="text-sm text-navy-500 mt-1">Booking: {{ $invoice->booking->booking_code }}</p>
+                @php $invBookings = $invoice->bookings->isNotEmpty() ? $invoice->bookings : collect([$invoice->booking])->filter(); @endphp
+                @if($invBookings->isNotEmpty())
+                <div class="flex flex-wrap justify-end gap-1.5 mt-2">
+                    @foreach($invBookings as $b)
+                    <span class="inline-flex items-center bg-sky-50 text-sky-600 border border-sky-200 rounded-lg px-2 py-0.5 text-[11px] font-semibold font-mono">{{ $b->booking_code }}</span>
+                    @endforeach
+                </div>
+                @if($invBookings->count() > 1)
+                <p class="text-[11px] font-bold text-violet-500 mt-1.5"><i class="fas fa-layer-group mr-1"></i>Invoice Gabungan {{ $invBookings->count() }} Sewa</p>
+                @endif
                 @endif
             </div>
         </div>

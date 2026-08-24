@@ -151,10 +151,10 @@
                 <div class="mt-5 pt-5 border-t border-gray-100">
                     <p class="text-[10px] text-gray-300 text-center uppercase tracking-wider font-semibold mb-3">Demo Accounts</p>
                     <div class="grid grid-cols-2 gap-2" x-data>
-                        @php $demos = [['Admin','admin@marirent.com'],['Owner','owner@marirent.com'],['User','user@marirent.com'],['Driver','driver@marirent.com']]; @endphp
+                        @php $demos = [['Admin','admin@marirent.com'],['Owner','owner@marirent.com'],['User','user@marirent.com'],['Driver','driver@marirent.com'],['Inspector','inspector@mariarental.com']]; @endphp
                         @foreach($demos as $d)
                         <button type="button" @click="$dispatch('fill-login',{email:'{{ $d[1] }}',pass:'password'})"
-                                class="bg-sky-50/80 hover:bg-sky-100 text-[11px] text-navy-600 py-2 rounded-lg font-medium transition border border-sky-100 hover:border-sky-200">
+                                class="{{ $d[0] === 'Inspector' ? 'col-span-2 ' : '' }}bg-sky-50/80 hover:bg-sky-100 text-[11px] text-navy-600 py-2 rounded-lg font-medium transition border border-sky-100 hover:border-sky-200">
                             <i class="fas fa-user-circle mr-1 text-sky-400"></i> {{ $d[0] }}
                         </button>
                         @endforeach

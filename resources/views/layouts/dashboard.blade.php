@@ -58,7 +58,7 @@
 </head>
 <body class="bg-sky-50/50 min-h-screen flex">
     {{-- SIDEBAR --}}
-    <aside id="sidebar" class="sidebar w-60 min-h-screen fixed left-0 top-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto">
+    <aside id="sidebar" class="sidebar w-60 h-screen fixed left-0 top-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto overflow-x-hidden">
         <div class="p-4">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5 mb-5 pb-4 border-b border-white/5">
                 <div class="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -77,6 +77,17 @@
                 <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-home w-5 mr-2.5 text-sm"></i> Beranda
                 </a>
+
+                <div class="sidebar-group-title mt-3">Komunikasi</div>
+                <a href="{{ route('mail.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('mail.*') ? 'active' : '' }}">
+                    <i class="fas fa-envelope w-5 mr-2.5 text-sm"></i> Mail Inbox
+                </a>
+                <a href="{{ route('chat.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('chat.*') ? 'active' : '' }}">
+                    <i class="fas fa-comments w-5 mr-2.5 text-sm"></i> Live Chat
+                </a>
+                <a href="{{ route('contacts.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
+                    <i class="fas fa-address-book w-5 mr-2.5 text-sm"></i> Buku Kontak
+                </a>
                 @endif
 
                 @if($role === 'superadmin')
@@ -92,7 +103,7 @@
                 <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
                     <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Mobil
                 </a>
-                <a href="{{ route('superadmin.motor') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.motor') ? 'active' : '' }}">
+                <a href="{{ route('motors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('motors.*') ? 'active' : '' }}">
                     <i class="fas fa-motorcycle w-5 mr-2.5 text-sm"></i> Motor
                 </a>
                 <a href="{{ route('superadmin.elektronik.type', 'kamera') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.elektronik*') ? 'active' : '' }}">
@@ -133,9 +144,12 @@
                 </a>
 
                 @elseif($role === 'owner')
-                <div class="sidebar-group-title mt-4">Manajemen</div>
+                <div class="sidebar-group-title mt-4">Inventaris & Tim</div>
                 <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
                     <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Mobil
+                </a>
+                <a href="{{ route('motors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('motors.*') ? 'active' : '' }}">
+                    <i class="fas fa-motorcycle w-5 mr-2.5 text-sm"></i> Motor
                 </a>
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
                     <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
@@ -170,6 +184,23 @@
                 </a>
                 <a href="{{ route('inspections.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-check w-5 mr-2.5 text-sm"></i> Inspeksi
+                </a>
+
+                @elseif($role === 'inspector')
+                <div class="sidebar-group-title mt-4">Inspeksi</div>
+                <a href="{{ route('inspections.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.*') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-check w-5 mr-2.5 text-sm"></i> Semua Inspeksi
+                </a>
+                <a href="{{ route('inspections.create') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.create') ? 'active' : '' }}">
+                    <i class="fas fa-plus w-5 mr-2.5 text-sm"></i> Buat Inspeksi
+                </a>
+
+                <div class="sidebar-group-title mt-4">Referensi</div>
+                <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Data Booking
+                </a>
+                <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') || request()->routeIs('motors.*') ? 'active' : '' }}">
+                    <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Data Armada
                 </a>
 
                 @else

@@ -16,7 +16,8 @@ class Booking extends Model
         'rental_type', 'start_date', 'end_date', 'actual_start_date',
         'actual_end_date', 'pickup_location', 'dropoff_location', 'with_driver',
         'base_price', 'driver_price', 'total_price', 'discount', 'final_price',
-        'status', 'payment_status', 'notes', 'cancellation_reason', 'ktp_photo',
+        'status', 'payment_status', 'payment_due_date', 'source',
+        'notes', 'cancellation_reason', 'ktp_photo',
     ];
 
     protected function casts(): array
@@ -43,6 +44,7 @@ class Booking extends Model
     public function inspection() { return $this->hasOne(Inspection::class); }
     public function tripReport() { return $this->hasOne(TripReport::class); }
     public function invoice() { return $this->hasOne(Invoice::class); }
+    public function invoices() { return $this->belongsToMany(Invoice::class, 'booking_invoice')->withTimestamps(); }
     public function replacement() { return $this->hasOne(VehicleReplacement::class); }
     public function review() { return $this->hasOne(Review::class); }
     public function payments() { return $this->hasManyThrough(Payment::class, Invoice::class); }

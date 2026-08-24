@@ -40,6 +40,7 @@ class Invoice extends Model
     }
 
     public function booking() { return $this->belongsTo(Booking::class); }
+    public function bookings() { return $this->belongsToMany(Booking::class, 'booking_invoice')->withTimestamps(); }
     public function user() { return $this->belongsTo(User::class); }
     public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
     public function items() { return $this->hasMany(InvoiceItem::class); }

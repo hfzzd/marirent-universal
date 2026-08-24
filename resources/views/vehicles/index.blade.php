@@ -1,71 +1,123 @@
-﻿@extends('layouts.dashboard')
-@section('page-title', 'Kendaraan')
+@extends('layouts.dashboard')
+@section('page-title', 'Inventaris Mobil')
 
 @section('content')
-<div class="flex items-center justify-between mb-5">
-    <form action="{{ route('vehicles.index') }}" method="GET" class="flex gap-2">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kendaraan..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-60">
-        <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition"><i class="fas fa-search text-gray-500"></i></button>
-    </form>
-    <a href="{{ route('vehicles.create') }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium"><i class="fas fa-plus mr-1.5"></i> Tambah</a>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h2 class="text-xl font-bold text-navy-800 flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm shadow-sm"><i class="fas fa-car"></i></span>
+            Inventaris Mobil
+        </h2>
+        <p class="text-xs text-gray-400 mt-0.5">Kelola seluruh armada mobil rental yang tersedia di sistem.</p>
+    </div>
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+        <form action="{{ route('vehicles.index') }}" method="GET" class="relative flex-1 sm:flex-initial">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari mobil, plat, merk..." class="border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-full sm:w-64 bg-white/80 backdrop-blur-sm">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        </form>
+        <a href="{{ route('vehicles.create', ['type' => 'mobil']) }}" class="btn-primary text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md shadow-sky-500/20 flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fas fa-plus"></i> Tambah Mobil
+        </a>
+    </div>
 </div>
 
-<div class="glass-card rounded-2xl overflow-hidden">
+<div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-sky-100/40">
     <div class="overflow-x-auto">
-        <table class="w-full text-[13px]">
+        <table class="w-full text-xs">
             <thead>
-                <tr class="bg-sky-50/50 border-b border-sky-100/50">
-                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Kendaraan</th>
-                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Kategori</th>
-                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Plat</th>
-                    <th class="text-right py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Harga/Hari</th>
-                    <th class="text-center py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Status</th>
-                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Aksi</th>
+                <tr class="bg-gradient-to-r from-sky-50/70 to-slate-50/70 border-b border-sky-100/60">
+                    <th class="text-left py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Unit Mobil</th>
+                    <th class="text-left py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Plat Nomor</th>
+                    <th class="text-left py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Transmisi & BBM</th>
+                    <th class="text-left py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Tarif / Hari</th>
+                    <th class="text-center py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Kondisi</th>
+                    <th class="text-center py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Status</th>
+                    @if(auth()->user()->role === 'superadmin')
+                    <th class="text-left py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Owner</th>
+                    @endif
+                    <th class="text-center py-3.5 px-5 text-gray-500 font-bold uppercase tracking-wider text-[10px]">Aksi</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-50">
                 @forelse($vehicles as $v)
-                <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30">
-                    <td class="py-3 px-5">
+                <tr class="hover:bg-sky-50/40 transition-colors">
+                    <td class="py-3.5 px-5">
                         <div class="flex items-center gap-3">
-                            @php $cat = $v->category->slug ?? ''; @endphp
-                            <div class="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                @if($cat == 'mobil') <i class="fas fa-car text-blue-500 text-sm"></i>
-                                @elseif($cat == 'motor') <i class="fas fa-motorcycle text-amber-500 text-sm"></i>
-                                @elseif($cat == 'sewa-kamera') <i class="fas fa-camera text-violet-500 text-sm"></i>
-                                @else <i class="fas fa-campground text-emerald-500 text-sm"></i>
-                                @endif
+                            <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-100/50 text-blue-600 shadow-sm">
+                                <i class="fas fa-car text-sm"></i>
                             </div>
                             <div>
-                                <p class="font-medium text-navy-800">{{ $v->name }}</p>
-                                <p class="text-[11px] text-gray-400">{{ $v->brand }} {{ $v->model }}</p>
+                                <p class="font-bold text-navy-800 text-[13px]">{{ $v->name }}</p>
+                                <p class="text-[11px] text-gray-400 font-medium">{{ $v->brand ?? 'Toyota' }} {{ $v->model }} {{ $v->year ? '• '.$v->year : '' }}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="py-3 px-5 text-navy-600">{{ $v->category->name }}</td>
-                    <td class="py-3 px-5 font-mono text-[12px] text-navy-600">{{ $v->license_plate }}</td>
-                    <td class="py-3 px-5 text-right font-medium text-navy-700">Rp {{ number_format($v->daily_price,0,',','.') }}</td>
-                    <td class="py-3 px-5 text-center">
+                    <td class="py-3.5 px-5 font-mono text-[12px] font-semibold text-navy-700">
+                        <span class="bg-gray-100 px-2 py-0.5 rounded border border-gray-200/60">{{ $v->license_plate }}</span>
+                    </td>
+                    <td class="py-3.5 px-5 text-navy-600">
+                        <span class="capitalize font-medium">{{ $v->transmission ?? 'Manual' }}</span>
+                        <span class="text-gray-400 block text-[10px] uppercase">{{ $v->fuel_type ?? 'Bensin' }} &bull; {{ $v->seats ?? '5' }} Kursi</span>
+                    </td>
+                    <td class="py-3.5 px-5 font-bold text-navy-800 text-[13px]">
+                        Rp {{ number_format($v->daily_price, 0, ',', '.') }}
+                        @if($v->with_driver_daily_price)
+                        <span class="text-[10px] text-sky-600 block font-normal">+Supir: Rp {{ number_format($v->with_driver_daily_price, 0, ',', '.') }}</span>
+                        @endif
+                    </td>
+                    <td class="py-3.5 px-5 text-center">
+                        @if($v->condition == 'excellent') <span class="badge badge-green">Sangat Baik</span>
+                        @elseif($v->condition == 'good') <span class="badge badge-teal">Baik</span>
+                        @elseif($v->condition == 'fair') <span class="badge badge-yellow">Cukup</span>
+                        @else <span class="badge badge-red">Kurang</span>
+                        @endif
+                    </td>
+                    <td class="py-3.5 px-5 text-center">
                         @if($v->status == 'available') <span class="badge badge-green">Tersedia</span>
                         @elseif($v->status == 'rented') <span class="badge badge-yellow">Disewa</span>
                         @elseif($v->status == 'maintenance') <span class="badge badge-red">Maintenance</span>
                         @else <span class="badge badge-blue">Reservasi</span>
                         @endif
                     </td>
-                    <td class="py-3 px-5">
-                        <a href="{{ route('vehicles.edit', $v) }}" class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-edit text-sm"></i></a>
-                        <form method="POST" action="{{ route('vehicles.destroy', $v) }}" class="inline" onsubmit="return confirm('Hapus?')">
-                            @csrf @method('DELETE')
-                            <button class="text-red-400 hover:text-red-600"><i class="fas fa-trash text-sm"></i></button>
-                        </form>
+                    @if(auth()->user()->role === 'superadmin')
+                    <td class="py-3.5 px-5 text-navy-600 font-medium">
+                        {{ $v->owner->name ?? 'MariRent' }}
+                    </td>
+                    @endif
+                    <td class="py-3.5 px-5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <a href="{{ route('vehicles.edit', $v) }}" class="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition" title="Edit Mobil">
+                                <i class="fas fa-edit text-xs"></i>
+                            </a>
+                            <form method="POST" action="{{ route('vehicles.destroy', $v) }}" class="inline" onsubmit="return confirm('Hapus mobil {{ $v->name }}?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition" title="Hapus Mobil">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="py-10 text-center text-gray-300">Belum ada kendaraan</td></tr>
+                <tr>
+                    <td colspan="{{ auth()->user()->role === 'superadmin' ? '8' : '7' }}" class="py-12 text-center text-gray-400">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center text-sky-400 mb-2">
+                                <i class="fas fa-car text-xl"></i>
+                            </div>
+                            <p class="font-medium text-navy-700">Belum ada data mobil</p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Klik tombol "Tambah Mobil" di atas untuk menambahkan armada.</p>
+                        </div>
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-    <div class="px-5 py-3 border-t border-gray-100">{{ $vehicles->links() }}</div>
+    @if($vehicles->hasPages())
+    <div class="px-5 py-3.5 border-t border-gray-100 bg-white/50">
+        {{ $vehicles->links() }}
+    </div>
+    @endif
 </div>
 @endsection

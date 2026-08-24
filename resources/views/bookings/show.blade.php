@@ -22,7 +22,9 @@
             <div class="glass-card rounded-2xl p-6">
                 <div class="flex items-center justify-between mb-5">
                     <div>
-                        <h2 class="text-xl font-bold text-navy-900">{{ $booking->booking_code }}</h2>
+                        <h2 class="text-xl font-bold text-navy-900">{{ $booking->booking_code }}
+                            @if(($booking->source ?? 'online') == 'manual')<span class="badge badge-teal text-[10px] align-middle ml-1">Booking Manual</span>@endif
+                        </h2>
                         <p class="text-[13px] text-gray-400 mt-1">Dibuat: {{ $booking->created_at->format('d M Y H:i') }}</p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -122,10 +124,47 @@
                     </form>
                     @endif
                     @if(!in_array($booking->status, ['completed','cancelled']))
-                    <form method="POST" action="{{ route('bookings.cancel', $booking) }}">@csrf
+                    <form method="POST" action="{{ route('bookings.cancel', $booking) }}" onsubmit="return confirm('Yakin batalkan booking ini?')">@csrf
                         <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-times"></i> Batalkan</button>
                     </form>
                     @endif
+                </div>
+                @endif
+
+                {{-- Ganti Kendaraan Langsung (Quick Swap) --}}
+                @if($booking->vehicle && in_array($booking->status, ['confirmed','ongoing']) && in_array(auth()->user()->role, ['superadmin','owner']) && $swappableVehicles->isNotEmpty())
+                <div x-data="{ open: false }" class="mt-4 border-t border-gray-100 pt-4">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                            <p class="text-[12px] font-bold text-navy-800 flex items-center gap-2"><i class="fas fa-right-left text-sky-500"></i> Ganti Kendaraan</p>
+                            <p class="text-[11px] text-gray-400">Tukar unit langsung tanpa proses pengajuan. Selisih harga dihitung otomatis.</p>
+                        </div>
+                        <button type="button" @click="open = !open" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 px-4 py-2 rounded-xl text-[12px] font-bold transition whitespace-nowrap">
+                            <i class="fas fa-repeat mr-1"></i> Ganti Sekarang
+                        </button>
+                    </div>
+                    <form method="POST" action="{{ route('bookings.replace-vehicle', $booking) }}" x-show="open" x-cloak x-transition class="mt-3 bg-sky-50/70 border border-sky-100 rounded-xl p-4 space-y-3">
+                        @csrf
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy-700 mb-1">Kendaraan Pengganti *</label>
+                                <select name="replacement_vehicle_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white">
+                                    <option value="">-- Pilih unit tersedia --</option>
+                                    @foreach($swappableVehicles as $v)
+                                    <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->category?->name ?? '-' }}) - Rp {{ number_format($v->daily_price, 0, ',', '.') }}/hari</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy-700 mb-1">Alasan (opsional)</label>
+                                <input type="text" name="reason" placeholder="Contoh: ban bocor / rusak mendadak" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="submit" onclick="return confirm('Tukar kendaraan untuk booking ini sekarang?')" class="btn-primary text-white px-5 py-2 rounded-lg text-[12px] font-bold shadow-md shadow-sky-500/20 transition"><i class="fas fa-arrows-rotate mr-1"></i> Konfirmasi Tukar Unit</button>
+                            <span class="text-[10px] text-gray-400">Unit lama otomatis tersedia kembali.</span>
+                        </div>
+                    </form>
                 </div>
                 @endif
             </div>
@@ -226,6 +265,19 @@
                     @else <span class="badge badge-red">Belum Bayar</span>
                     @endif
                 </div>
+                @if($booking->payment_due_date && $booking->payment_status != 'paid')
+                <div class="mt-3 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+                    <span class="text-[11px] font-bold text-amber-700"><i class="fas fa-calendar-day mr-1"></i> Jatuh Tempo</span>
+                    @php
+                        $due = \Carbon\Carbon::parse($booking->payment_due_date);
+                        $isOverdue = $due->isPast();
+                    @endphp
+                    <span class="text-[11px] font-bold {{ $isOverdue ? 'text-red-600' : 'text-navy-700' }}">
+                        {{ $due->translatedFormat('d M Y') }}
+                        @if($isOverdue) (Terlambat) @else ({{ now()->diffInDays($due) }} hari lagi) @endif
+                    </span>
+                </div>
+                @endif
             </div>
 
             {{-- Link Terkait --}}

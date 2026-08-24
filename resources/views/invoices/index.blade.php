@@ -10,7 +10,8 @@
     <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Lihat detail tagihan dan status pembayaran Anda' : 'Kelola seluruh invoice' }}</p>
 </div>
 
-<div class="flex items-center gap-2 mb-5 flex-wrap">
+<div class="flex items-center justify-between gap-2 mb-5 flex-wrap">
+    <div class="flex gap-2 flex-wrap">
     @php
         $statusLabels = [
             '' => 'Semua',
@@ -27,6 +28,10 @@
         {{ $label }}
     </a>
     @endforeach
+    </div>
+    @if(in_array(auth()->user()->role, ['superadmin', 'owner']))
+    <a href="{{ route('invoices.create') }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium"><i class="fas fa-layer-group mr-1.5"></i> Invoice Gabungan</a>
+    @endif
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">
@@ -64,14 +69,26 @@
                         @elseif($inv->type == 'damage') <span class="inline-flex items-center gap-1"><i class="fas fa-tools text-red-400"></i> Kerusakan</span>
                         @else <span class="inline-flex items-center gap-1"><i class="fas fa-file text-gray-400"></i> Lainnya</span>
                         @endif
+                        @if($inv->bookings->count() > 1)
+                        <span class="ml-1 inline-flex items-center bg-violet-50 text-violet-600 border border-violet-200 rounded px-1.5 py-0.5 text-[10px] font-bold" title="Invoice gabungan {{ $inv->bookings->count() }} sewa"><i class="fas fa-layer-group mr-0.5"></i> {{ $inv->bookings->count() }}x</span>
+                        @endif
                     </td>
                     <td class="py-3 px-5 text-navy-700">{{ $inv->user->name }}</td>
                     @else
                     <td class="py-3 px-5">
+                        @php $bs = $inv->bookings->isNotEmpty() ? $inv->bookings : collect([$inv->booking])->filter(); @endphp
                         <div>
-                            <span class="text-navy-700 font-medium">{{ $inv->booking->booking_code ?? '-' }}</span>
-                            @if($inv->booking)
-                            <p class="text-[11px] text-gray-400">{{ $inv->booking->vehicle->name ?? $inv->booking->category->name ?? '-' }}</p>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-navy-700 font-medium">{{ $bs->first()?->booking_code ?? '-' }}</span>
+                                @if($bs->count() > 1)
+                                <span class="inline-flex items-center bg-violet-50 text-violet-600 border border-violet-200 rounded px-1.5 py-0.5 text-[10px] font-bold"><i class="fas fa-layer-group mr-0.5"></i> +{{ $bs->count() - 1 }}</span>
+                                @endif
+                            </div>
+                            @if($bs->isNotEmpty())
+                            <p class="text-[11px] text-gray-400">{{ $bs->first()->vehicle->name ?? $bs->first()->category->name ?? '-' }}</p>
+                            @endif
+                            @if($bs->count() > 1)
+                            <p class="text-[10px] font-semibold text-violet-500 mt-0.5">Gabungan {{ $bs->count() }} sewa</p>
                             @endif
                         </div>
                     </td>
