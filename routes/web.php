@@ -14,11 +14,16 @@ use App\Http\Controllers\Web\SalaryWebController;
 use App\Http\Controllers\Web\ReplacementWebController;
 use App\Http\Controllers\Web\SuperadminController;
 use App\Http\Controllers\Web\ElektronikController;
+use App\Http\Controllers\Web\ContactWebController;
+use App\Http\Controllers\Web\MailWebController;
+use App\Http\Controllers\Web\ChatWebController;
+use App\Http\Controllers\Web\ContactDirectoryWebController;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
 Route::get('/produk', [PublicController::class, 'products'])->name('products');
 Route::get('/kontak', [PublicController::class, 'contact'])->name('contact');
+Route::post('/kontak', [ContactWebController::class, 'submit'])->name('contact.submit');
 Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.vehicle');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -32,6 +37,34 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('/profile', [DashboardController::class, 'profile'])->name('dashboard.profile');
     Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('dashboard.profile.update');
     Route::put('/password', [DashboardController::class, 'updatePassword'])->name('dashboard.password.update');
+});
+
+// Communication Routes (Mail, Chat, Contacts)
+Route::middleware('auth')->group(function () {
+    // Mail Inbox
+    Route::prefix('mail')->group(function () {
+        Route::get('/', [MailWebController::class, 'index'])->name('mail.index');
+        Route::get('/compose', [MailWebController::class, 'compose'])->name('mail.compose');
+        Route::post('/send', [MailWebController::class, 'store'])->name('mail.store');
+        Route::get('/contacts-inbox', [ContactWebController::class, 'index'])->name('mail.contacts');
+        Route::get('/contacts-inbox/{contactMessage}', [ContactWebController::class, 'show'])->name('mail.contacts.show');
+        Route::post('/contacts-inbox/{contactMessage}/reply', [ContactWebController::class, 'reply'])->name('mail.contacts.reply');
+        Route::delete('/contacts-inbox/{contactMessage}', [ContactWebController::class, 'destroy'])->name('mail.contacts.destroy');
+        Route::get('/{message}', [MailWebController::class, 'show'])->name('mail.show');
+        Route::post('/{message}/star', [MailWebController::class, 'toggleStar'])->name('mail.star');
+        Route::post('/{message}/trash', [MailWebController::class, 'toggleTrash'])->name('mail.trash');
+        Route::delete('/{message}', [MailWebController::class, 'destroy'])->name('mail.destroy');
+    });
+
+    // Live Chat Messenger
+    Route::prefix('chat')->group(function () {
+        Route::get('/', [ChatWebController::class, 'index'])->name('chat.index');
+        Route::post('/{conversation}/send', [ChatWebController::class, 'send'])->name('chat.send');
+        Route::get('/{conversation}/messages', [ChatWebController::class, 'fetchMessages'])->name('chat.messages');
+    });
+
+    // Contacts Directory
+    Route::get('/contacts', [ContactDirectoryWebController::class, 'index'])->name('contacts.index');
 });
 
 // Superadmin Routes
@@ -51,6 +84,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::delete('/elektronik/{type}/{id}', [ElektronikController::class, 'destroy'])->name('superadmin.elektronik.destroy');
 });
 
+// Vehicles (Mobil) Routes
 Route::middleware(['auth', 'role:superadmin,owner'])->prefix('vehicles')->group(function () {
     Route::get('/', [VehicleWebController::class, 'index'])->name('vehicles.index');
     Route::get('/create', [VehicleWebController::class, 'create'])->name('vehicles.create');
@@ -58,6 +92,11 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('vehicles')->group(
     Route::get('/{vehicle}/edit', [VehicleWebController::class, 'edit'])->name('vehicles.edit');
     Route::put('/{vehicle}', [VehicleWebController::class, 'update'])->name('vehicles.update');
     Route::delete('/{vehicle}', [VehicleWebController::class, 'destroy'])->name('vehicles.destroy');
+});
+
+// Motors Routes
+Route::middleware(['auth', 'role:superadmin,owner'])->prefix('motors')->group(function () {
+    Route::get('/', [VehicleWebController::class, 'motor'])->name('motors.index');
 });
 
 Route::middleware('auth')->prefix('bookings')->group(function () {

@@ -29,7 +29,7 @@ class SuperadminController extends Controller
 
     public function motor()
     {
-        return view('superadmin.motor');
+        return redirect()->route('motors.index');
     }
 
     public function elektronik()

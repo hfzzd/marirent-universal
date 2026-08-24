@@ -1,5 +1,5 @@
 @extends('layouts.dashboard')
-@section('page-title', 'Beranda')
+@section('page-title', 'Beranda Superadmin')
 
 @section('content')
 @php
@@ -10,10 +10,12 @@
     $ongoingBookings = \App\Models\Booking::where('status','ongoing')->count();
     $completedBookings = \App\Models\Booking::where('status','completed')->count();
     $cancelledBookings = \App\Models\Booking::where('status','cancelled')->count();
+    
     $revenueThisMonth = \App\Models\Invoice::where('status','paid')->whereMonth('created_at', now()->month)->sum('total_amount');
     $revenueLastMonth = \App\Models\Invoice::where('status','paid')->whereMonth('created_at', now()->subMonth()->month)->sum('total_amount');
     $revenueChange = $revenueLastMonth > 0 ? round((($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100) : 0;
     $totalRevenue = \App\Models\Invoice::where('status','paid')->sum('total_amount');
+    
     $activeDrivers = \App\Models\Driver::where('status','on_trip')->count();
     $totalDrivers = \App\Models\Driver::count();
 
@@ -24,263 +26,435 @@
     $hpCount = \App\Models\Phone::count();
     $totalAllProducts = $mobilCount + $motorCount + $kameraCount + $tendaCount + $hpCount;
 
+    $availableVehicles = \App\Models\Vehicle::where('status', 'available')->count();
+    $rentedVehicles = \App\Models\Vehicle::where('status', 'rented')->count();
+    $maintenanceVehicles = \App\Models\Vehicle::where('status', 'maintenance')->count();
+
     $monthlyRevenue = [];
+    $monthlyBookings = [];
     for ($i = 5; $i >= 0; $i--) {
         $month = now()->subMonths($i);
         $monthlyRevenue[] = [
-            'label' => $month->format('M'),
-            'value' => \App\Models\Invoice::where('status','paid')->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum('total_amount')
+            'label' => $month->translatedFormat('M Y'),
+            'value' => (int) \App\Models\Invoice::where('status','paid')->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum('total_amount')
         ];
+        $monthlyBookings[] = (int) \App\Models\Booking::whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->count();
     }
+
+    $recentBookings = \App\Models\Booking::with(['user', 'vehicle', 'category'])->latest()->limit(6)->get();
+    $driversOnTrip = \App\Models\Driver::with(['user', 'bookings' => fn($q) => $q->where('status','ongoing')->with('vehicle')])->where('status', 'on_trip')->limit(4)->get();
 @endphp
 
-{{-- Hero Welcome --}}
-<div class="relative overflow-hidden rounded-2xl mb-6 animate-fade-in" style="background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #0c4a6e 100%);">
-    <div class="absolute inset-0 opacity-10">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/4"></div>
-        <div class="absolute top-1/2 right-1/4 w-32 h-32 bg-white rounded-full opacity-50"></div>
-    </div>
-    <div class="relative px-8 py-8 flex items-center justify-between">
+{{-- DAdmin Hero Welcome Banner --}}
+<div class="relative overflow-hidden rounded-3xl mb-6 shadow-xl shadow-sky-900/10" style="background: linear-gradient(135deg, #0b1e36 0%, #0f3259 45%, #0284c7 100%);">
+    <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute right-1/3 -top-12 w-60 h-60 bg-sky-300/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="relative px-6 py-7 md:px-8 md:py-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
-            <h2 class="text-2xl font-bold text-white mb-2">Selamat Datang, {{ auth()->user()->name }} 👋</h2>
-            <p class="text-sky-200 text-[14px]">Berikut ringkasan aktivitas MariRent hari ini.</p>
-            <div class="flex items-center gap-4 mt-4">
-                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
-                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span class="text-sky-100 text-[12px] font-medium">{{ $activeDrivers }} driver aktif</span>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sky-200 text-xs font-semibold mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Sistem Operasional Aktif</span>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+                Selamat Datang, {{ auth()->user()->name }}! 👋
+            </h1>
+            <p class="text-sky-100/80 text-xs md:text-sm mt-1 max-w-xl">
+                Pantau performa rental armada universal, pendapatan harian, dan status penugasan secara real-time.
+            </p>
+            <div class="flex flex-wrap items-center gap-3 mt-4">
+                <div class="flex items-center gap-2 bg-black/20 backdrop-blur-md rounded-xl px-3.5 py-1.5 border border-white/10 text-white text-xs">
+                    <i class="fas fa-id-card text-emerald-400"></i>
+                    <span><strong>{{ $activeDrivers }}</strong> / {{ $totalDrivers }} Driver Bertugas</span>
                 </div>
-                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
-                    <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                    <span class="text-sky-100 text-[12px] font-medium">{{ $pendingBookings }} booking pending</span>
+                <div class="flex items-center gap-2 bg-black/20 backdrop-blur-md rounded-xl px-3.5 py-1.5 border border-white/10 text-white text-xs">
+                    <i class="fas fa-clock text-amber-400"></i>
+                    <span><strong>{{ $pendingBookings }}</strong> Menunggu Konfirmasi</span>
+                </div>
+                <div class="flex items-center gap-2 bg-black/20 backdrop-blur-md rounded-xl px-3.5 py-1.5 border border-white/10 text-white text-xs">
+                    <i class="fas fa-car-side text-sky-300"></i>
+                    <span><strong>{{ $ongoingBookings }}</strong> Sedang Berjalan</span>
                 </div>
             </div>
         </div>
-        <div class="hidden lg:flex items-center gap-3">
-            <a href="{{ route('superadmin.monitoring') }}" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2">
-                <i class="fas fa-chart-bar"></i> Monitoring
+        <div class="flex items-center gap-3 w-full lg:w-auto">
+            <a href="{{ route('superadmin.monitoring') }}" class="flex-1 lg:flex-initial bg-white/15 hover:bg-white/25 text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 backdrop-blur-md">
+                <i class="fas fa-chart-line"></i> Monitoring
             </a>
-            <a href="{{ route('superadmin.finance') }}" class="bg-white text-sky-700 hover:bg-sky-50 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition shadow-lg flex items-center gap-2">
-                <i class="fas fa-wallet"></i> Finance
-            </a>
-        </div>
-    </div>
-</div>
-
-{{-- Stat Cards --}}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="stat-card glass-card rounded-2xl p-5 relative overflow-hidden animate-slide-up" style="animation-delay: 0.1s">
-        <div class="absolute top-0 right-0 w-20 h-20 bg-sky-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60"></div>
-        <div class="relative">
-            <div class="w-11 h-11 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/25 mb-3">
-                <i class="fas fa-car text-white"></i>
-            </div>
-            <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">Total Produk</p>
-            <p class="text-3xl font-extrabold text-navy-800 mt-1" data-count="{{ $totalAllProducts }}">0</p>
-        </div>
-    </div>
-    <div class="stat-card glass-card rounded-2xl p-5 relative overflow-hidden animate-slide-up" style="animation-delay: 0.2s">
-        <div class="absolute top-0 right-0 w-20 h-20 bg-amber-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60"></div>
-        <div class="relative">
-            <div class="w-11 h-11 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25 mb-3">
-                <i class="fas fa-calendar-check text-white"></i>
-            </div>
-            <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">Booking Aktif</p>
-            <p class="text-3xl font-extrabold text-navy-800 mt-1" data-count="{{ $ongoingBookings }}">0</p>
-        </div>
-    </div>
-    <div class="stat-card glass-card rounded-2xl p-5 relative overflow-hidden animate-slide-up" style="animation-delay: 0.3s">
-        <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60"></div>
-        <div class="relative">
-            <div class="w-11 h-11 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-3">
-                <i class="fas fa-wallet text-white"></i>
-            </div>
-            <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">Bulan Ini</p>
-            <p class="text-xl font-extrabold text-navy-800 mt-1">Rp <span data-count="{{ $revenueThisMonth }}" data-prefix="">0</span></p>
-        </div>
-    </div>
-    <div class="stat-card glass-card rounded-2xl p-5 relative overflow-hidden animate-slide-up" style="animation-delay: 0.4s">
-        <div class="absolute top-0 right-0 w-20 h-20 bg-violet-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60"></div>
-        <div class="relative">
-            <div class="w-11 h-11 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25 mb-3">
-                <i class="fas fa-users text-white"></i>
-            </div>
-            <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">Pengguna</p>
-            <p class="text-3xl font-extrabold text-navy-800 mt-1" data-count="{{ $totalUsers }}">0</p>
-        </div>
-    </div>
-</div>
-
-{{-- Chart + Quick Access --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-    {{-- Revenue Chart --}}
-    <div class="lg:col-span-2 glass-card rounded-2xl p-5 animate-slide-up" style="animation-delay: 0.3s">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-[14px] font-bold text-navy-800">Pendapatan 6 Bulan</h3>
-            <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
-                @if($revenueChange >= 0)
-                <span class="text-emerald-500 font-semibold"><i class="fas fa-arrow-up mr-0.5"></i>{{ $revenueChange }}%</span>
-                @else
-                <span class="text-red-500 font-semibold"><i class="fas fa-arrow-down mr-0.5"></i>{{ abs($revenueChange) }}%</span>
-                @endif
-                <span>dari bulan lalu</span>
-            </div>
-        </div>
-        <div style="height: 220px;">
-            <canvas id="revenueChart"></canvas>
-        </div>
-    </div>
-
-    {{-- Quick Access --}}
-    <div class="glass-card rounded-2xl p-5 animate-slide-up" style="animation-delay: 0.4s">
-        <h3 class="text-[14px] font-bold text-navy-800 mb-4">Akses Cepat</h3>
-        <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('superadmin.monitoring') }}" class="group flex flex-col items-center p-3.5 rounded-xl bg-sky-50 hover:bg-sky-100 transition">
-                <div class="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-md shadow-sky-500/20 mb-2 group-hover:scale-110 transition">
-                    <i class="fas fa-chart-bar text-white text-sm"></i>
-                </div>
-                <span class="text-[11px] font-semibold text-navy-700">Monitoring</span>
-            </a>
-            <a href="{{ route('superadmin.finance') }}" class="group flex flex-col items-center p-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition">
-                <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20 mb-2 group-hover:scale-110 transition">
-                    <i class="fas fa-wallet text-white text-sm"></i>
-                </div>
-                <span class="text-[11px] font-semibold text-navy-700">Finance</span>
-            </a>
-            <a href="{{ route('superadmin.absen') }}" class="group flex flex-col items-center p-3.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition">
-                <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20 mb-2 group-hover:scale-110 transition">
-                    <i class="fas fa-clipboard-list text-white text-sm"></i>
-                </div>
-                <span class="text-[11px] font-semibold text-navy-700">Absen</span>
-            </a>
-            <a href="{{ route('superadmin.monitoring-vehicle') }}" class="group flex flex-col items-center p-3.5 rounded-xl bg-violet-50 hover:bg-violet-100 transition">
-                <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20 mb-2 group-hover:scale-110 transition">
-                    <i class="fas fa-car text-white text-sm"></i>
-                </div>
-                <span class="text-[11px] font-semibold text-navy-700">Vehicle</span>
+            <a href="{{ route('superadmin.finance') }}" class="flex-1 lg:flex-initial bg-white text-navy-900 hover:bg-sky-50 px-5 py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center justify-center gap-2">
+                <i class="fas fa-wallet text-sky-600"></i> Finance Center
             </a>
         </div>
     </div>
 </div>
 
-{{-- Bottom Section --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    {{-- Booking Terbaru --}}
-    <div class="lg:col-span-2 glass-card rounded-2xl overflow-hidden animate-slide-up" style="animation-delay: 0.5s">
-        <div class="px-5 py-4 border-b border-sky-100/50 flex items-center justify-between">
-            <h3 class="text-[14px] font-bold text-navy-800">Booking Terbaru</h3>
-            <a href="{{ route('bookings.index') }}" class="text-[11px] font-semibold text-sky-600 hover:text-sky-700 transition">Lihat Semua <i class="fas fa-arrow-right ml-0.5"></i></a>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-[13px]">
-                <thead>
-                    <tr class="border-b border-sky-50">
-                        <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Kode</th>
-                        <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Pengguna</th>
-                        <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Kendaraan</th>
-                        <th class="text-center py-3 px-5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Status</th>
-                        <th class="text-right py-3 px-5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse(\App\Models\Booking::with(['user','vehicle'])->latest()->limit(8)->get() as $b)
-                    <tr class="border-b border-sky-50/50 last:border-0 hover:bg-sky-50/30 transition cursor-pointer" onclick="window.location='{{ route('bookings.show', $b) }}'">
-                        <td class="py-3 px-5 font-semibold text-sky-600">{{ $b->booking_code }}</td>
-                        <td class="py-3 px-5 text-navy-700">{{ $b->user->name }}</td>
-                        <td class="py-3 px-5 text-navy-700">{{ $b->vehicle->name ?? ($b->category->name ?? '-') }}</td>
-                        <td class="py-3 px-5 text-center">
-                            @if($b->status == 'pending') <span class="badge badge-blue">{{ ucfirst($b->status) }}</span>
-                            @elseif($b->status == 'confirmed') <span class="badge badge-teal">{{ ucfirst($b->status) }}</span>
-                            @elseif($b->status == 'ongoing') <span class="badge badge-yellow">{{ ucfirst($b->status) }}</span>
-                            @elseif($b->status == 'completed') <span class="badge badge-green">{{ ucfirst($b->status) }}</span>
-                            @else <span class="badge badge-gray">{{ ucfirst($b->status) }}</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-5 text-right font-bold text-navy-800">Rp {{ number_format($b->final_price, 0, ',', '.') }}</td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="5" class="py-12 text-center text-gray-300">Belum ada booking</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+{{-- 4 DAdmin Mini Stat Widgets --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {{-- Widget 1: Total Armada & Produk --}}
+    <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Unit Produk</p>
+                <h3 class="text-2xl font-black text-navy-800 mt-1">{{ $totalAllProducts }}</h3>
+                <div class="flex items-center gap-1.5 mt-2 text-[11px] text-gray-500 font-medium">
+                    <span class="text-blue-600 font-bold">{{ $mobilCount }} Mobil</span> &bull; 
+                    <span class="text-amber-600 font-bold">{{ $motorCount }} Motor</span>
+                </div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-sky-600 flex items-center justify-center text-white text-lg shadow-lg shadow-sky-500/25">
+                <i class="fas fa-boxes-stacked"></i>
+            </div>
         </div>
     </div>
 
-    {{-- Kategori Inventaris + Status Chart --}}
-    <div class="space-y-5 animate-slide-up" style="animation-delay: 0.6s">
-        <div class="glass-card rounded-2xl p-5">
-            <h3 class="text-[14px] font-bold text-navy-800 mb-3">Status Booking</h3>
-            <div style="height: 160px;">
-                <canvas id="statusChart"></canvas>
+    {{-- Widget 2: Booking Berjalan --}}
+    <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Booking Aktif</p>
+                <h3 class="text-2xl font-black text-navy-800 mt-1">{{ $ongoingBookings }}</h3>
+                <div class="flex items-center gap-1.5 mt-2">
+                    <span class="badge badge-yellow text-[10px]">{{ $pendingBookings }} Pending</span>
+                    <span class="badge badge-green text-[10px]">{{ $completedBookings }} Sukses</span>
+                </div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-lg shadow-lg shadow-amber-500/25">
+                <i class="fas fa-calendar-check"></i>
             </div>
         </div>
-        <div class="glass-card rounded-2xl p-5">
-            <h3 class="text-[14px] font-bold text-navy-800 mb-3">Inventaris</h3>
-            <div class="space-y-2.5">
-                <a href="{{ route('vehicles.index') }}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-sky-50 transition group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-car text-sky-500 text-xs"></i></div>
-                        <span class="text-[13px] font-medium text-navy-700">Mobil</span>
-                    </div>
-                    <span class="text-[13px] font-bold text-navy-800 bg-sky-50 px-2.5 py-0.5 rounded-full">{{ $mobilCount }}</span>
-                </a>
-                <a href="{{ route('superadmin.motor') }}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-amber-50 transition group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center"><i class="fas fa-motorcycle text-amber-500 text-xs"></i></div>
-                        <span class="text-[13px] font-medium text-navy-700">Motor</span>
-                    </div>
-                    <span class="text-[13px] font-bold text-navy-800 bg-amber-50 px-2.5 py-0.5 rounded-full">{{ $motorCount }}</span>
-                </a>
-                <a href="{{ route('superadmin.elektronik.type', 'kamera') }}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-violet-50 transition group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center"><i class="fas fa-camera text-violet-500 text-xs"></i></div>
-                        <span class="text-[13px] font-medium text-navy-700">Kamera</span>
-                    </div>
-                    <span class="text-[13px] font-bold text-navy-800 bg-violet-50 px-2.5 py-0.5 rounded-full">{{ $kameraCount }}</span>
-                </a>
-                <a href="{{ route('superadmin.elektronik.type', 'hp') }}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-sky-50 transition group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-mobile-alt text-sky-500 text-xs"></i></div>
-                        <span class="text-[13px] font-medium text-navy-700">Handphone</span>
-                    </div>
-                    <span class="text-[13px] font-bold text-navy-800 bg-sky-50 px-2.5 py-0.5 rounded-full">{{ $hpCount }}</span>
-                </a>
-                <a href="{{ route('superadmin.elektronik.type', 'tenda') }}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-50 transition group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-campground text-emerald-500 text-xs"></i></div>
-                        <span class="text-[13px] font-medium text-navy-700">Tenda & Alat</span>
-                    </div>
-                    <span class="text-[13px] font-bold text-navy-800 bg-emerald-50 px-2.5 py-0.5 rounded-full">{{ $tendaCount }}</span>
-                </a>
+    </div>
+
+    {{-- Widget 3: Pendapatan Bulan Ini --}}
+    <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Omset Bulan Ini</p>
+                <h3 class="text-xl font-black text-navy-800 mt-1">Rp {{ number_format($revenueThisMonth, 0, ',', '.') }}</h3>
+                <div class="flex items-center gap-1 mt-2 text-[11px]">
+                    @if($revenueChange >= 0)
+                    <span class="inline-flex items-center text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">
+                        <i class="fas fa-arrow-up text-[9px] mr-1"></i>+{{ $revenueChange }}%
+                    </span>
+                    @else
+                    <span class="inline-flex items-center text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[10px]">
+                        <i class="fas fa-arrow-down text-[9px] mr-1"></i>{{ $revenueChange }}%
+                    </span>
+                    @endif
+                    <span class="text-gray-400">vs bln lalu</span>
+                </div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/25">
+                <i class="fas fa-wallet"></i>
+            </div>
+        </div>
+    </div>
+
+    {{-- Widget 4: Pelanggan & User --}}
+    <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Pengguna</p>
+                <h3 class="text-2xl font-black text-navy-800 mt-1">{{ $totalUsers }}</h3>
+                <div class="flex items-center gap-1.5 mt-2 text-[11px] text-gray-500 font-medium">
+                    <span class="text-purple-600 font-bold">{{ $totalDrivers }} Driver</span> &bull; 
+                    <span>{{ $totalUsers - $totalDrivers }} Klien</span>
+                </div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-lg shadow-lg shadow-purple-500/25">
+                <i class="fas fa-users"></i>
             </div>
         </div>
     </div>
 </div>
 
-@endsection
+{{-- Main Analytics Row (DAdmin Style Charts) --}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    {{-- Left Chart (2 Cols): Revenue & Rental Volume Trend --}}
+    <div class="lg:col-span-2 glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+            <div>
+                <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                    <i class="fas fa-chart-area text-sky-500"></i> Tren Pendapatan 6 Bulan Terakhir
+                </h3>
+                <p class="text-[11px] text-gray-400 mt-0.5">Ringkasan pendapatan invoice lunas per bulan.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 text-xs text-navy-700 font-semibold">
+                    <span class="w-3 h-3 rounded-full bg-sky-500"></span> Pendapatan
+                </div>
+            </div>
+        </div>
+        <div class="relative w-full" style="height: 250px;">
+            <canvas id="dadminRevenueChart"></canvas>
+        </div>
+    </div>
+
+    {{-- Right Chart (1 Col): Category Distribution Donut --}}
+    <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm flex flex-col justify-between">
+        <div>
+            <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2 mb-1">
+                <i class="fas fa-pie-chart text-purple-500"></i> Distribusi Kategori Produk
+            </h3>
+            <p class="text-[11px] text-gray-400 mb-4">Proporsi seluruh jenis inventaris sewa.</p>
+            <div class="relative flex items-center justify-center my-2" style="height: 170px;">
+                <canvas id="dadminCategoryChart"></canvas>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                <span class="text-gray-500 text-[11px]">Mobil ({{ $mobilCount }})</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span class="text-gray-500 text-[11px]">Motor ({{ $motorCount }})</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                <span class="text-gray-500 text-[11px]">Kamera ({{ $kameraCount }})</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span class="text-gray-500 text-[11px]">Camping ({{ $tendaCount }})</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Secondary Row: Fleet Status Progress & Quick Actions --}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    {{-- Fleet Availability Tracker --}}
+    <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
+        <h3 class="text-sm font-extrabold text-navy-800 mb-1 flex items-center gap-2">
+            <i class="fas fa-tachometer-alt text-teal-500"></i> Status Ketersediaan Kendaraan
+        </h3>
+        <p class="text-[11px] text-gray-400 mb-4">Kondisi operasional armada Mobil & Motor.</p>
+        
+        @php
+            $totalVehicleUnits = max(1, $totalVehicles);
+            $availPct = round(($availableVehicles / $totalVehicleUnits) * 100);
+            $rentedPct = round(($rentedVehicles / $totalVehicleUnits) * 100);
+            $maintPct = round(($maintenanceVehicles / $totalVehicleUnits) * 100);
+        @endphp
+
+        <div class="space-y-4">
+            <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span class="text-emerald-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Tersedia</span>
+                    <span class="text-navy-800">{{ $availableVehicles }} Unit ({{ $availPct }}%)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" style="width: {{ $availPct }}%"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span class="text-amber-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Sedang Disewa</span>
+                    <span class="text-navy-800">{{ $rentedVehicles }} Unit ({{ $rentedPct }}%)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style="width: {{ $rentedPct }}%"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span class="text-red-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Dalam Perawatan (Maintenance)</span>
+                    <span class="text-navy-800">{{ $maintenanceVehicles }} Unit ({{ $maintPct }}%)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full" style="width: {{ $maintPct }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
+            <span class="text-gray-400 font-medium">Total Armada: <strong>{{ $totalVehicles }} Unit</strong></span>
+            <a href="{{ route('superadmin.monitoring-vehicle') }}" class="text-sky-600 hover:text-sky-700 font-bold">Detail Unit &rarr;</a>
+        </div>
+    </div>
+
+    {{-- Quick Shortcuts --}}
+    <div class="lg:col-span-2 glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
+        <h3 class="text-sm font-extrabold text-navy-800 mb-1 flex items-center gap-2">
+            <i class="fas fa-compass text-sky-500"></i> Modul Pintas Superadmin
+        </h3>
+        <p class="text-[11px] text-gray-400 mb-4">Akses cepat ke seluruh fitur utama operasional dan inventaris.</p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <a href="{{ route('vehicles.index') }}" class="group p-3.5 rounded-xl bg-blue-50/60 hover:bg-blue-50 border border-blue-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center text-base shadow-md shadow-blue-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-car"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Mobil</span>
+                <span class="text-[10px] text-gray-400">{{ $mobilCount }} unit</span>
+            </a>
+
+            <a href="{{ route('motors.index') }}" class="group p-3.5 rounded-xl bg-amber-50/60 hover:bg-amber-50 border border-amber-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-base shadow-md shadow-amber-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-motorcycle"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Motor</span>
+                <span class="text-[10px] text-gray-400">{{ $motorCount }} unit</span>
+            </a>
+
+            <a href="{{ route('superadmin.elektronik.type', 'kamera') }}" class="group p-3.5 rounded-xl bg-purple-50/60 hover:bg-purple-50 border border-purple-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center text-base shadow-md shadow-purple-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Elektronik</span>
+                <span class="text-[10px] text-gray-400">{{ $kameraCount + $hpCount + $tendaCount }} unit</span>
+            </a>
+
+            <a href="{{ route('drivers.index') }}" class="group p-3.5 rounded-xl bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-base shadow-md shadow-emerald-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Driver</span>
+                <span class="text-[10px] text-gray-400">{{ $totalDrivers }} personil</span>
+            </a>
+
+            <a href="{{ route('superadmin.finance') }}" class="group p-3.5 rounded-xl bg-teal-50/60 hover:bg-teal-50 border border-teal-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-teal-500 text-white flex items-center justify-center text-base shadow-md shadow-teal-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Finance</span>
+                <span class="text-[10px] text-gray-400">Kas & Invoice</span>
+            </a>
+
+            <a href="{{ route('superadmin.absen') }}" class="group p-3.5 rounded-xl bg-indigo-50/60 hover:bg-indigo-50 border border-indigo-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-base shadow-md shadow-indigo-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-clipboard-user"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Absensi</span>
+                <span class="text-[10px] text-gray-400">Kehadiran Tim</span>
+            </a>
+
+            <a href="{{ route('bookings.index') }}" class="group p-3.5 rounded-xl bg-sky-50/60 hover:bg-sky-50 border border-sky-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center text-base shadow-md shadow-sky-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Booking</span>
+                <span class="text-[10px] text-gray-400">{{ $totalBookings }} transaksi</span>
+            </a>
+
+            <a href="{{ route('reports.index') }}" class="group p-3.5 rounded-xl bg-rose-50/60 hover:bg-rose-50 border border-rose-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center text-base shadow-md shadow-rose-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-file-lines"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Laporan</span>
+                <span class="text-[10px] text-gray-400">Trip & Rekap</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+{{-- Recent Bookings Table (DAdmin Style) --}}
+<div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-sky-100/50 mb-6">
+    <div class="px-6 py-4 border-b border-sky-100/60 flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                <i class="fas fa-clock-rotate-left text-sky-500"></i> Transaksi Sewa Terbaru
+            </h3>
+            <p class="text-[11px] text-gray-400">Daftar booking yang masuk ke dalam sistem secara real-time.</p>
+        </div>
+        <a href="{{ route('bookings.index') }}" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1">
+            Lihat Semua <i class="fas fa-arrow-right text-[10px]"></i>
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="bg-sky-50/40 border-b border-sky-100/50 text-[10px] uppercase font-bold text-gray-500">
+                    <th class="py-3 px-6 text-left">Penyewa</th>
+                    <th class="py-3 px-6 text-left">Item Sewa</th>
+                    <th class="py-3 px-6 text-left">Jadwal Sewa</th>
+                    <th class="py-3 px-6 text-left">Total Biaya</th>
+                    <th class="py-3 px-6 text-center">Status</th>
+                    <th class="py-3 px-6 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @forelse($recentBookings as $b)
+                <tr class="hover:bg-sky-50/30 transition-colors">
+                    <td class="py-3.5 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs">
+                                {{ strtoupper(substr($b->user->name ?? 'U', 0, 2)) }}
+                            </div>
+                            <div>
+                                <p class="font-bold text-navy-800">{{ $b->user->name ?? 'Pelanggan' }}</p>
+                                <p class="text-[10px] text-gray-400 font-mono">{{ $b->booking_code }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-6">
+                        <p class="font-bold text-navy-800">{{ $b->vehicle->name ?? ($b->category->name ?? 'Unit Sewa') }}</p>
+                        <span class="text-[10px] text-gray-400">{{ $b->with_driver ? '+ Dengan Supir' : 'Lepas Kunci' }}</span>
+                    </td>
+                    <td class="py-3.5 px-6 text-navy-600">
+                        <p class="font-medium">{{ $b->start_date ? \Carbon\Carbon::parse($b->start_date)->translatedFormat('d M Y') : '-' }}</p>
+                        <span class="text-[10px] text-gray-400">s/d {{ $b->end_date ? \Carbon\Carbon::parse($b->end_date)->translatedFormat('d M Y') : '-' }}</span>
+                    </td>
+                    <td class="py-3.5 px-6 font-bold text-navy-800">
+                        Rp {{ number_format($b->final_price ?? $b->total_price, 0, ',', '.') }}
+                    </td>
+                    <td class="py-3.5 px-6 text-center">
+                        @if($b->status == 'pending') <span class="badge badge-yellow">Pending</span>
+                        @elseif($b->status == 'confirmed') <span class="badge badge-teal">Dikonfirmasi</span>
+                        @elseif($b->status == 'ongoing') <span class="badge badge-blue">Berjalan</span>
+                        @elseif($b->status == 'completed') <span class="badge badge-green">Selesai</span>
+                        @else <span class="badge badge-red">Batal</span>
+                        @endif
+                    </td>
+                    <td class="py-3.5 px-6 text-center">
+                        <a href="{{ route('bookings.show', $b) }}" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-600 transition" title="Lihat Detail">
+                            <i class="fas fa-eye text-xs"></i>
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-gray-400">Belum ada transaksi sewa terbaru.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 
 @push('scripts')
 <script>
-    // Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart');
-    if (revenueCtx) {
-        new Chart(revenueCtx, {
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Revenue Chart
+    const revCtx = document.getElementById('dadminRevenueChart');
+    if (revCtx) {
+        const monthsData = @json($monthlyRevenue);
+        const labels = monthsData.map(m => m.label);
+        const values = monthsData.map(m => m.value);
+
+        const gradient = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 240);
+        gradient.addColorStop(0, 'rgba(14, 165, 233, 0.35)');
+        gradient.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
+
+        new Chart(revCtx, {
             type: 'line',
             data: {
-                labels: {!! json_encode(array_column($monthlyRevenue, 'label')) !!},
+                labels: labels,
                 datasets: [{
-                    label: 'Pendapatan',
-                    data: {!! json_encode(array_column($monthlyRevenue, 'value')) !!},
-                    borderColor: '#0ea5e9',
-                    backgroundColor: 'rgba(14, 165, 233, 0.08)',
-                    borderWidth: 2.5,
+                    label: 'Pendapatan (Rp)',
+                    data: values,
+                    borderColor: '#0284c7',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: '#0ea5e9',
-                    pointBorderColor: '#fff',
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#0284c7',
                     pointBorderWidth: 2,
                     pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
@@ -290,48 +464,77 @@
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: '#0f172a',
-                        titleFont: { size: 12, weight: '600' },
-                        bodyFont: { size: 12 },
                         padding: 10,
-                        cornerRadius: 8,
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 },
                         callbacks: {
-                            label: ctx => 'Rp ' + ctx.parsed.y.toLocaleString('id-ID')
+                            label: function(context) {
+                                return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                            }
                         }
                     }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' } },
-                    y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 }, color: '#94a3b8', callback: v => 'Rp ' + (v/1000000).toFixed(0) + 'jt' } }
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, color: '#64748b' }
+                    },
+                    y: {
+                        border: { dash: [4, 4] },
+                        grid: { color: '#e2e8f0' },
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#64748b',
+                            callback: function(val) {
+                                if (val >= 1000000) return (val/1000000).toFixed(1) + 'M';
+                                if (val >= 1000) return (val/1000).toFixed(0) + 'k';
+                                return val;
+                            }
+                        }
+                    }
                 }
             }
         });
     }
 
-    // Status Doughnut Chart
-    const statusCtx = document.getElementById('statusChart');
-    if (statusCtx) {
-        new Chart(statusCtx, {
+    // 2. Category Donut Chart
+    const catCtx = document.getElementById('dadminCategoryChart');
+    if (catCtx) {
+        new Chart(catCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Pending', 'Proses', 'Selesai', 'Batal'],
+                labels: ['Mobil', 'Motor', 'Kamera', 'Camping', 'HP'],
                 datasets: [{
-                    data: [{{ $pendingBookings }}, {{ $ongoingBookings }}, {{ $completedBookings }}, {{ $cancelledBookings }}],
-                    backgroundColor: ['#38bdf8', '#fbbf24', '#34d399', '#cbd5e1'],
-                    borderWidth: 0,
-                    spacing: 2,
-                    borderRadius: 4,
+                    data: [
+                        {{ $mobilCount }},
+                        {{ $motorCount }},
+                        {{ $kameraCount }},
+                        {{ $tendaCount }},
+                        {{ $hpCount }}
+                    ],
+                    backgroundColor: [
+                        '#3b82f6',
+                        '#f59e0b',
+                        '#a855f7',
+                        '#10b981',
+                        '#ec4899'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '65%',
+                cutout: '72%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 }, usePointStyle: true, pointStyleWidth: 8 } },
-                    tooltip: { backgroundColor: '#0f172a', padding: 8, cornerRadius: 6, titleFont: { size: 11 } }
+                    legend: { display: false }
                 }
             }
         });
     }
+});
 </script>
 @endpush
+@endsection
