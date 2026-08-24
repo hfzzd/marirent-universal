@@ -33,21 +33,68 @@ class Booking extends Model
 
     public static function generateBookingCode(): string
     {
-        return 'MR-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+        return 'MR-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
     }
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function vehicle() { return $this->belongsTo(Vehicle::class); }
-    public function driver() { return $this->belongsTo(Driver::class); }
-    public function category() { return $this->belongsTo(Category::class); }
-    public function item() { return $this->morphTo(); }
-    public function inspection() { return $this->hasOne(Inspection::class); }
-    public function tripReport() { return $this->hasOne(TripReport::class); }
-    public function invoice() { return $this->hasOne(Invoice::class); }
-    public function invoices() { return $this->belongsToMany(Invoice::class, 'booking_invoice')->withTimestamps(); }
-    public function replacement() { return $this->hasOne(VehicleReplacement::class); }
-    public function review() { return $this->hasOne(Review::class); }
-    public function payments() { return $this->hasManyThrough(Payment::class, Invoice::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
+    }
+
+    public function driver()
+    {
+        return $this->belongsTo(Driver::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function item()
+    {
+        return $this->morphTo();
+    }
+
+    public function inspection()
+    {
+        return $this->hasOne(Inspection::class);
+    }
+
+    public function tripReport()
+    {
+        return $this->hasOne(TripReport::class);
+    }
+
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    public function invoices()
+    {
+        return $this->belongsToMany(Invoice::class, 'booking_invoice')->withTimestamps();
+    }
+
+    public function replacements()
+    {
+        return $this->hasMany(VehicleReplacement::class);
+    }
+
+    public function review()
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasManyThrough(Payment::class, Invoice::class);
+    }
 
     public function getDuration(): int
     {

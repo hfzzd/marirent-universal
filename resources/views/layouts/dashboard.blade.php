@@ -139,9 +139,6 @@
                 <a href="{{ route('reports.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
                 </a>
-                <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
-                </a>
 
                 @elseif($role === 'owner')
                 <div class="sidebar-group-title mt-4">Inventaris & Tim</div>
@@ -169,9 +166,6 @@
                 </a>
                 <a href="{{ route('reports.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
-                </a>
-                <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
                 </a>
 
                 @elseif($role === 'driver')

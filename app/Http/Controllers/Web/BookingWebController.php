@@ -4,17 +4,19 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\Vehicle;
-use App\Models\Driver;
-use App\Models\User;
 use App\Models\Camera;
-use App\Models\Phone;
 use App\Models\CampingEquipment;
-use App\Models\VehicleReplacement;
+use App\Models\Driver;
+use App\Models\Phone;
+use App\Models\User;
+use App\Models\Vehicle;
+use App\Services\VehicleSwapService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class BookingWebController extends Controller
 {
@@ -25,14 +27,14 @@ class BookingWebController extends Controller
         if (Auth::user()->role === 'user') {
             $query->where('user_id', Auth::id());
         } elseif (Auth::user()->role === 'driver') {
-            $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
+            $driver = Driver::where('user_id', Auth::id())->first();
             if ($driver) {
                 $query->where('driver_id', $driver->id);
             }
         } elseif (Auth::user()->role === 'owner') {
             $query->where(function ($q) {
-                $q->whereHas('vehicle', fn($vq) => $vq->where('owner_id', Auth::id()))
-                  ->orWhere('item_id', '!=', null);
+                $q->whereHas('vehicle', fn ($vq) => $vq->where('owner_id', Auth::id()))
+                    ->orWhere('item_id', '!=', null);
             });
         }
 
@@ -79,8 +81,8 @@ class BookingWebController extends Controller
         }
 
         $basePrice = $vehicle->getPriceForType($validated['rental_type']);
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
 
         if ($validated['rental_type'] === 'hourly') {
             $hours = max(1, $startDate->diffInHours($endDate));
@@ -92,7 +94,7 @@ class BookingWebController extends Controller
         }
 
         $driverPrice = 0;
-        if (!empty($validated['with_driver']) && $vehicle->with_driver) {
+        if (! empty($validated['with_driver']) && $vehicle->with_driver) {
             $driverDays = max(1, $startDate->diffInDays($endDate));
             $driverPrice = ($vehicle->with_driver_daily_price ?? 0) * $driverDays;
         }
@@ -129,12 +131,16 @@ class BookingWebController extends Controller
 
         $vehicle->update(['status' => 'reserved']);
 
-        return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
+        return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: '.$booking->booking_code);
     }
 
     public function show(Booking $booking)
     {
         $booking->load(['vehicle', 'driver.user', 'category', 'user', 'invoice', 'tripReport', 'inspection', 'payments']);
+        $replacements = $booking->replacements()
+            ->with(['originalVehicle', 'replacementVehicle', 'requestedBy'])
+            ->latest('swapped_at')
+            ->get();
 
         $swappableVehicles = collect();
         if ($booking->vehicle_id
@@ -143,12 +149,13 @@ class BookingWebController extends Controller
             $swappableVehicles = Vehicle::with('category')
                 ->where('status', 'available')
                 ->where('is_active', true)
+                ->where('category_id', $booking->vehicle->category_id)
                 ->where('id', '!=', $booking->vehicle_id)
                 ->orderBy('name')
                 ->get();
         }
 
-        return view('bookings.show', compact('booking', 'swappableVehicles'));
+        return view('bookings.show', compact('booking', 'swappableVehicles', 'replacements'));
     }
 
     public function uploadKtp(Request $request, Booking $booking)
@@ -221,7 +228,7 @@ class BookingWebController extends Controller
         }
 
         if ($booking->driver_id) {
-            \App\Models\Driver::where('id', $booking->driver_id)->update(['status' => 'off_duty']);
+            Driver::where('id', $booking->driver_id)->update(['status' => 'off_duty']);
         }
 
         return back()->with('success', 'Perjalanan selesai');
@@ -234,7 +241,7 @@ class BookingWebController extends Controller
         $cameras = Camera::whereIn('status', ['available'])->where('is_active', true)->orderBy('name')->get();
         $phones = Phone::whereIn('status', ['available'])->where('is_active', true)->orderBy('name')->get();
         $campings = CampingEquipment::whereIn('status', ['available'])->where('is_active', true)->orderBy('name')->get();
-        $drivers = Driver::with('user')->get()->sortBy(fn($d) => $d->user->name ?? '')->values();
+        $drivers = Driver::with('user')->get()->sortBy(fn ($d) => $d->user->name ?? '')->values();
 
         return view('bookings.manual-create', compact(
             'customers', 'vehicles', 'cameras', 'phones', 'campings', 'drivers'
@@ -266,7 +273,7 @@ class BookingWebController extends Controller
         if ($validated['customer_mode'] === 'existing') {
             $userId = $validated['user_id'];
         } else {
-            $email = 'walkin.' . strtolower(preg_replace('/[^a-z0-9]/i', '', $validated['guest_name'])) . Str::random(4) . '@marirent.local';
+            $email = 'walkin.'.strtolower(preg_replace('/[^a-z0-9]/i', '', $validated['guest_name'])).Str::random(4).'@marirent.local';
             $user = User::create([
                 'name' => $validated['guest_name'],
                 'email' => $email,
@@ -293,9 +300,9 @@ class BookingWebController extends Controller
             case 'motor':
                 $categorySlug = $validated['item_kind'] === 'mobil' ? 'mobil' : 'motor';
                 $query = Vehicle::where('id', $validated['item_id'])
-                    ->whereHas('category', fn($q) => $q->where('slug', $categorySlug));
+                    ->whereHas('category', fn ($q) => $q->where('slug', $categorySlug));
                 $vehicle = $query->first();
-                if (!$vehicle) {
+                if (! $vehicle) {
                     return back()->with('error', 'Kendaraan tidak ditemukan')->withInput();
                 }
                 if ($vehicle->status !== 'available') {
@@ -322,7 +329,7 @@ class BookingWebController extends Controller
         }
 
         if ($itemType) {
-            if (!$item || !in_array($item->status, ['available'])) {
+            if (! $item || ! in_array($item->status, ['available'])) {
                 return back()->with('error', 'Barang sedang tidak tersedia')->withInput();
             }
             $categoryId = $item->category_id;
@@ -332,8 +339,8 @@ class BookingWebController extends Controller
         }
 
         // Hitung biaya
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
 
         if ($validated['rental_type'] === 'hourly') {
             $hours = max(1, $startDate->diffInHours($endDate));
@@ -357,7 +364,7 @@ class BookingWebController extends Controller
         $driverId = null;
         $driverPrice = 0;
         $withDriver = false;
-        if ($vehicle && !empty($validated['driver_id']) && $allowDriver) {
+        if ($vehicle && ! empty($validated['driver_id']) && $allowDriver) {
             $driver = Driver::find($validated['driver_id']);
             if ($driver) {
                 $driverId = $driver->id;
@@ -408,7 +415,7 @@ class BookingWebController extends Controller
         }
 
         return redirect()->route('bookings.show', $booking)
-            ->with('success', 'Booking manual berhasil dibuat! Kode: ' . $booking->booking_code);
+            ->with('success', 'Booking manual berhasil dibuat! Kode: '.$booking->booking_code);
     }
 
     private function weeklyRateFor($model): float
@@ -426,46 +433,37 @@ class BookingWebController extends Controller
         $validated = $request->validate([
             'replacement_vehicle_id' => 'required|exists:vehicles,id',
             'reason' => 'nullable|string|max:500',
+            'price_difference' => 'nullable|numeric',
+            'mark_maintenance' => 'nullable|boolean',
         ]);
 
-        if (!$booking->vehicle_id || !in_array($booking->status, ['confirmed', 'ongoing'])) {
+        if (! $booking->vehicle_id || ! in_array($booking->status, ['confirmed', 'ongoing'])) {
             return back()->with('error', 'Penggantian hanya untuk booking kendaraan yang aktif');
         }
 
-        if ((int) $validated['replacement_vehicle_id'] === (int) $booking->vehicle_id) {
-            return back()->with('error', 'Kendaraan pengganti harus berbeda dari kendaraan saat ini');
+        try {
+            $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
+
+            app(VehicleSwapService::class)->swapForBooking(
+                booking: $booking,
+                replacementVehicle: $replacementVehicle,
+                actor: Auth::user(),
+                reason: $validated['reason'] ?? '',
+                priceDifference: isset($validated['price_difference']) ? (float) $validated['price_difference'] : null,
+                markMaintenance: $request->boolean('mark_maintenance', true),
+            );
+        } catch (ValidationException $e) {
+            return back()->with('error', implode(' ', collect($e->errors())->flatten()->all()));
         }
 
-        $newVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
-        if ($newVehicle->status !== 'available') {
-            return back()->with('error', 'Kendaraan pengganti tidak tersedia');
-        }
+        $booking->refresh();
 
-        $oldVehicle = $booking->vehicle;
-        $days = max(1, $booking->start_date->diffInDays($booking->end_date));
-        $priceDiff = max(0, ((float) $newVehicle->daily_price - (float) $oldVehicle->daily_price) * $days);
-
-        // Langsung tukar unit
-        $oldVehicle->update(['status' => 'available']);
-        $newVehicle->update(['status' => $booking->status === 'ongoing' ? 'rented' : 'reserved']);
-
-        $booking->update([
-            'vehicle_id' => $newVehicle->id,
-            'final_price' => (float) $booking->final_price + $priceDiff,
-        ]);
-
-        // Catat riwayat penggantian sebagai sudah disetujui
-        VehicleReplacement::create([
-            'booking_id' => $booking->id,
-            'original_vehicle_id' => $oldVehicle->id,
-            'replacement_vehicle_id' => $newVehicle->id,
-            'requested_by' => Auth::id(),
-            'approved_by' => Auth::id(),
-            'status' => 'approved',
-            'reason' => $validated['reason'] ?? 'Penggantian langsung oleh operator',
-            'price_difference' => $priceDiff,
-        ]);
-
-        return back()->with('success', "Kendaraan diganti ke {$newVehicle->name}" . ($priceDiff > 0 ? ' (selisih Rp ' . number_format($priceDiff, 0, ',', '.') . ')' : ''));
+        return back()->with(
+            'success',
+            "Kendaraan diganti ke {$booking->vehicle->name}"
+            .((float) ($validated['price_difference'] ?? 0) !== 0.0
+                ? ' (selisih Rp '.number_format((float) $validated['price_difference'], 0, ',', '.').')'
+                : '')
+        );
     }
 }

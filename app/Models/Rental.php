@@ -83,8 +83,8 @@ class Rental extends Model
      */
     public static function generateRentalCode(): string
     {
-        $datePrefix = 'MR-' . now()->format('Ymd') . '-';
-        $lastRental = static::where('rental_code', 'like', $datePrefix . '%')
+        $datePrefix = 'MR-'.now()->format('Ymd').'-';
+        $lastRental = static::where('rental_code', 'like', $datePrefix.'%')
             ->orderByDesc('rental_code')
             ->first();
 
@@ -95,7 +95,7 @@ class Rental extends Model
             $nextNumber = '0001';
         }
 
-        return $datePrefix . $nextNumber;
+        return $datePrefix.$nextNumber;
     }
 
     /**
@@ -123,14 +123,6 @@ class Rental extends Model
     }
 
     /**
-     * Get the invoice for the rental.
-     */
-    public function invoice(): HasOne
-    {
-        return $this->hasOne(Invoice::class);
-    }
-
-    /**
      * Get the inspection for the rental.
      */
     public function inspection(): HasOne
@@ -151,7 +143,7 @@ class Rental extends Model
      */
     public function vehicleReplacements(): HasMany
     {
-        return $this->hasMany(VehicleReplacement::class, 'original_rental_id');
+        return $this->hasMany(VehicleReplacement::class);
     }
 
     /**

@@ -1,17 +1,18 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\BookingController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\InspectionController;
-use App\Http\Controllers\Api\TripReportController;
 use App\Http\Controllers\Api\InvoiceController;
-use App\Http\Controllers\Api\ReplacementController;
-use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\RentalController;
+use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Api\TripReportController;
+use App\Http\Controllers\Api\VehicleController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -27,6 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read']);
 
     Route::apiResource('bookings', BookingController::class)->only(['index', 'store']);
     Route::get('/bookings/{bookingCode}', [BookingController::class, 'show']);
@@ -47,9 +52,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send']);
     Route::get('/invoices/booking/{bookingCode}', [InvoiceController::class, 'byBooking']);
 
-    Route::apiResource('replacements', ReplacementController::class)->only(['index', 'store']);
-    Route::post('/replacements/{replacement}/approve', [ReplacementController::class, 'approve']);
-    Route::post('/replacements/{replacement}/reject', [ReplacementController::class, 'reject']);
+    Route::apiResource('rentals', RentalController::class)->only(['index', 'store', 'show']);
+    Route::post('/rentals/{rental}/cancel', [RentalController::class, 'cancel']);
+    Route::post('/rentals/{rental}/confirm', [RentalController::class, 'confirm']);
+    Route::post('/rentals/{rental}/complete', [RentalController::class, 'complete']);
+    Route::post('/rentals/{rental}/replace-vehicle', [RentalController::class, 'replaceVehicle']);
 
     Route::apiResource('salaries', SalaryController::class)->only(['index', 'store', 'show']);
     Route::post('/salaries/{salary}/approve', [SalaryController::class, 'approve']);

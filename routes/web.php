@@ -1,23 +1,22 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Web\PublicController;
 use App\Http\Controllers\Web\AuthController;
-use App\Http\Controllers\Web\DashboardController;
-use App\Http\Controllers\Web\VehicleWebController;
 use App\Http\Controllers\Web\BookingWebController;
-use App\Http\Controllers\Web\DriverWebController;
-use App\Http\Controllers\Web\InvoiceWebController;
-use App\Http\Controllers\Web\InspectionWebController;
-use App\Http\Controllers\Web\TripReportWebController;
-use App\Http\Controllers\Web\SalaryWebController;
-use App\Http\Controllers\Web\ReplacementWebController;
-use App\Http\Controllers\Web\SuperadminController;
-use App\Http\Controllers\Web\ElektronikController;
-use App\Http\Controllers\Web\ContactWebController;
-use App\Http\Controllers\Web\MailWebController;
 use App\Http\Controllers\Web\ChatWebController;
 use App\Http\Controllers\Web\ContactDirectoryWebController;
+use App\Http\Controllers\Web\ContactWebController;
+use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DriverWebController;
+use App\Http\Controllers\Web\ElektronikController;
+use App\Http\Controllers\Web\InspectionWebController;
+use App\Http\Controllers\Web\InvoiceWebController;
+use App\Http\Controllers\Web\MailWebController;
+use App\Http\Controllers\Web\PublicController;
+use App\Http\Controllers\Web\SalaryWebController;
+use App\Http\Controllers\Web\SuperadminController;
+use App\Http\Controllers\Web\TripReportWebController;
+use App\Http\Controllers\Web\VehicleWebController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
@@ -163,12 +162,4 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('salaries')->group(
     Route::get('/{salary}', [SalaryWebController::class, 'show'])->name('salaries.show');
     Route::post('/{salary}/approve', [SalaryWebController::class, 'approve'])->name('salaries.approve');
     Route::post('/{salary}/pay', [SalaryWebController::class, 'pay'])->name('salaries.pay');
-});
-
-Route::middleware('auth')->prefix('replacements')->group(function () {
-    Route::get('/', [ReplacementWebController::class, 'index'])->name('replacements.index');
-    Route::get('/create', [ReplacementWebController::class, 'create'])->name('replacements.create');
-    Route::post('/', [ReplacementWebController::class, 'store'])->name('replacements.store');
-    Route::post('/{replacement}/approve', [ReplacementWebController::class, 'approve'])->name('replacements.approve');
-    Route::post('/{replacement}/reject', [ReplacementWebController::class, 'reject'])->name('replacements.reject');
 });
