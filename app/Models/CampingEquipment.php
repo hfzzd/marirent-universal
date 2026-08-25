@@ -28,8 +28,15 @@ class CampingEquipment extends Model
         ];
     }
 
-    public function category() { return $this->belongsTo(Category::class); }
-    public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
 
     public function getPriceForType(string $type): float
     {
@@ -44,14 +51,12 @@ class CampingEquipment extends Model
 
     public function reviews()
     {
-        $q = $this->hasMany(Review::class, 'vehicle_id');
-        $q->whereRaw('1 = 0');
-        return $q;
+        return $this->morphMany(Review::class, 'item');
     }
 
     public function getAverageRating(): float
     {
-        return 0;
+        return (float) ($this->morphMany(Review::class, 'item')->avg('rating') ?? 0);
     }
 
     public function getRouteKeyName(): string

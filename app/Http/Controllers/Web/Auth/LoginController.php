@@ -11,7 +11,8 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            $user = Auth::user();
+            return redirect($user->role === 'user' ? route('home') : route('dashboard'));
         }
 
         return view('auth.login');
@@ -58,6 +59,6 @@ class LoginController extends Controller
 
     private function redirectBasedOnRole($user)
     {
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended($user->role === 'user' ? route('home') : route('dashboard'));
     }
 }

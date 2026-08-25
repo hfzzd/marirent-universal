@@ -22,7 +22,9 @@
             <div class="glass-card rounded-2xl p-6">
                 <div class="flex items-center justify-between mb-5">
                     <div>
-                        <h2 class="text-xl font-bold text-navy-900">{{ $booking->booking_code }}</h2>
+                        <h2 class="text-xl font-bold text-navy-900">{{ $booking->booking_code }}
+                            @if(($booking->source ?? 'online') == 'manual')<span class="badge badge-teal text-[10px] align-middle ml-1">Booking Manual</span>@endif
+                        </h2>
                         <p class="text-[13px] text-gray-400 mt-1">Dibuat: {{ $booking->created_at->format('d M Y H:i') }}</p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -122,10 +124,59 @@
                     </form>
                     @endif
                     @if(!in_array($booking->status, ['completed','cancelled']))
-                    <form method="POST" action="{{ route('bookings.cancel', $booking) }}">@csrf
+                    <form method="POST" action="{{ route('bookings.cancel', $booking) }}" onsubmit="return confirm('Yakin batalkan booking ini?')">@csrf
                         <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-times"></i> Batalkan</button>
                     </form>
                     @endif
+                </div>
+                @endif
+
+                {{-- Ganti Kendaraan Langsung (Quick Swap) --}}
+                @if($booking->vehicle && in_array($booking->status, ['confirmed','ongoing']) && in_array(auth()->user()->role, ['superadmin','owner']) && $swappableVehicles->isNotEmpty())
+                <div x-data="{ open: false }" class="mt-4 border-t border-gray-100 pt-4">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                            <p class="text-[12px] font-bold text-navy-800 flex items-center gap-2"><i class="fas fa-right-left text-sky-500"></i> Ganti Kendaraan</p>
+                            <p class="text-[11px] text-gray-400">Tukar unit langsung saat sewa berjalan. Hanya unit dalam kategori yang sama ({{ $booking->vehicle->category?->name ?? '-' }}). Harga tetap kecuali diisi biaya tambahan.</p>
+                        </div>
+                        <button type="button" @click="open = !open" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 px-4 py-2 rounded-xl text-[12px] font-bold transition whitespace-nowrap">
+                            <i class="fas fa-repeat mr-1"></i> Ganti Sekarang
+                        </button>
+                    </div>
+                    <form method="POST" action="{{ route('bookings.replace-vehicle', $booking) }}" x-show="open" x-cloak x-transition class="mt-3 bg-sky-50/70 border border-sky-100 rounded-xl p-4 space-y-3">
+                        @csrf
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy-700 mb-1">Kendaraan Pengganti *</label>
+                                <select name="replacement_vehicle_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white">
+                                    <option value="">-- Pilih unit tersedia --</option>
+                                    @foreach($swappableVehicles as $v)
+                                    <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->category?->name ?? '-' }}) - Rp {{ number_format($v->daily_price, 0, ',', '.') }}/hari</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy-700 mb-1">Alasan</label>
+                                <input type="text" name="reason" placeholder="Contoh: ban bocor / rusak mendadak" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-navy-700 mb-1">Biaya Tambahan / Selisih (opsional)</label>
+                                <input type="number" step="0.01" min="-999999999" name="price_difference" placeholder="0 = harga tetap" value="{{ old('price_difference') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                                <p class="text-[10px] text-gray-400 mt-1">Kosongkan / 0 bila harga sewa tidak berubah. Bisa diubah kapan saja lewat invoice.</p>
+                            </div>
+                            <div class="flex items-end pb-1">
+                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                    <input type="hidden" name="mark_maintenance" value="0">
+                                    <input type="checkbox" name="mark_maintenance" value="1" checked class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                                    <span class="text-[11px] font-semibold text-navy-700">Unit lama rusak &rarr; tandai maintenance</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="submit" onclick="return confirm('Tukar kendaraan untuk booking ini sekarang?')" class="btn-primary text-white px-5 py-2 rounded-lg text-[12px] font-bold shadow-md shadow-sky-500/20 transition"><i class="fas fa-arrows-rotate mr-1"></i> Konfirmasi Tukar Unit</button>
+                            <span class="text-[10px] text-gray-400">Penyewa otomatis mendapat notifikasi penggantian.</span>
+                        </div>
+                    </form>
                 </div>
                 @endif
             </div>
@@ -135,6 +186,43 @@
             <div class="glass-card rounded-2xl p-6">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-2"><i class="fas fa-sticky-note text-amber-400 mr-2"></i>Catatan</h3>
                 <p class="text-[13px] text-gray-600">{{ $booking->notes }}</p>
+            </div>
+            @endif
+
+            {{-- Riwayat Penggantian Kendaraan --}}
+            @if($replacements->isNotEmpty())
+            <div class="glass-card rounded-2xl p-6">
+                <h3 class="text-[14px] font-bold text-navy-800 mb-4"><i class="fas fa-right-left text-sky-500 mr-2"></i>Riwayat Penggantian Kendaraan</h3>
+                <div class="space-y-3">
+                    @foreach($replacements as $r)
+                    <div class="flex items-start gap-3 bg-sky-50/60 border border-sky-100 rounded-xl p-3">
+                        <div class="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <i class="fas fa-exchange-alt text-sky-600 text-[12px]"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[13px] font-semibold text-navy-800 leading-snug">
+                                {{ $r->originalVehicle?->name ?? 'Unit lama' }}
+                                <i class="fas fa-arrow-right text-sky-400 mx-1.5"></i>
+                                {{ $r->replacementVehicle?->name ?? 'Unit baru' }}
+                            </p>
+                            @if($r->reason)
+                            <p class="text-[11px] text-gray-500 mt-0.5">Alasan: {{ $r->reason }}</p>
+                            @endif
+                            <p class="text-[10px] text-gray-400 mt-1">
+                                {{ optional($r->swapped_at ?? $r->created_at)->format('d M Y H:i') }} oleh {{ $r->requestedBy?->name ?? '-' }}
+                                @if((float) $r->price_difference != 0)
+                                    &bull; Selisih: <span class="{{ (float) $r->price_difference > 0 ? 'text-red-600 font-semibold' : 'text-emerald-600 font-semibold' }}">Rp {{ number_format((float) $r->price_difference, 0, ',', '.') }}</span>
+                                @else
+                                    &bull; Harga tetap
+                                @endif
+                                @if($r->originalVehicle && $r->originalVehicle->status === 'maintenance')
+                                    &bull; <span class="text-amber-600">Unit lama di-maintenance</span>
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
             </div>
             @endif
 
@@ -226,6 +314,19 @@
                     @else <span class="badge badge-red">Belum Bayar</span>
                     @endif
                 </div>
+                @if($booking->payment_due_date && $booking->payment_status != 'paid')
+                <div class="mt-3 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+                    <span class="text-[11px] font-bold text-amber-700"><i class="fas fa-calendar-day mr-1"></i> Jatuh Tempo</span>
+                    @php
+                        $due = \Carbon\Carbon::parse($booking->payment_due_date);
+                        $isOverdue = $due->isPast();
+                    @endphp
+                    <span class="text-[11px] font-bold {{ $isOverdue ? 'text-red-600' : 'text-navy-700' }}">
+                        {{ $due->translatedFormat('d M Y') }}
+                        @if($isOverdue) (Terlambat) @else ({{ now()->diffInDays($due) }} hari lagi) @endif
+                    </span>
+                </div>
+                @endif
             </div>
 
             {{-- Link Terkait --}}

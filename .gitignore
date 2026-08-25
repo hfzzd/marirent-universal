@@ -3,8 +3,11 @@
 /public/hot
 /public/storage
 /storage/*.key
-/storage/framework/views/*
+/storage/app/*
+/storage/framework/cache/*
 /storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
 /storage/logs/*
 /vendor
 .env
@@ -20,3 +23,4 @@ yarn-error.log
 /.idea
 /.vscode
 /Rahman
+/marirent-universal

@@ -14,9 +14,19 @@
     $lastSalary = $driver->salaries()->latest()->first();
     $assignedBookings = \App\Models\Booking::where('driver_id', $driver->id)
         ->whereIn('status', ['confirmed', 'ongoing', 'pending'])
-        ->with(['vehicle', 'user'])
+        ->with(['vehicle', 'user', 'inspection'])
         ->latest()
         ->get();
+
+    $needInspectionCount = $assignedBookings->filter(function ($b) {
+        if ($b->status === 'confirmed') {
+            return !$b->inspection || $b->inspection->type !== 'pre_rental';
+        }
+        if ($b->status === 'ongoing') {
+            return !$b->inspection || $b->inspection->type !== 'post_rental';
+        }
+        return false;
+    })->count();
 @endphp
 
 {{-- Driver Duty Banner --}}
@@ -45,7 +55,7 @@
 </div>
 
 {{-- 4 Stat Widgets --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
     <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm">
         <div class="flex items-center justify-between">
             <div>
@@ -103,6 +113,19 @@
             </div>
         </div>
     </div>
+
+    <a href="{{ route('inspections.create') }}" class="stat-card glass-card rounded-2xl p-5 border border-emerald-100/50 shadow-sm hover:border-emerald-300 transition">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Inspeksi Unit</p>
+                <h3 class="text-xl font-black {{ $needInspectionCount > 0 ? 'text-emerald-600' : 'text-navy-800' }} mt-1">{{ $needInspectionCount }} Tugas</h3>
+                <span class="text-[11px] text-gray-500 mt-2 block">Cek awal & akhir sewa</span>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/25">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+        </div>
+    </a>
 </div>
 
 {{-- Assigned Bookings / Trips --}}
@@ -124,12 +147,22 @@
                     <i class="fas fa-car"></i>
                 </div>
                 <div>
-                    <div class="flex items-center gap-2 mb-1">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <span class="font-bold text-navy-800 text-sm">{{ $b->vehicle->name ?? 'Unit Kendaraan' }}</span>
                         <span class="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-navy-700 font-semibold">{{ $b->vehicle->license_plate ?? '-' }}</span>
                         @if($b->status == 'ongoing') <span class="badge badge-blue">Sedang Berjalan</span>
                         @elseif($b->status == 'confirmed') <span class="badge badge-teal">Terkonfirmasi</span>
                         @else <span class="badge badge-yellow">Pending</span>
+                        @endif
+                        @php
+                            $ins = $b->inspection;
+                            $insNeeded = ($b->status == 'confirmed' && (!$ins || $ins->type !== 'pre_rental'))
+                                || ($b->status == 'ongoing' && (!$ins || $ins->type !== 'post_rental'));
+                        @endphp
+                        @if($ins)
+                            <span class="badge {{ $ins->type == 'pre_rental' ? 'badge-blue' : 'badge-green' }}">{{ $ins->getTypeLabel() }} Selesai</span>
+                        @elseif($insNeeded)
+                            <a href="{{ route('inspections.create', ['booking_id' => $b->id]) }}" class="badge badge-red hover:opacity-80 transition"><i class="fas fa-triangle-exclamation mr-1"></i> Perlu Inspeksi</a>
                         @endif
                     </div>
                     <p class="text-xs text-gray-500 flex items-center gap-2">

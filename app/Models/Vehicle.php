@@ -28,16 +28,44 @@ class Vehicle extends Model
         ];
     }
 
-    public function category() { return $this->belongsTo(Category::class); }
-    public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
-    public function bookings() { return $this->hasMany(Booking::class); }
-    public function inspections() { return $this->hasMany(Inspection::class); }
-    public function tripReports() { return $this->hasMany(TripReport::class); }
-    public function reviews() { return $this->hasMany(Review::class); }
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function rentals()
+    {
+        return $this->hasMany(Rental::class);
+    }
+
+    public function inspections()
+    {
+        return $this->hasMany(Inspection::class);
+    }
+
+    public function tripReports()
+    {
+        return $this->hasMany(TripReport::class);
+    }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'item');
+    }
 
     public function getPriceForType(string $type): float
     {
-        return match($type) {
+        return match ($type) {
             'hourly' => $this->hourly_price ?? 0,
             'daily' => $this->daily_price,
             'weekly' => $this->weekly_price ?? ($this->daily_price * 7),
@@ -48,7 +76,7 @@ class Vehicle extends Model
 
     public function getAverageRating(): float
     {
-        return $this->reviews()->avg('rating') ?? 0;
+        return (float) ($this->morphMany(Review::class, 'item')->avg('rating') ?? 0);
     }
 
     public function scopeAvailable($query)

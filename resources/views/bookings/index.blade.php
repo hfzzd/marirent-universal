@@ -14,6 +14,15 @@
     <a href="{{ route('home') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 inline-flex items-center gap-1.5">
         <i class="fas fa-plus text-[10px]"></i> Booking Baru
     </a>
+    @elseif(in_array(auth()->user()->role, ['superadmin', 'owner']))
+    <div class="flex items-center gap-2">
+        <a href="{{ route('bookings.manual-create') }}" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-emerald-500/25 inline-flex items-center gap-1.5 transition">
+            <i class="fas fa-user-pen text-[10px]"></i> Booking Manual
+        </a>
+        <a href="{{ route('superadmin.monitoring') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold inline-flex items-center gap-1.5 transition">
+            <i class="fas fa-calendar-days text-[10px]"></i> Scheduler
+        </a>
+    </div>
     @endif
 </div>
 
@@ -58,7 +67,10 @@
             <tbody>
                 @forelse($bookings as $b)
                 <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30 transition-colors">
-                    <td class="py-3 px-5 font-medium text-sky-600">{{ $b->booking_code }}</td>
+                    <td class="py-3 px-5 font-medium text-sky-600">
+                        {{ $b->booking_code }}
+                        @if(($b->source ?? 'online') == 'manual')<span class="badge badge-teal text-[9px] ml-1">Manual</span>@endif
+                    </td>
                     <td class="py-3 px-5">
                         <div class="flex items-center gap-2">
                             @php $cat = $b->category->slug ?? ''; @endphp

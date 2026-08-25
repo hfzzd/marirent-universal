@@ -43,6 +43,20 @@
 
     $recentBookings = \App\Models\Booking::with(['user', 'vehicle', 'category'])->latest()->limit(6)->get();
     $driversOnTrip = \App\Models\Driver::with(['user', 'bookings' => fn($q) => $q->where('status','ongoing')->with('vehicle')])->where('status', 'on_trip')->limit(4)->get();
+
+    // Jadwal pembayaran terdekat
+    $totalInspectors = \App\Models\User::where('role', 'inspector')->count();
+    $dueToday = \App\Models\Booking::whereIn('payment_status', ['unpaid', 'partial'])
+        ->whereDate('payment_due_date', today())->count();
+    $overduePayments = \App\Models\Booking::whereIn('payment_status', ['unpaid', 'partial'])
+        ->whereNotNull('payment_due_date')->whereDate('payment_due_date', '<', today())->count();
+    $upcomingPayments = \App\Models\Booking::with(['user', 'vehicle', 'category'])
+        ->whereIn('payment_status', ['unpaid', 'partial'])
+        ->whereNotNull('payment_due_date')
+        ->whereDate('payment_due_date', '>=', today())
+        ->orderBy('payment_due_date')
+        ->limit(5)
+        ->get();
 @endphp
 
 {{-- DAdmin Hero Welcome Banner --}}
@@ -220,8 +234,48 @@
     </div>
 </div>
 
-{{-- Secondary Row: Fleet Status Progress & Quick Actions --}}
+{{-- Secondary Row: Payment Scheduler, Fleet Status & Quick Actions --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    {{-- Payment Scheduler Mini --}}
+    <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-1">
+            <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                <i class="fas fa-calendar-days text-orange-500"></i> Jadwal Pembayaran
+            </h3>
+            @if($overduePayments > 0) <span class="badge badge-red">{{ $overduePayments }} Telat</span> @endif
+        </div>
+        <p class="text-[11px] text-gray-400 mb-4">Tagihan jatuh tempo terdekat.</p>
+
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <a href="{{ route('superadmin.monitoring') }}" class="bg-red-50 hover:bg-red-100 rounded-xl p-3 text-center transition">
+                <p class="text-lg font-black text-red-600">{{ $dueToday }}</p>
+                <p class="text-[10px] font-semibold text-red-500 uppercase">Jatuh Tempo Hari Ini</p>
+            </a>
+            <a href="{{ route('superadmin.monitoring') }}" class="bg-amber-50 hover:bg-amber-100 rounded-xl p-3 text-center transition">
+                <p class="text-lg font-black text-amber-600">{{ $overduePayments }}</p>
+                <p class="text-[10px] font-semibold text-amber-600 uppercase">Terlambat Bayar</p>
+            </a>
+        </div>
+
+        <div class="space-y-2.5 flex-1">
+            @forelse($upcomingPayments as $p)
+            <div class="flex items-center justify-between gap-2 bg-sky-50/50 rounded-xl px-3 py-2">
+                <div class="min-w-0">
+                    <p class="text-[12px] font-bold text-navy-800 truncate">{{ $p->vehicle?->name ?? ($p->category?->name ?? 'Unit Sewa') }}</p>
+                    <p class="text-[10px] text-gray-400 truncate">{{ $p->booking_code }} &bull; {{ \Carbon\Carbon::parse($p->payment_due_date)->translatedFormat('d M Y') }}</p>
+                </div>
+                <span class="text-[11px] font-bold text-navy-700 whitespace-nowrap">Rp {{ number_format($p->final_price, 0, ',', '.') }}</span>
+            </div>
+            @empty
+            <div class="text-center py-4 text-gray-300 text-xs">Belum ada tagihan terjadwal.</div>
+            @endforelse
+        </div>
+
+        <a href="{{ route('superadmin.monitoring') }}" class="mt-4 pt-3 border-t border-gray-100 text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center justify-between">
+            Buka Scheduler Pembayaran <i class="fas fa-arrow-right text-[10px]"></i>
+        </a>
+    </div>
+
     {{-- Fleet Availability Tracker --}}
     <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
         <h3 class="text-sm font-extrabold text-navy-800 mb-1 flex items-center gap-2">
@@ -274,8 +328,42 @@
         </div>
     </div>
 
-    {{-- Quick Shortcuts --}}
-    <div class="lg:col-span-2 glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
+    {{-- Tim & Inspector --}}
+    <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm flex flex-col">
+        <h3 class="text-sm font-extrabold text-navy-800 mb-1 flex items-center gap-2">
+            <i class="fas fa-users-gear text-purple-500"></i> Tim Operasional
+        </h3>
+        <p class="text-[11px] text-gray-400 mb-4">Ringkasan personel yang bertugas hari ini.</p>
+
+        <div class="space-y-3 flex-1">
+            <a href="{{ route('drivers.index') }}" class="flex items-center justify-between bg-blue-50/60 hover:bg-blue-50 rounded-xl px-4 py-3 transition group">
+                <span class="flex items-center gap-2.5 text-[12px] font-bold text-navy-800"><i class="fas fa-id-card text-blue-500"></i> Driver</span>
+                <span class="text-[12px] font-black text-navy-800">{{ $activeDrivers }}<span class="text-gray-400 font-medium">/{{ $totalDrivers }} tugas</span></span>
+            </a>
+            <a href="{{ route('inspections.index') }}" class="flex items-center justify-between bg-emerald-50/60 hover:bg-emerald-50 rounded-xl px-4 py-3 transition group">
+                <span class="flex items-center gap-2.5 text-[12px] font-bold text-navy-800"><i class="fas fa-magnifying-glass text-emerald-500"></i> Inspector</span>
+                <span class="text-[12px] font-black text-navy-800">{{ $totalInspectors }}<span class="text-gray-400 font-medium"> personel</span></span>
+            </a>
+            <a href="{{ route('bookings.index', ['status' => 'pending']) }}" class="flex items-center justify-between bg-amber-50/60 hover:bg-amber-50 rounded-xl px-4 py-3 transition group">
+                <span class="flex items-center gap-2.5 text-[12px] font-bold text-navy-800"><i class="fas fa-hourglass-half text-amber-500"></i> Perlu Konfirmasi</span>
+                <span class="text-[12px] font-black text-navy-800">{{ $pendingBookings }}<span class="text-gray-400 font-medium"> booking</span></span>
+            </a>
+            <a href="{{ route('bookings.manual-create') }}" class="flex items-center justify-between bg-sky-50/60 hover:bg-sky-50 rounded-xl px-4 py-3 transition group">
+                <span class="flex items-center gap-2.5 text-[12px] font-bold text-navy-800"><i class="fas fa-user-pen text-sky-500"></i> Booking Manual</span>
+                <i class="fas fa-arrow-right text-[10px] text-sky-500 group-hover:translate-x-1 transition"></i>
+            </a>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+            <span class="text-gray-400 font-medium">Absensi & Penggajian</span>
+            <a href="{{ route('superadmin.absen') }}" class="text-sky-600 hover:text-sky-700 font-bold">Kelola Tim &rarr;</a>
+        </div>
+    </div>
+</div>
+
+{{-- Quick Shortcuts --}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="lg:col-span-3 glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
         <h3 class="text-sm font-extrabold text-navy-800 mb-1 flex items-center gap-2">
             <i class="fas fa-compass text-sky-500"></i> Modul Pintas Superadmin
         </h3>
