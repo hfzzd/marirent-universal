@@ -15,8 +15,11 @@ class Booking extends Model
         'item_type', 'item_id',
         'rental_type', 'start_date', 'end_date', 'actual_start_date',
         'actual_end_date', 'pickup_location', 'dropoff_location', 'with_driver',
-        'base_price', 'driver_price', 'total_price', 'discount', 'final_price',
+        'base_price', 'driver_price', 'deposit_amount', 'insurance_fee',
+        'total_price', 'discount', 'final_price',
         'status', 'payment_status', 'notes', 'cancellation_reason', 'ktp_photo',
+        'accessories', 'urgency', 'with_insurance',
+        'payment_due_date', 'source', 'parent_booking_id',
     ];
 
     protected function casts(): array
@@ -25,8 +28,10 @@ class Booking extends Model
             'start_date' => 'datetime', 'end_date' => 'datetime',
             'actual_start_date' => 'datetime', 'actual_end_date' => 'datetime',
             'base_price' => 'decimal:2', 'driver_price' => 'decimal:2',
+            'deposit_amount' => 'decimal:2', 'insurance_fee' => 'decimal:2',
             'total_price' => 'decimal:2', 'discount' => 'decimal:2',
             'final_price' => 'decimal:2', 'with_driver' => 'boolean',
+            'accessories' => 'array', 'with_insurance' => 'boolean',
         ];
     }
 
@@ -46,6 +51,9 @@ class Booking extends Model
     public function replacement() { return $this->hasOne(VehicleReplacement::class); }
     public function review() { return $this->hasOne(Review::class); }
     public function payments() { return $this->hasManyThrough(Payment::class, Invoice::class); }
+    public function bookingItems() { return $this->hasMany(BookingItem::class); }
+    public function parentBooking() { return $this->belongsTo(Booking::class, 'parent_booking_id'); }
+    public function childBookings() { return $this->hasMany(Booking::class, 'parent_booking_id'); }
 
     public function getDuration(): int
     {

@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="max-w-3xl">
-    <a href="{{ route('superadmin.elektronik.type', $type) }}" class="text-sky-600 text-sm mb-4 inline-flex items-center hover:text-sky-700 transition"><i class="fas fa-arrow-left mr-1.5"></i> Kembali ke Daftar {{ ucfirst($type) }}</a>
+    <a href="{{ route(($prefix ?? 'superadmin') . '.elektronik.type', $type) }}" class="text-sky-600 text-sm mb-4 inline-flex items-center hover:text-sky-700 transition"><i class="fas fa-arrow-left mr-1.5"></i> Kembali ke Daftar {{ ucfirst($type) }}</a>
 
     <div class="glass-card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-6">
@@ -29,7 +29,7 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('superadmin.elektronik.store', $type) }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route(($prefix ?? 'superadmin') . '.elektronik.store', $type) }}" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
@@ -172,7 +172,7 @@
                 <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-sky-500/25 transition">
                     <i class="fas fa-save mr-1.5"></i> Simpan {{ ucfirst($type) }}
                 </button>
-                <a href="{{ route('superadmin.elektronik.type', $type) }}" class="bg-gray-100 hover:bg-gray-200 px-6 py-2.5 rounded-xl text-[13px] font-medium text-navy-700 transition">
+                <a href="{{ route(($prefix ?? 'superadmin') . '.elektronik.type', $type) }}" class="bg-gray-100 hover:bg-gray-200 px-6 py-2.5 rounded-xl text-[13px] font-medium text-navy-700 transition">
                     Batal
                 </a>
             </div>

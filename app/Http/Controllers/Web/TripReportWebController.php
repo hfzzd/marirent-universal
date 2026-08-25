@@ -50,6 +50,10 @@ class TripReportWebController extends Controller
             'other_cost' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:2000',
             'issues_reported' => 'nullable|string|max:2000',
+            'photo_front' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'photo_rear' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'photo_right' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'photo_left' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
@@ -61,6 +65,25 @@ class TripReportWebController extends Controller
         }
 
         $validated['status'] = !empty($validated['issues_reported']) ? 'has_issues' : 'completed';
+
+        // Handle photo uploads
+        foreach (['photo_front', 'photo_rear', 'photo_right', 'photo_left'] as $photoField) {
+            if ($request->hasFile($photoField)) {
+                $validated[$photoField] = $request->file($photoField)->store('trip-reports', 'public');
+            }
+            unset($validated[$photoField]); // Will handle separately
+        }
+
+        $photoData = [];
+        foreach (['photo_front', 'photo_rear', 'photo_right', 'photo_left'] as $photoField) {
+            if ($request->hasFile($photoField)) {
+                $photoData[$photoField] = $request->file($photoField)->store('trip-reports', 'public');
+            }
+        }
+
+        foreach ($photoData as $key => $path) {
+            $validated[$key] = $path;
+        }
 
         $report = TripReport::create($validated);
         $report->calculateTotalCost();

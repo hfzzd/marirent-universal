@@ -38,6 +38,13 @@ class CategorySeeder extends Seeder
                 'icon' => 'camera',
                 'is_active' => true,
             ],
+            [
+                'name' => 'Sewa Tenda',
+                'slug' => 'sewa-tenda',
+                'description' => 'Sewa tenda dan alat outdoor untuk camping.',
+                'icon' => 'campground',
+                'is_active' => true,
+            ],
         ];
 
         foreach ($categories as $category) {

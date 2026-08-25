@@ -13,11 +13,16 @@ class VehicleReplacement extends Model
         'booking_id', 'original_vehicle_id', 'replacement_vehicle_id',
         'requested_by', 'approved_by', 'status', 'reason',
         'admin_notes', 'price_difference',
+        'handover_type', 'handover_notes', 'actual_handover_at',
+        'initial_vehicle_photo', 'final_vehicle_photo',
     ];
 
     protected function casts(): array
     {
-        return ['price_difference' => 'decimal:2'];
+        return [
+            'price_difference' => 'decimal:2',
+            'actual_handover_at' => 'datetime',
+        ];
     }
 
     public function booking() { return $this->belongsTo(Booking::class); }

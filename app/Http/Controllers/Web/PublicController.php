@@ -68,6 +68,73 @@ class PublicController extends Controller
         return view('public.show', compact('vehicle', 'relatedVehicles'));
     }
 
+    public function showItem(string $type, string $slug)
+    {
+        $config = $this->getItemConfig($type);
+        $model = $config['model'];
+        $item = $model::with('category')->where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        $related = $model::where('category_id', $item->category_id)
+            ->where('id', '!=', $item->id)
+            ->where('is_active', true)
+            ->where('status', 'available')
+            ->limit(4)
+            ->get();
+
+        return view('public.show-item', compact('item', 'type', 'config', 'related'));
+    }
+
+    private function getItemConfig(string $type): array
+    {
+        return match($type) {
+            'hp' => [
+                'icon' => 'fa-mobile-alt',
+                'label' => 'Sewa HP',
+                'model' => Phone::class,
+                'subtitle' => fn($item) => $item->phone_model,
+                'specs' => fn($item) => array_filter([
+                    $item->storage_capacity,
+                    $item->ram ? $item->ram . ' RAM' : null,
+                    $item->color,
+                    $item->screen_size ? $item->screen_size . '"' : null,
+                    $item->battery_capacity ? $item->battery_capacity . ' mAh' : null,
+                ]),
+            ],
+            'kamera' => [
+                'icon' => 'fa-camera',
+                'label' => 'Sewa Kamera',
+                'model' => Camera::class,
+                'subtitle' => fn($item) => $item->camera_model,
+                'specs' => fn($item) => array_filter([
+                    $item->sensor_size,
+                    $item->lens_included != 'Body Only' ? $item->lens_included : null,
+                    $item->resolution,
+                    $item->video_resolution,
+                    $item->weight,
+                ]),
+            ],
+            'tenda' => [
+                'icon' => 'fa-campground',
+                'label' => 'Sewa Alat Camping',
+                'model' => CampingEquipment::class,
+                'subtitle' => fn($item) => $item->equipment_model,
+                'specs' => fn($item) => array_filter([
+                    $item->type,
+                    $item->capacity ? $item->capacity . ' Orang' : null,
+                    $item->weight,
+                    $item->material,
+                ]),
+            ],
+            default => [
+                'icon' => 'fa-box',
+                'label' => 'Sewa Barang',
+                'model' => Phone::class,
+                'subtitle' => fn($item) => '-',
+                'specs' => fn($item) => [],
+            ],
+        };
+    }
+
     public function getAllProducts(Request $request, int $limit = 12)
     {
         $products = collect();
@@ -125,14 +192,17 @@ class PublicController extends Controller
 
         $products = $products->sortByDesc('id')->values();
 
-        $currentPage = $request->input('page', 1);
+        $currentPage = (int) $request->input('page', 1);
         $perPage = 12;
         $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
             $products->forPage($currentPage, $perPage),
             $products->count(),
             $perPage,
             $currentPage,
-            $request->query()
+            [
+                'path' => route('products'),
+                'query' => $request->except('page'),
+            ]
         );
 
         return $paginated;

@@ -43,12 +43,21 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $driverUser = User::create([
+        $driverUser =         User::create([
             'name' => 'Ahmad Driver',
             'email' => 'driver@marirent.com',
             'password' => Hash::make('password'),
             'role' => 'driver',
             'phone' => '081555666777',
+            'is_active' => true,
+        ]);
+
+        User::create([
+            'name' => 'Rina Inspector',
+            'email' => 'inspector@marirent.com',
+            'password' => Hash::make('password'),
+            'role' => 'inspector',
+            'phone' => '081555666778',
             'is_active' => true,
         ]);
 
@@ -80,64 +89,7 @@ class DatabaseSeeder extends Seeder
         $kameraCat = Category::where('slug', 'sewa-kamera')->first();
         $tendaCat = Category::where('slug', 'sewa-tenda')->first();
 
-        // Vehicles (Mobil)
-        Vehicle::create([
-            'category_id' => $mobilCat->id, 'owner_id' => $owner->id,
-            'name' => 'Toyota Avanza', 'slug' => 'toyota-avanza-2023',
-            'brand' => 'Toyota', 'model' => 'Avanza', 'year' => 2023, 'color' => 'Putih',
-            'license_plate' => 'B 1234 ABC',
-            'description' => 'Toyota Avanza 2023, nyaman untuk keluarga. AC dingin, audio system lengkap.',
-            'daily_price' => 350000, 'weekly_price' => 2200000, 'monthly_price' => 8000000, 'hourly_price' => 50000,
-            'with_driver_daily_price' => 200000,
-            'status' => 'available', 'condition' => 'excellent', 'seats' => 7,
-            'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'with_driver' => true, 'is_active' => true,
-        ]);
-        Vehicle::create([
-            'category_id' => $mobilCat->id, 'owner_id' => $owner->id,
-            'name' => 'Honda Brio', 'slug' => 'honda-brio-2022',
-            'brand' => 'Honda', 'model' => 'Brio', 'year' => 2022, 'color' => 'Merah',
-            'license_plate' => 'B 5678 DEF',
-            'description' => 'Honda Brio 2022, irit dan lincah untuk perkotaan.',
-            'daily_price' => 275000, 'weekly_price' => 1800000, 'monthly_price' => 6500000, 'hourly_price' => 40000,
-            'with_driver_daily_price' => 175000,
-            'status' => 'available', 'condition' => 'good', 'seats' => 5,
-            'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'with_driver' => true, 'is_active' => true,
-        ]);
-        Vehicle::create([
-            'category_id' => $mobilCat->id, 'owner_id' => $owner->id,
-            'name' => 'Toyota Innova Reborn', 'slug' => 'toyota-innova-reborn-2023',
-            'brand' => 'Toyota', 'model' => 'Innova Reborn', 'year' => 2023, 'color' => 'Hitam',
-            'license_plate' => 'B 9012 GHI',
-            'description' => 'Toyota Innova Reborn 2023, premium comfort untuk perjalanan jauh.',
-            'daily_price' => 550000, 'weekly_price' => 3500000, 'monthly_price' => 12000000, 'hourly_price' => 75000,
-            'with_driver_daily_price' => 250000,
-            'status' => 'available', 'condition' => 'excellent', 'seats' => 7,
-            'transmission' => 'automatic', 'fuel_type' => 'diesel', 'with_driver' => true, 'is_active' => true,
-        ]);
-
-        // Vehicles (Motor)
-        Vehicle::create([
-            'category_id' => $motorCat->id, 'owner_id' => $owner->id,
-            'name' => 'Honda Vario 160', 'slug' => 'honda-vario-160-2023',
-            'brand' => 'Honda', 'model' => 'Vario 160', 'year' => 2023, 'color' => 'Biru',
-            'license_plate' => 'B 1111 AAA',
-            'description' => 'Honda Vario 160, motor matic terbaru untuk mobilitas harian.',
-            'daily_price' => 75000, 'weekly_price' => 450000, 'monthly_price' => 1500000, 'hourly_price' => 15000,
-            'status' => 'available', 'condition' => 'excellent', 'seats' => 2,
-            'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'is_active' => true,
-        ]);
-        Vehicle::create([
-            'category_id' => $motorCat->id, 'owner_id' => $owner->id,
-            'name' => 'Yamaha NMAX', 'slug' => 'yamaha-nmax-2023',
-            'brand' => 'Yamaha', 'model' => 'NMAX', 'year' => 2023, 'color' => 'Putih',
-            'license_plate' => 'B 2222 BBB',
-            'description' => 'Yamaha NMAX 2023, maxi scooter premium dengan fitur lengkap.',
-            'daily_price' => 100000, 'weekly_price' => 600000, 'monthly_price' => 2000000, 'hourly_price' => 20000,
-            'status' => 'available', 'condition' => 'excellent', 'seats' => 2,
-            'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'is_active' => true,
-        ]);
-
-        // Phones
+        // Phones (sample only - bulk in ElectronicsSeeder)
         Phone::create([
             'category_id' => $hpCat->id, 'owner_id' => $owner->id,
             'name' => 'iPhone 15 Pro Max', 'slug' => 'iphone-15-pro-max',
@@ -235,5 +187,11 @@ class DatabaseSeeder extends Seeder
 
         // Run demo data
         $this->call(DemoSeeder::class);
+
+        // Run bulk vehicle seed data (50 mobil + 50 motor)
+        $this->call(VehicleSeeder::class);
+
+        // Run bulk electronics seed data (50+ per category)
+        $this->call(ElectronicsSeeder::class);
     }
 }

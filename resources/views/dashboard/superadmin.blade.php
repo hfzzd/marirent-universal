@@ -28,7 +28,7 @@
 
     $availableVehicles = \App\Models\Vehicle::where('status', 'available')->count();
     $rentedVehicles = \App\Models\Vehicle::where('status', 'rented')->count();
-    $maintenanceVehicles = \App\Models\Vehicle::where('status', 'maintenance')->count();
+    $maintenanceCount = \App\Models\Vehicle::where('status', 'maintenance')->count();
 
     $monthlyRevenue = [];
     $monthlyBookings = [];
@@ -233,7 +233,7 @@
             $totalVehicleUnits = max(1, $totalVehicles);
             $availPct = round(($availableVehicles / $totalVehicleUnits) * 100);
             $rentedPct = round(($rentedVehicles / $totalVehicleUnits) * 100);
-            $maintPct = round(($maintenanceVehicles / $totalVehicleUnits) * 100);
+            $maintPct = round(($maintenanceCount / $totalVehicleUnits) * 100);
         @endphp
 
         <div class="space-y-4">
@@ -260,7 +260,7 @@
             <div>
                 <div class="flex justify-between text-xs font-semibold mb-1">
                     <span class="text-red-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Dalam Perawatan (Maintenance)</span>
-                    <span class="text-navy-800">{{ $maintenanceVehicles }} Unit ({{ $maintPct }}%)</span>
+                    <span class="text-navy-800">{{ $maintenanceCount }} Unit ({{ $maintPct }}%)</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
                     <div class="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full" style="width: {{ $maintPct }}%"></div>
@@ -345,6 +345,14 @@
                 <span class="text-xs font-bold text-navy-800 mt-2">Laporan</span>
                 <span class="text-[10px] text-gray-400">Trip & Rekap</span>
             </a>
+
+            <a href="{{ route('superadmin.scheduler') }}" class="group p-3.5 rounded-xl bg-violet-50/60 hover:bg-violet-50 border border-violet-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-violet-500 text-white flex items-center justify-center text-base shadow-md shadow-violet-500/20 group-hover:scale-110 transition">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span class="text-xs font-bold text-navy-800 mt-2">Scheduler</span>
+                <span class="text-[10px] text-gray-400">Kalender Operasional</span>
+            </a>
         </div>
     </div>
 </div>
@@ -421,6 +429,139 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+</div>
+
+{{-- MONITORING SCHEDULER PANELS --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    {{-- Overdue Bookings --}}
+    <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-red-100/50">
+        <div class="px-6 py-4 border-b border-red-100/60 flex items-center justify-between bg-red-50/30">
+            <div>
+                <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    <i class="fas fa-exclamation-triangle text-red-500"></i> Booking Lewat Waktu
+                </h3>
+                <p class="text-[11px] text-gray-400">Booking yang melewati tanggal selesai</p>
+            </div>
+            <span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-bold">{{ $overdueBookings->count() }}</span>
+        </div>
+        <div class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+            @forelse($overdueBookings as $b)
+            <div class="px-6 py-3 hover:bg-red-50/20 transition-colors flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-navy-800 text-xs">{{ $b->booking_code }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $b->user->name ?? '-' }} &bull; {{ $b->vehicle->name ?? ($b->bookingItems->first()?->item_type ?? '-') }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[11px] text-red-500 font-semibold">Lewat {{ \Carbon\Carbon::parse($b->end_date)->diffForHumans() }}</p>
+                    <a href="{{ route('bookings.show', $b) }}" class="text-[10px] text-sky-600 hover:underline">Lihat &rarr;</a>
+                </div>
+            </div>
+            @empty
+            <div class="py-8 text-center text-gray-400 text-xs"><i class="fas fa-check-circle text-green-400 mr-1"></i> Tidak ada booking lewat waktu</div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Pending Payments --}}
+    <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-yellow-100/50">
+        <div class="px-6 py-4 border-b border-yellow-100/60 flex items-center justify-between bg-yellow-50/30">
+            <div>
+                <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                    <i class="fas fa-money-bill-transfer text-yellow-500"></i> Pembayaran Menunggu Verifikasi
+                </h3>
+                <p class="text-[11px] text-gray-400">Bukti pembayaran yang perlu direview</p>
+            </div>
+            <span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-bold">{{ $pendingPayments->count() }}</span>
+        </div>
+        <div class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+            @forelse($pendingPayments as $p)
+            <div class="px-6 py-3 hover:bg-yellow-50/20 transition-colors flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-navy-800 text-xs">{{ $p->payment_code }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $p->user->name ?? '-' }} &bull; {{ ucfirst($p->method) }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-xs text-navy-800">Rp {{ number_format($p->amount, 0, ',', '.') }}</p>
+                    @if($p->invoice)
+                    <a href="{{ route('invoices.show', $p->invoice) }}" class="text-[10px] text-sky-600 hover:underline">Review &rarr;</a>
+                    @endif
+                </div>
+            </div>
+            @empty
+            <div class="py-8 text-center text-gray-400 text-xs"><i class="fas fa-check-circle text-green-400 mr-1"></i> Tidak ada pembayaran menunggu</div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Upcoming Bookings (Next 3 Days) --}}
+    <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-blue-100/50">
+        <div class="px-6 py-4 border-b border-blue-100/60 flex items-center justify-between bg-blue-50/30">
+            <div>
+                <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <i class="fas fa-calendar-day text-blue-500"></i> Booking Mendatang (3 Hari)
+                </h3>
+                <p class="text-[11px] text-gray-400">Booking yang akan mulai dalam 3 hari ke depan</p>
+            </div>
+            <span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold">{{ $upcomingBookings->count() }}</span>
+        </div>
+        <div class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+            @forelse($upcomingBookings as $b)
+            <div class="px-6 py-3 hover:bg-blue-50/20 transition-colors flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-navy-800 text-xs">{{ $b->booking_code }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $b->user->name ?? '-' }} &bull; {{ $b->vehicle->name ?? ($b->category->name ?? '-') }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[11px] text-blue-500 font-semibold">{{ \Carbon\Carbon::parse($b->start_date)->translatedFormat('d M Y') }}</p>
+                    <span class="badge badge-{{ $b->status === 'pending' ? 'yellow' : 'teal' }} text-[10px]">{{ ucfirst($b->status) }}</span>
+                </div>
+            </div>
+            @empty
+            <div class="py-8 text-center text-gray-400 text-xs"><i class="fas fa-calendar text-gray-300 mr-1"></i> Tidak ada booking mendatang</div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Pending Replacements & Maintenance --}}
+    <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-purple-100/50">
+        <div class="px-6 py-4 border-b border-purple-100/60 flex items-center justify-between bg-purple-50/30">
+            <div>
+                <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                    <i class="fas fa-wrench text-purple-500"></i> Penggantian & Maintenance
+                </h3>
+                <p class="text-[11px] text-gray-400">Status permintaan penggantian & kendaraan maintenance</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{{ $pendingReplacementCount }} Penggantian</span>
+                <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{{ $maintenanceVehicles->count() }} Maintenance</span>
+            </div>
+        </div>
+        <div class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+            @if($pendingReplacementCount > 0)
+            <div class="px-6 py-3 bg-yellow-50/30">
+                <a href="{{ route('replacements.index', ['status' => 'pending']) }}" class="flex items-center justify-between group">
+                    <span class="text-xs font-bold text-navy-800"><i class="fas fa-exchange-alt text-yellow-500 mr-2"></i>{{ $pendingReplacementCount }} Permintaan Penggantian Menunggu</span>
+                    <span class="text-[10px] text-sky-600 group-hover:underline">Lihat &rarr;</span>
+                </a>
+            </div>
+            @endif
+            @forelse($maintenanceVehicles as $v)
+            <div class="px-6 py-3 hover:bg-purple-50/20 transition-colors flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-navy-800 text-xs">{{ $v->name }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $v->category->name ?? '-' }}</p>
+                </div>
+                <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Maintenance</span>
+            </div>
+            @empty
+            <div class="py-8 text-center text-gray-400 text-xs"><i class="fas fa-wrench text-gray-300 mr-1"></i> Tidak ada kendaraan dalam maintenance</div>
+            @endforelse
+        </div>
     </div>
 </div>
 

@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Inspection;
 use App\Models\Booking;
+use App\Models\Vehicle;
+use App\Models\Phone;
+use App\Models\Camera;
+use App\Models\CampingEquipment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,12 +18,20 @@ class InspectionWebController extends Controller
     {
         $query = Inspection::with(['booking', 'vehicle', 'inspector']);
 
+        if (Auth::user()->role === 'inspector') {
+            $query->where('inspector_id', Auth::id());
+        }
+
         if ($request->booking_id) {
             $query->where('booking_id', $request->booking_id);
         }
 
         if ($request->type) {
             $query->where('type', $request->type);
+        }
+
+        if ($request->scope) {
+            $query->where('scope', $request->scope);
         }
 
         $inspections = $query->latest()->paginate(15);
@@ -29,10 +41,18 @@ class InspectionWebController extends Controller
 
     public function create(Request $request)
     {
-        $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])->get();
-        $booking = $request->booking_id ? Booking::find($request->booking_id) : null;
+        $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
+            ->with(['user', 'vehicle', 'category', 'bookingItems'])
+            ->get();
 
-        return view('inspections.create', compact('bookings', 'booking'));
+        $booking = $request->booking_id ? Booking::with(['vehicle', 'bookingItems'])->find($request->booking_id) : null;
+
+        $vehicles = Vehicle::where('status', '!=', 'maintenance')->get();
+        $phones = Phone::where('status', '!=', 'maintenance')->get();
+        $cameras = Camera::where('status', '!=', 'maintenance')->get();
+        $equipments = CampingEquipment::where('status', '!=', 'maintenance')->get();
+
+        return view('inspections.create', compact('bookings', 'booking', 'vehicles', 'phones', 'cameras', 'equipments'));
     }
 
     public function store(Request $request)
@@ -40,24 +60,76 @@ class InspectionWebController extends Controller
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             'type' => 'required|in:pre_rental,post_rental',
-            'exterior_condition' => 'required|integer|min:1|max:10',
-            'interior_condition' => 'required|integer|min:1|max:10',
-            'engine_condition' => 'required|integer|min:1|max:10',
-            'tire_condition' => 'required|integer|min:1|max:10',
-            'brake_condition' => 'required|integer|min:1|max:10',
-            'electrical_condition' => 'required|integer|min:1|max:10',
-            'overall_condition' => 'required|integer|min:1|max:10',
-            'fuel_level' => 'required|numeric|min:0|max:100',
+            'scope' => 'required|in:kendaraan,elektronik,camping',
+            'inspection_item_id' => 'required|integer',
+            'usage_duration_hours' => 'nullable|integer|min:0',
+            'overall_condition' => 'nullable|integer|min:1|max:10',
+            'exterior_condition' => 'nullable|integer|min:1|max:10',
+            'interior_condition' => 'nullable|integer|min:1|max:10',
+            'engine_condition' => 'nullable|integer|min:1|max:10',
+            'tire_condition' => 'nullable|integer|min:1|max:10',
+            'brake_condition' => 'nullable|integer|min:1|max:10',
+            'electrical_condition' => 'nullable|integer|min:1|max:10',
+            'fuel_level' => 'nullable|numeric|min:0|max:100',
             'odometer_reading' => 'nullable|numeric|min:0',
+            'damage_items' => 'nullable|array',
+            'damage_items.*' => 'string|max:255',
+            'completeness' => 'nullable|array',
+            'completeness.*' => 'string|max:255',
             'notes' => 'nullable|string|max:2000',
             'recommendations' => 'nullable|string|max:2000',
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
-        $validated['vehicle_id'] = $booking->vehicle_id;
-        $validated['inspector_id'] = Auth::id();
 
-        Inspection::create($validated);
+        $scope = $validated['scope'];
+        $itemId = $validated['inspection_item_id'];
+
+        $itemType = match($scope) {
+            'kendaraan' => Vehicle::class,
+            'elektronik' => in_array($itemId, $request->phones ?? []) ? Phone::class : Camera::class,
+            'camping' => CampingEquipment::class,
+            default => Vehicle::class,
+        };
+
+        if ($scope === 'elektronik') {
+            if (Phone::find($itemId)) {
+                $itemType = Phone::class;
+            } elseif (Camera::find($itemId)) {
+                $itemType = Camera::class;
+            }
+        }
+
+        $vehicleId = null;
+        if ($scope === 'kendaraan') {
+            $vehicleId = $itemId;
+        }
+
+        $data = [
+            'booking_id' => $booking->id,
+            'vehicle_id' => $vehicleId,
+            'inspector_id' => Auth::id(),
+            'type' => $validated['type'],
+            'scope' => $scope,
+            'item_type' => $itemType,
+            'item_id' => $itemId,
+            'overall_condition' => $validated['overall_condition'] ?? null,
+            'exterior_condition' => $validated['exterior_condition'] ?? null,
+            'interior_condition' => $validated['interior_condition'] ?? null,
+            'engine_condition' => $validated['engine_condition'] ?? null,
+            'tire_condition' => $validated['tire_condition'] ?? null,
+            'brake_condition' => $validated['brake_condition'] ?? null,
+            'electrical_condition' => $validated['electrical_condition'] ?? null,
+            'fuel_level' => $validated['fuel_level'] ?? null,
+            'odometer_reading' => $validated['odometer_reading'] ?? null,
+            'usage_duration_hours' => $validated['usage_duration_hours'] ?? null,
+            'damage_items' => $validated['damage_items'] ?? null,
+            'completeness' => $validated['completeness'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'recommendations' => $validated['recommendations'] ?? null,
+        ];
+
+        Inspection::create($data);
 
         return redirect()->route('inspections.index')->with('success', 'Inspeksi berhasil dicatat');
     }

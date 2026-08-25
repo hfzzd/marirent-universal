@@ -99,17 +99,34 @@
                             </div>
                         </div>
 
-                        {{-- Driver --}}
+                        {{-- Tipe Penggunaan: Lepas Kunci / Sama Driver --}}
                         @if($vehicle->with_driver)
-                        <div class="bg-sky-50/50 border border-sky-100 rounded-xl p-4">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" name="with_driver" value="1" {{ old('with_driver') ? 'checked' : '' }}
-                                    class="w-4 h-4 rounded text-sky-500 focus:ring-sky-500">
-                                <div>
-                                    <p class="text-[13px] font-semibold text-navy-800"><i class="fas fa-user-tie mr-1.5 text-sky-500"></i> Sewa dengan Driver</p>
-                                    <p class="text-[11px] text-gray-400">Tambahan Rp {{ number_format($vehicle->with_driver_daily_price ?? 0, 0, ',', '.') }}/hari</p>
-                                </div>
-                            </label>
+                        <div>
+                            <label class="block text-[12px] font-semibold text-navy-700 mb-2">Tipe Penggunaan *</label>
+                            <div class="grid grid-cols-2 gap-3" x-data="{ mode: '{{ old('with_driver') ? 'driver' : 'lepas_kunci' }}' }">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="with_driver" value="0" x-model="mode" class="peer sr-only">
+                                    <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-2xl p-5 transition-all hover:border-sky-300 group text-center">
+                                        <div class="w-12 h-12 rounded-xl bg-blue-50 peer-checked:bg-sky-100 flex items-center justify-center mb-3 mx-auto transition">
+                                            <i class="fas fa-key text-blue-500 text-xl"></i>
+                                        </div>
+                                        <p class="font-bold text-navy-800 text-[14px]">Lepas Kunci</p>
+                                        <p class="text-[11px] text-gray-400 mt-1">Kendarai sendiri kendaraan pilihan Anda</p>
+                                        <p class="text-[13px] font-bold text-sky-600 mt-2">Rp {{ number_format($vehicle->daily_price, 0, ',', '.') }}/hari</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="with_driver" value="1" x-model="mode" class="peer sr-only">
+                                    <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-2xl p-5 transition-all hover:border-sky-300 group text-center">
+                                        <div class="w-12 h-12 rounded-xl bg-emerald-50 peer-checked:bg-sky-100 flex items-center justify-center mb-3 mx-auto transition">
+                                            <i class="fas fa-user-tie text-emerald-500 text-xl"></i>
+                                        </div>
+                                        <p class="font-bold text-navy-800 text-[14px]">Sama Driver</p>
+                                        <p class="text-[11px] text-gray-400 mt-1">Driver profesional siap mengantar Anda</p>
+                                        <p class="text-[13px] font-bold text-sky-600 mt-2">+ Rp {{ number_format($vehicle->with_driver_daily_price ?? 0, 0, ',', '.') }}/hari</p>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                         @endif
 
@@ -273,8 +290,8 @@ function bookingSummary() {
             return document.querySelector('input[name="end_date"]')?.value;
         },
         get withDriverChecked() {
-            const cb = document.querySelector('input[name="with_driver"]');
-            return cb ? cb.checked : false;
+            const el = document.querySelector('input[name="with_driver"]:checked');
+            return el ? el.value === '1' : false;
         },
         rentalTypeLabel() {
             return { hourly: 'Per Jam', daily: 'Per Hari', weekly: 'Per Minggu', monthly: 'Per Bulan' }[this.rentalType] || 'Per Hari';

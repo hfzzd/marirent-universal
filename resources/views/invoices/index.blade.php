@@ -1,15 +1,70 @@
 ﻿@extends(auth()->user()->role === 'user' ? 'layouts.user' : 'layouts.dashboard')
-@section('title', 'Invoice Saya - MariRent')
-@section('page-title', 'Invoice Saya')
+@section('title', 'Invoice - MariRent')
+@section('page-title', 'Invoice')
 
 @section('content')
 @php $isUser = auth()->user()->role === 'user'; @endphp
 
-<div class="mb-5">
-    <h2 class="text-[14px] font-semibold text-navy-800">{{ $isUser ? 'Riwayat Invoice Saya' : 'Semua Invoice' }}</h2>
-    <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Lihat detail tagihan dan status pembayaran Anda' : 'Kelola seluruh invoice' }}</p>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
+    <div>
+        <h2 class="text-[14px] font-semibold text-navy-800">{{ $isUser ? 'Riwayat Invoice Saya' : 'Semua Invoice' }}</h2>
+        <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Lihat detail tagihan dan status pembayaran Anda' : 'Kelola seluruh invoice' }}</p>
+    </div>
+    @if(!$isUser)
+    <div class="flex gap-2">
+        <a href="{{ route('invoices.create') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
+            <i class="fas fa-plus text-[10px]"></i> Invoice Gabungan
+        </a>
+    </div>
+    @endif
 </div>
 
+{{-- FILTERS --}}
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form action="{{ route('invoices.index') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
+        <div class="flex-1 w-full">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-[11px]"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Nomor invoice, nama, kode booking..."
+                    class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+            </div>
+        </div>
+        @if(!$isUser)
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipe</label>
+            <select name="type" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[140px]">
+                <option value="">Semua Tipe</option>
+                <option value="rental" {{ request('type') == 'rental' ? 'selected' : '' }}>Sewa</option>
+                <option value="driver_salary" {{ request('type') == 'driver_salary' ? 'selected' : '' }}>Gaji Driver</option>
+                <option value="replacement" {{ request('type') == 'replacement' ? 'selected' : '' }}>Penggantian</option>
+                <option value="damage" {{ request('type') == 'damage' ? 'selected' : '' }}>Kerusakan</option>
+                <option value="other" {{ request('type') == 'other' ? 'selected' : '' }}>Lainnya</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Dari Tanggal</label>
+            <input type="date" name="date_from" value="{{ request('date_from') }}" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sampai</label>
+            <input type="date" name="date_to" value="{{ request('date_to') }}" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+        </div>
+        @endif
+        <div class="flex gap-2">
+            <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
+            @if(request()->hasAny(['search','type','status','date_from','date_to','user_id']))
+            <a href="{{ route('invoices.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
+                <i class="fas fa-times text-[10px]"></i> Reset
+            </a>
+            @endif
+        </div>
+    </form>
+</div>
+
+{{-- STATUS TABS --}}
 <div class="flex items-center gap-2 mb-5 flex-wrap">
     @php
         $statusLabels = [
@@ -29,6 +84,7 @@
     @endforeach
 </div>
 
+{{-- TABLE --}}
 <div class="glass-card rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-[13px]">
@@ -96,16 +152,26 @@
                         @else <span class="badge badge-gray">Draft</span>
                         @endif
                     </td>
-                    <td class="py-3 px-5 text-[12px] {{ $inv->isOverdue() ? 'text-red-500 font-semibold' : 'text-navy-500' }}">
+                    <td class="py-3 px-5 text-[12px] {{ $inv->due_date && $inv->isOverdue() ? 'text-red-500 font-semibold' : 'text-navy-500' }}">
                         <div class="flex items-center gap-1.5">
-                            @if($inv->isOverdue()) <i class="fas fa-exclamation-circle text-[10px]"></i> @endif
-                            {{ $inv->due_date->format('d M Y') }}
+                            @if($inv->due_date && $inv->isOverdue()) <i class="fas fa-exclamation-circle text-[10px]"></i> @endif
+                            {{ $inv->due_date ? $inv->due_date->format('d M Y') : '-' }}
                         </div>
                     </td>
                     <td class="py-3 px-5">
-                        <a href="{{ route('invoices.show', $inv) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
-                            <i class="fas fa-eye text-[10px]"></i> Detail
-                        </a>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('invoices.show', $inv) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
+                                <i class="fas fa-eye text-[10px]"></i> Detail
+                            </a>
+                            @if(!$isUser && $inv->status === 'draft')
+                            <form method="POST" action="{{ route('invoices.send', $inv) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="text-emerald-600 text-[12px] font-medium hover:text-emerald-700 transition inline-flex items-center gap-1">
+                                    <i class="fas fa-paper-plane text-[10px]"></i> Kirim
+                                </button>
+                            </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty
@@ -126,6 +192,6 @@
             </tbody>
         </table>
     </div>
-    <div class="px-5 py-3 border-t border-gray-100">{{ $invoices->links() }}</div>
+    <div class="px-5 py-3 border-t border-gray-100">{{ $invoices->withQueryString()->links() }}</div>
 </div>
 @endsection

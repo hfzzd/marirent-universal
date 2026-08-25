@@ -61,6 +61,16 @@ class UserSeeder extends Seeder
                 'is_active' => true,
                 'email_verified_at' => now(),
             ],
+            [
+                'name' => 'Rina Inspector',
+                'email' => 'inspector@mariarental.com',
+                'password' => Hash::make('password'),
+                'role' => 'inspector',
+                'phone' => '081234567895',
+                'address' => 'Jl. Inspeksi No. 3, Bandung',
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ],
         ];
 
         foreach ($users as $userData) {

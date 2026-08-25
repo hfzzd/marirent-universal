@@ -34,6 +34,17 @@
     }
 
     $recentOwnerBookings = \App\Models\Booking::whereIn('vehicle_id', $vehicleIds)->with(['user', 'vehicle'])->latest()->limit(5)->get();
+
+    $manualIncomePerCategory = [];
+    $ownerCategories = \App\Models\Category::all();
+    foreach ($ownerCategories as $cat) {
+        $manualIncomePerCategory[$cat->name] = \App\Models\Invoice::where('owner_id', $owner->id)
+            ->where('type', 'manual_income')
+            ->where('category_id', $cat->id)
+            ->where('status', 'paid')
+            ->sum('total_amount');
+    }
+    $totalManualIncome = array_sum($manualIncomePerCategory);
 @endphp
 
 {{-- DAdmin Hero Welcome Banner for Owner --}}
@@ -206,6 +217,35 @@
         <div class="pt-4 border-t border-gray-100 flex items-center justify-between text-xs mt-4">
             <a href="{{ route('vehicles.index') }}" class="text-sky-600 hover:text-sky-700 font-bold">Kelola Mobil &rarr;</a>
             <a href="{{ route('motors.index') }}" class="text-amber-600 hover:text-amber-700 font-bold">Kelola Motor &rarr;</a>
+        </div>
+    </div>
+</div>
+
+{{-- Recent Bookings Table --}}
+<div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-sky-100/50 mb-6">
+    <div class="px-6 py-4 border-b border-sky-100/60 flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                <i class="fas fa-hand-holding-dollar text-emerald-500"></i> Pendapatan per Kategori
+            </h3>
+            <p class="text-[11px] text-gray-400">Total pendapatan lunas dari pencatatan manual per katalog produk.</p>
+        </div>
+        <a href="{{ route('owner.revenue.create') }}" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+            + Catat Pendapatan <i class="fas fa-arrow-right text-[10px]"></i>
+        </a>
+    </div>
+    <div class="p-5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            @foreach($manualIncomePerCategory as $catName => $amount)
+            <div class="bg-sky-50/50 rounded-xl p-3 text-center">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">{{ $catName }}</p>
+                <p class="text-sm font-black text-navy-800">Rp {{ number_format($amount, 0, ',', '.') }}</p>
+            </div>
+            @endforeach
+            <div class="bg-emerald-50/50 rounded-xl p-3 text-center border border-emerald-100">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-1">Total</p>
+                <p class="text-sm font-black text-emerald-600">Rp {{ number_format($totalManualIncome, 0, ',', '.') }}</p>
+            </div>
         </div>
     </div>
 </div>

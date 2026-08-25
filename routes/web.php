@@ -18,6 +18,8 @@ use App\Http\Controllers\Web\ContactWebController;
 use App\Http\Controllers\Web\MailWebController;
 use App\Http\Controllers\Web\ChatWebController;
 use App\Http\Controllers\Web\ContactDirectoryWebController;
+use App\Http\Controllers\Web\MaintenanceController;
+use App\Http\Controllers\Web\OwnerRevenueController;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
@@ -25,6 +27,7 @@ Route::get('/produk', [PublicController::class, 'products'])->name('products');
 Route::get('/kontak', [PublicController::class, 'contact'])->name('contact');
 Route::post('/kontak', [ContactWebController::class, 'submit'])->name('contact.submit');
 Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.vehicle');
+Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('public.item');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -70,6 +73,8 @@ Route::middleware('auth')->group(function () {
 // Superadmin Routes
 Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(function () {
     Route::get('/monitoring', [SuperadminController::class, 'monitoring'])->name('superadmin.monitoring');
+    Route::get('/scheduler', [SuperadminController::class, 'scheduler'])->name('superadmin.scheduler');
+    Route::get('/scheduler/events', [SuperadminController::class, 'schedulerEvents'])->name('superadmin.scheduler.events');
     Route::get('/finance', [SuperadminController::class, 'finance'])->name('superadmin.finance');
     Route::get('/absen', [SuperadminController::class, 'absen'])->name('superadmin.absen');
     Route::get('/monitoring-vehicle', [SuperadminController::class, 'monitoringVehicle'])->name('superadmin.monitoring-vehicle');
@@ -82,6 +87,21 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::get('/elektronik/{type}/{id}/edit', [ElektronikController::class, 'edit'])->name('superadmin.elektronik.edit');
     Route::put('/elektronik/{type}/{id}', [ElektronikController::class, 'update'])->name('superadmin.elektronik.update');
     Route::delete('/elektronik/{type}/{id}', [ElektronikController::class, 'destroy'])->name('superadmin.elektronik.destroy');
+});
+
+// Owner Elektronik Routes
+Route::middleware(['auth', 'role:owner'])->prefix('owner')->group(function () {
+    Route::get('/revenue', [OwnerRevenueController::class, 'index'])->name('owner.revenue.index');
+    Route::get('/revenue/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
+    Route::post('/revenue', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');
+    Route::get('/revenue/{invoice}', [OwnerRevenueController::class, 'show'])->name('owner.revenue.show');
+    Route::delete('/revenue/{invoice}', [OwnerRevenueController::class, 'destroy'])->name('owner.revenue.destroy');
+    Route::get('/elektronik/{type}', [ElektronikController::class, 'index'])->name('owner.elektronik.type');
+    Route::get('/elektronik/{type}/create', [ElektronikController::class, 'create'])->name('owner.elektronik.create');
+    Route::post('/elektronik/{type}', [ElektronikController::class, 'store'])->name('owner.elektronik.store');
+    Route::get('/elektronik/{type}/{id}/edit', [ElektronikController::class, 'edit'])->name('owner.elektronik.edit');
+    Route::put('/elektronik/{type}/{id}', [ElektronikController::class, 'update'])->name('owner.elektronik.update');
+    Route::delete('/elektronik/{type}/{id}', [ElektronikController::class, 'destroy'])->name('owner.elektronik.destroy');
 });
 
 // Vehicles (Mobil) Routes
@@ -103,6 +123,10 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::get('/', [BookingWebController::class, 'index'])->name('bookings.index');
     Route::get('/create', [BookingWebController::class, 'create'])->name('bookings.create');
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
+    Route::get('/create-item/{type}/{item}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
+    Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
+    Route::get('/create-multi', [BookingWebController::class, 'createMulti'])->name('bookings.create-multi');
+    Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
     Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
     Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm');
@@ -122,8 +146,14 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('drivers')->group(f
 
 Route::middleware('auth')->prefix('invoices')->group(function () {
     Route::get('/', [InvoiceWebController::class, 'index'])->name('invoices.index');
+    Route::get('/create', [InvoiceWebController::class, 'create'])->name('invoices.create');
+    Route::post('/', [InvoiceWebController::class, 'store'])->name('invoices.store');
+    Route::get('/{invoice}/print', [InvoiceWebController::class, 'print'])->name('invoices.print');
+    Route::post('/{invoice}/send', [InvoiceWebController::class, 'send'])->name('invoices.send');
     Route::get('/{invoice}', [InvoiceWebController::class, 'show'])->name('invoices.show');
     Route::post('/{invoice}/pay', [InvoiceWebController::class, 'pay'])->name('invoices.pay');
+    Route::post('/payments/{payment}/verify', [InvoiceWebController::class, 'verifyPayment'])->name('invoices.verify-payment');
+    Route::post('/payments/{payment}/reject', [InvoiceWebController::class, 'rejectPayment'])->name('invoices.reject-payment');
 });
 
 Route::middleware('auth')->prefix('inspections')->group(function () {
@@ -155,4 +185,23 @@ Route::middleware('auth')->prefix('replacements')->group(function () {
     Route::post('/', [ReplacementWebController::class, 'store'])->name('replacements.store');
     Route::post('/{replacement}/approve', [ReplacementWebController::class, 'approve'])->name('replacements.approve');
     Route::post('/{replacement}/reject', [ReplacementWebController::class, 'reject'])->name('replacements.reject');
+});
+
+// Item Replacement Routes (Electronics)
+use App\Http\Controllers\Web\ItemReplacementWebController;
+
+Route::middleware('auth')->prefix('item-replacements')->group(function () {
+    Route::get('/', [ItemReplacementWebController::class, 'index'])->name('item-replacements.index');
+    Route::get('/create', [ItemReplacementWebController::class, 'create'])->name('item-replacements.create');
+    Route::post('/', [ItemReplacementWebController::class, 'store'])->name('item-replacements.store');
+    Route::post('/{replacement}/approve', [ItemReplacementWebController::class, 'approve'])->name('item-replacements.approve');
+    Route::post('/{replacement}/reject', [ItemReplacementWebController::class, 'reject'])->name('item-replacements.reject');
+});
+
+// Maintenance Routes
+Route::middleware(['auth', 'role:superadmin,owner'])->prefix('maintenances')->group(function () {
+    Route::get('/', [MaintenanceController::class, 'index'])->name('maintenances.index');
+    Route::post('/', [MaintenanceController::class, 'store'])->name('maintenances.store');
+    Route::put('/{maintenance}', [MaintenanceController::class, 'update'])->name('maintenances.update');
+    Route::delete('/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenances.destroy');
 });

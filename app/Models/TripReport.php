@@ -14,6 +14,7 @@ class TripReport extends Model
         'end_odometer', 'total_distance', 'fuel_used', 'fuel_cost',
         'toll_cost', 'parking_cost', 'other_cost', 'total_operational_cost',
         'route_points', 'photos', 'notes', 'issues_reported', 'status',
+        'photo_front', 'photo_rear', 'photo_right', 'photo_left',
     ];
 
     protected function casts(): array

@@ -29,6 +29,17 @@ class Camera extends Model
     public function category() { return $this->belongsTo(Category::class); }
     public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
 
+    public function getPriceForType(string $type): float
+    {
+        return match($type) {
+            'hourly' => $this->hourly_price ?? 0,
+            'daily' => $this->daily_price,
+            'weekly' => $this->weekly_price ?? ($this->daily_price * 7),
+            'monthly' => $this->monthly_price ?? ($this->daily_price * 30),
+            default => $this->daily_price,
+        };
+    }
+
     public function reviews()
     {
         $q = $this->hasMany(Review::class, 'vehicle_id');

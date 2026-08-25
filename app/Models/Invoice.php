@@ -11,7 +11,7 @@ class Invoice extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'invoice_number', 'booking_id', 'user_id', 'owner_id', 'type',
+        'invoice_number', 'booking_id', 'user_id', 'owner_id', 'category_id', 'type',
         'subtotal', 'tax_amount', 'discount_amount', 'total_amount',
         'paid_amount', 'due_amount', 'status', 'payment_method',
         'payment_reference', 'paid_at', 'due_date', 'notes', 'terms',
@@ -34,6 +34,7 @@ class Invoice extends Model
             'driver_salary' => 'INV-S',
             'replacement' => 'INV-P',
             'damage' => 'INV-D',
+            'manual_income' => 'INV-I',
             default => 'INV-O',
         };
         return $prefix . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
@@ -42,6 +43,7 @@ class Invoice extends Model
     public function booking() { return $this->belongsTo(Booking::class); }
     public function user() { return $this->belongsTo(User::class); }
     public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
+    public function category() { return $this->belongsTo(Category::class); }
     public function items() { return $this->hasMany(InvoiceItem::class); }
     public function payments() { return $this->hasMany(Payment::class); }
 

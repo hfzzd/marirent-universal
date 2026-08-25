@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Payment;
+use App\Models\Booking;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +15,7 @@ class InvoiceWebController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['booking', 'user', 'items']);
+        $query = Invoice::with(['booking', 'booking.vehicle', 'booking.category', 'user', 'items']);
 
         if (Auth::user()->role === 'user') {
             $query->where('user_id', Auth::id());
@@ -28,15 +31,141 @@ class InvoiceWebController extends Controller
             $query->where('status', $request->status);
         }
 
-        $invoices = $query->latest()->paginate(15);
+        if ($request->search) {
+            $search = "%{$request->search}%";
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', $search)
+                  ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $search)->orWhere('email', 'like', $search))
+                  ->orWhereHas('booking', fn($bq) => $bq->where('booking_code', 'like', $search));
+            });
+        }
 
-        return view('invoices.index', compact('invoices'));
+        if ($request->date_from) {
+            $query->where('created_at', '>=', $request->date_from);
+        }
+        if ($request->date_to) {
+            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
+        }
+
+        if ($request->user_id && Auth::user()->role !== 'user') {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $invoices = $query->latest()->paginate(15);
+        $customers = User::where('role', 'user')->get();
+
+        return view('invoices.index', compact('invoices', 'customers'));
+    }
+
+    public function create()
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+
+        $customers = User::where('role', 'user')->get();
+
+        $bookings = Booking::whereIn('status', ['confirmed', 'ongoing', 'completed'])
+            ->where('payment_status', '!=', 'paid')
+            ->with(['vehicle', 'category', 'user'])
+            ->get();
+
+        $eligible = $bookings->map(function ($b) {
+            return [
+                'id' => $b->id,
+                'user_id' => $b->user_id,
+                'code' => $b->booking_code,
+                'unit' => $b->vehicle->name ?? ($b->category->name ?? '-'),
+                'period' => ($b->start_date ? $b->start_date->format('d M Y') : '?') . ' - ' . ($b->end_date ? $b->end_date->format('d M Y') : '?'),
+                'days' => $b->start_date && $b->end_date ? max(1, $b->start_date->diffInDays($b->end_date)) : 0,
+                'price' => (float) $b->final_price,
+            ];
+        })->filter(fn($e) => $e['price'] > 0)->values();
+
+        return view('invoices.create', compact('customers', 'eligible'));
+    }
+
+    public function store(Request $request)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'booking_ids' => 'required|array|min:1',
+            'booking_ids.*' => 'exists:bookings,id',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'due_date' => 'required|date|after:today',
+            'notes' => 'nullable|string|max:2000',
+        ]);
+
+        $bookings = Booking::whereIn('id', $validated['booking_ids'])->with(['vehicle', 'category'])->get();
+        $ownerId = Auth::id();
+
+        $subtotal = $bookings->sum('final_price');
+        $taxPercent = $validated['tax_percent'] ?? 0;
+        $taxAmount = round($subtotal * $taxPercent / 100, 2);
+        $discountAmount = $validated['discount_amount'] ?? 0;
+        $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
+
+        $invoice = Invoice::create([
+            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
+            'booking_id' => $bookings->first()->id,
+            'user_id' => $validated['user_id'],
+            'owner_id' => $ownerId,
+            'type' => 'rental',
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'discount_amount' => $discountAmount,
+            'total_amount' => $totalAmount,
+            'paid_amount' => 0,
+            'due_amount' => $totalAmount,
+            'status' => 'draft',
+            'due_date' => $validated['due_date'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        foreach ($bookings as $b) {
+            $vehicleName = $b->vehicle->name ?? ($b->category->name ?? '-');
+            $days = max(1, $b->start_date->diffInDays($b->end_date));
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'description' => "Sewa {$vehicleName} ({$b->booking_code}) - {$days} hari",
+                'quantity' => 1,
+                'unit_price' => (float) $b->final_price,
+                'total_price' => (float) $b->final_price,
+            ]);
+        }
+
+        return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice gabungan berhasil dibuat dengan ' . $bookings->count() . ' booking.');
     }
 
     public function show(Invoice $invoice)
     {
-        $invoice->load(['booking', 'user', 'owner', 'items', 'payments']);
+        $invoice->load(['booking', 'booking.vehicle', 'booking.bookingItems', 'booking.category', 'user', 'owner', 'items', 'payments']);
         return view('invoices.show', compact('invoice'));
+    }
+
+    public function print(Invoice $invoice)
+    {
+        $invoice->load(['booking', 'booking.vehicle', 'booking.bookingItems', 'booking.category', 'user', 'owner', 'items', 'payments']);
+        return view('invoices.print', compact('invoice'));
+    }
+
+    public function send(Invoice $invoice)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+
+        if ($invoice->status === 'draft') {
+            $invoice->update(['status' => 'sent']);
+            return back()->with('success', 'Invoice berhasil dikirim ke admin.');
+        }
+
+        return back()->with('error', 'Invoice sudah dikirim sebelumnya.');
     }
 
     public function pay(Request $request, Invoice $invoice)
@@ -45,8 +174,14 @@ class InvoiceWebController extends Controller
             'amount' => 'required|numeric|min:1',
             'method' => 'required|in:cash,transfer,ewallet,credit_card,other',
             'reference_number' => 'nullable|string|max:100',
+            'proof_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        $proofPath = null;
+        if ($request->hasFile('proof_photo')) {
+            $proofPath = $request->file('proof_photo')->store('payments/proof', 'public');
+        }
 
         $payment = Payment::create([
             'payment_code' => Payment::generatePaymentCode(),
@@ -55,20 +190,74 @@ class InvoiceWebController extends Controller
             'amount' => $validated['amount'],
             'method' => $validated['method'],
             'reference_number' => $validated['reference_number'] ?? null,
-            'status' => $validated['method'] === 'cash' ? 'verified' : 'pending',
+            'proof_photo' => $proofPath,
+            'status' => 'pending',
             'notes' => $validated['notes'] ?? null,
             'paid_at' => now(),
         ]);
 
-        if ($payment->status === 'verified') {
-            $newPaid = $invoice->paid_amount + $payment->amount;
-            $invoice->update([
-                'paid_amount' => $newPaid,
-                'due_amount' => max(0, $invoice->total_amount - $newPaid),
-                'status' => $newPaid >= $invoice->total_amount ? 'paid' : 'partial',
-            ]);
+        return back()->with('success', 'Bukti pembayaran berhasil dikirim. Menunggu verifikasi admin.');
+    }
+
+    public function verifyPayment(Payment $payment)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
         }
 
-        return back()->with('success', 'Pembayaran berhasil dicatat');
+        if ($payment->status !== 'pending') {
+            return back()->with('error', 'Pembayaran sudah diproses');
+        }
+
+        $payment->update([
+            'status' => 'verified',
+            'verified_by' => Auth::id(),
+            'verified_at' => now(),
+        ]);
+
+        $invoice = $payment->invoice;
+        $newPaid = $invoice->paid_amount + $payment->amount;
+        $newStatus = $newPaid >= $invoice->total_amount ? 'paid' : 'partial';
+
+        $invoice->update([
+            'paid_amount' => $newPaid,
+            'due_amount' => max(0, $invoice->total_amount - $newPaid),
+            'status' => $newStatus,
+        ]);
+
+        if ($invoice->booking) {
+            $bookingPaymentStatus = match($newStatus) {
+                'paid' => 'paid',
+                'partial' => 'partial',
+                default => 'unpaid',
+            };
+            $invoice->booking->update(['payment_status' => $bookingPaymentStatus]);
+        }
+
+        return back()->with('success', 'Pembayaran berhasil diverifikasi');
+    }
+
+    public function rejectPayment(Request $request, Payment $payment)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+
+        if ($payment->status !== 'pending') {
+            return back()->with('error', 'Pembayaran sudah diproses');
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        $payment->update([
+            'status' => 'rejected',
+            'verified_by' => Auth::id(),
+            'verified_at' => now(),
+            'rejection_reason' => $validated['rejection_reason'],
+        ]);
+
+        return back()->with('success', 'Pembayaran ditolak');
     }
 }

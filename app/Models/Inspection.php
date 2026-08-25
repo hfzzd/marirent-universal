@@ -10,11 +10,14 @@ class Inspection extends Model
     use HasFactory;
 
     protected $fillable = [
-        'booking_id', 'vehicle_id', 'inspector_id', 'type',
+        'booking_id', 'vehicle_id', 'inspector_id', 'type', 'scope',
+        'item_type', 'item_id',
         'exterior_condition', 'interior_condition', 'engine_condition',
         'tire_condition', 'brake_condition', 'electrical_condition',
         'overall_condition', 'fuel_level', 'odometer_reading',
-        'damages', 'photos', 'notes', 'recommendations',
+        'usage_duration_hours',
+        'damages', 'damage_items', 'completeness', 'photos',
+        'notes', 'recommendations',
     ];
 
     protected function casts(): array
@@ -22,7 +25,10 @@ class Inspection extends Model
         return [
             'fuel_level' => 'decimal:2',
             'odometer_reading' => 'decimal:2',
+            'usage_duration_hours' => 'integer',
             'damages' => 'array',
+            'damage_items' => 'array',
+            'completeness' => 'array',
             'photos' => 'array',
         ];
     }
@@ -33,16 +39,60 @@ class Inspection extends Model
 
     public function hasDamages(): bool
     {
-        return !empty($this->damages) && count($this->damages) > 0;
+        return !empty($this->damage_items) && count($this->damage_items) > 0;
     }
 
     public function getConditionLabel(): string
     {
+        if (!$this->overall_condition) return '-';
         return match(true) {
             $this->overall_condition >= 8 => 'Sangat Baik',
             $this->overall_condition >= 6 => 'Baik',
             $this->overall_condition >= 4 => 'Cukup',
             default => 'Buruk',
         };
+    }
+
+    public function getItemName(): string
+    {
+        if ($this->vehicle) return $this->vehicle->name;
+
+        if ($this->item_type && $this->item_id) {
+            $model = $this->item_type;
+            $item = $model::find($this->item_id);
+            if ($item) return $item->name ?? '-';
+        }
+
+        return '-';
+    }
+
+    public function getTypeLabel(): string
+    {
+        return match($this->type) {
+            'pre_rental' => 'Inspeksi Awal',
+            'post_rental' => 'Inspeksi Akhir',
+            'periodic' => 'Periodik',
+            default => ucfirst($this->type),
+        };
+    }
+
+    public function getScopeLabel(): string
+    {
+        return match($this->scope) {
+            'kendaraan' => 'Kendaraan',
+            'elektronik' => 'Elektronik',
+            'camping' => 'Alat Camping',
+            default => ucfirst($this->scope ?? 'kendaraan'),
+        };
+    }
+
+    public function getUsageDurationLabel(): string
+    {
+        if (!$this->usage_duration_hours) return '-';
+        $hours = $this->usage_duration_hours;
+        if ($hours < 24) return $hours . ' jam';
+        $days = floor($hours / 24);
+        $remainingHours = $hours % 24;
+        return $days . ' hari' . ($remainingHours > 0 ? ' ' . $remainingHours . ' jam' : '');
     }
 }

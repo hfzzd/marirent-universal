@@ -43,12 +43,26 @@ class ElektronikController extends Controller
         };
     }
 
+    private function isOwner(): bool
+    {
+        return Auth::user()->role === 'owner';
+    }
+
+    private function getRoutePrefix(): string
+    {
+        return $this->isOwner() ? 'owner' : 'superadmin';
+    }
+
     public function index(Request $request, $type)
     {
         if (!$this->getType($type)) abort(404);
 
         $model = $this->getModel($type);
         $query = $model->with(['category', 'owner']);
+
+        if ($this->isOwner()) {
+            $query->where('owner_id', Auth::id());
+        }
 
         if ($request->search) {
             $search = $request->search;
@@ -60,21 +74,26 @@ class ElektronikController extends Controller
         }
 
         $items = $query->latest()->paginate(15);
+
+        $ownerFilter = $this->isOwner() ? fn($q) => $q->where('owner_id', Auth::id()) : null;
         $counts = [
-            'kamera' => Camera::count(),
-            'hp' => Phone::count(),
-            'tenda' => CampingEquipment::count(),
+            'kamera' => $ownerFilter ? Camera::where('owner_id', Auth::id())->count() : Camera::count(),
+            'hp' => $ownerFilter ? Phone::where('owner_id', Auth::id())->count() : Phone::count(),
+            'tenda' => $ownerFilter ? CampingEquipment::where('owner_id', Auth::id())->count() : CampingEquipment::count(),
         ];
 
-        return view('superadmin.elektronik', compact('items', 'type', 'counts'));
+        $prefix = $this->getRoutePrefix();
+
+        return view('superadmin.elektronik', compact('items', 'type', 'counts', 'prefix'));
     }
 
     public function create($type)
     {
         if (!$this->getType($type)) abort(404);
         $categories = Category::where('is_active', true)->get();
+        $prefix = $this->getRoutePrefix();
 
-        return view('superadmin.elektronik-create', compact('type', 'categories'));
+        return view('superadmin.elektronik-create', compact('type', 'categories', 'prefix'));
     }
 
     public function store(Request $request, $type)
@@ -139,7 +158,8 @@ class ElektronikController extends Controller
         $model = $this->getModel($type);
         $model->create($validated);
 
-        return redirect()->route('superadmin.elektronik.type', $type)
+        $prefix = $this->getRoutePrefix();
+        return redirect()->route($prefix . '.elektronik.type', $type)
             ->with('success', ucfirst($type) . ' berhasil ditambahkan');
     }
 
@@ -149,9 +169,15 @@ class ElektronikController extends Controller
 
         $model = $this->getModel($type);
         $item = $model->findOrFail($id);
-        $categories = Category::where('is_active', true)->get();
 
-        return view('superadmin.elektronik-edit', compact('type', 'item', 'categories'));
+        if ($this->isOwner() && $item->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $categories = Category::where('is_active', true)->get();
+        $prefix = $this->getRoutePrefix();
+
+        return view('superadmin.elektronik-edit', compact('type', 'item', 'categories', 'prefix'));
     }
 
     public function update(Request $request, $type, $id)
@@ -160,6 +186,10 @@ class ElektronikController extends Controller
 
         $model = $this->getModel($type);
         $item = $model->findOrFail($id);
+
+        if ($this->isOwner() && $item->owner_id !== Auth::id()) {
+            abort(403);
+        }
 
         $baseRules = [
             'name' => 'required|string|max:255',
@@ -217,7 +247,8 @@ class ElektronikController extends Controller
 
         $item->update($validated);
 
-        return redirect()->route('superadmin.elektronik.type', $type)
+        $prefix = $this->getRoutePrefix();
+        return redirect()->route($prefix . '.elektronik.type', $type)
             ->with('success', ucfirst($type) . ' berhasil diperbarui');
     }
 
@@ -226,9 +257,16 @@ class ElektronikController extends Controller
         if (!$this->getType($type)) abort(404);
 
         $model = $this->getModel($type);
-        $model->findOrFail($id)->delete();
+        $item = $model->findOrFail($id);
 
-        return redirect()->route('superadmin.elektronik.type', $type)
+        if ($this->isOwner() && $item->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $item->delete();
+
+        $prefix = $this->getRoutePrefix();
+        return redirect()->route($prefix . '.elektronik.type', $type)
             ->with('success', ucfirst($type) . ' berhasil dihapus');
     }
 }

@@ -11,7 +11,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return $this->dashboardRedirect();
+            return redirect($this->dashboardRedirect());
         }
         return view('auth.login');
     }
@@ -41,7 +41,7 @@ class AuthController extends Controller
     public function showRegister()
     {
         if (Auth::check()) {
-            return $this->dashboardRedirect();
+            return redirect($this->dashboardRedirect());
         }
         return view('auth.register');
     }
