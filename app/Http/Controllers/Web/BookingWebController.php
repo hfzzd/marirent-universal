@@ -433,11 +433,206 @@ class BookingWebController extends Controller
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking multi-item berhasil dibuat! Kode: ' . $booking->booking_code);
     }
 
+    public function manualCreate()
+    {
+        $customers = \App\Models\User::where('role', 'user')->orderBy('name')->get();
+        $vehicles = Vehicle::with('category')->where('status', 'available')->get();
+        $drivers = Driver::with('user')->get();
+        $cameras = Camera::where('status', 'available')->get();
+        $phones = Phone::where('status', 'available')->get();
+        $campings = CampingEquipment::where('status', 'available')->get();
+
+        return view('bookings.manual-create', compact('customers', 'vehicles', 'drivers', 'cameras', 'phones', 'campings'));
+    }
+
+    public function manualStore(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_mode' => 'required|in:existing,new',
+            'user_id' => 'required_if:customer_mode,existing|nullable|exists:users,id',
+            'guest_name' => 'required_if:customer_mode,new|nullable|string|max:255',
+            'guest_phone' => 'required_if:customer_mode,new|nullable|string|max:20',
+            'item_kind' => 'required|in:mobil,motor,kamera,hp,tenda',
+            'item_id' => 'required|integer',
+            'rental_type' => 'required|in:hourly,daily,weekly,monthly',
+            'driver_id' => 'nullable|exists:drivers,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'pickup_location' => 'nullable|string|max:255',
+            'dropoff_location' => 'nullable|string|max:255',
+            'payment_status' => 'required|in:unpaid,partial,paid',
+            'payment_due_date' => 'nullable|date',
+            'discount' => 'nullable|integer|min:0',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $userId = Auth::id();
+
+        if ($validated['customer_mode'] === 'new') {
+            $guestEmail = 'walkin_' . strtolower(uniqid()) . '@marirent临时';
+            $guestUser = \App\Models\User::create([
+                'name' => $validated['guest_name'],
+                'email' => $guestEmail,
+                'phone' => $validated['guest_phone'],
+                'password' => bcrypt('password123'),
+                'role' => 'user',
+            ]);
+            $userId = $guestUser->id;
+        } else {
+            $userId = $validated['user_id'];
+        }
+
+        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $duration = $validated['rental_type'] === 'hourly'
+            ? max(1, $startDate->diffInHours($endDate))
+            : max(1, $startDate->diffInDays($endDate));
+
+        $itemId = $validated['item_id'];
+        $itemKind = $validated['item_kind'];
+        $itemModel = null;
+        $item = null;
+        $vehicleId = null;
+        $itemType = null;
+
+        if (in_array($itemKind, ['mobil', 'motor'])) {
+            $item = Vehicle::findOrFail($itemId);
+            $vehicleId = $item->id;
+        } elseif ($itemKind === 'kamera') {
+            $item = Camera::findOrFail($itemId);
+            $itemType = Camera::class;
+        } elseif ($itemKind === 'hp') {
+            $item = Phone::findOrFail($itemId);
+            $itemType = Phone::class;
+        } elseif ($itemKind === 'tenda') {
+            $item = CampingEquipment::findOrFail($itemId);
+            $itemType = CampingEquipment::class;
+        }
+
+        $basePrice = $item->getPriceForType($validated['rental_type']);
+        $totalPrice = $basePrice * $duration;
+
+        $driverPrice = 0;
+        $driverId = null;
+        if ($validated['driver_id'] && in_array($itemKind, ['mobil', 'motor'])) {
+            $driverId = $validated['driver_id'];
+            if ($item->with_driver) {
+                $driverDays = max(1, $startDate->diffInDays($endDate));
+                $driverPrice = ($item->with_driver_daily_price ?? 0) * $driverDays;
+            }
+        }
+
+        $discount = $validated['discount'] ?? 0;
+        $finalPrice = max(0, $totalPrice + $driverPrice - $discount);
+
+        $categoryId = $item->category_id ?? null;
+
+        $booking = Booking::create([
+            'booking_code' => Booking::generateBookingCode(),
+            'user_id' => $userId,
+            'vehicle_id' => $vehicleId,
+            'driver_id' => $driverId,
+            'category_id' => $categoryId,
+            'item_type' => $itemType,
+            'item_id' => $vehicleId ? null : $itemId,
+            'rental_type' => $validated['rental_type'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'pickup_location' => $validated['pickup_location'] ?? null,
+            'dropoff_location' => $validated['dropoff_location'] ?? null,
+            'with_driver' => $driverId ? true : false,
+            'base_price' => $totalPrice,
+            'driver_price' => $driverPrice,
+            'total_price' => $totalPrice + $driverPrice,
+            'discount' => $discount,
+            'final_price' => $finalPrice,
+            'status' => 'confirmed',
+            'payment_status' => $validated['payment_status'],
+            'payment_due_date' => $validated['payment_due_date'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $item->update(['status' => 'reserved']);
+
+        if ($driverId) {
+            Driver::where('id', $driverId)->update(['status' => 'on_duty']);
+        }
+
+        return redirect()->route('bookings.show', $booking)->with('success', 'Booking manual berhasil dibuat! Kode: ' . $booking->booking_code);
+    }
+
     public function show(Booking $booking)
     {
-        $booking->load(['vehicle', 'driver.user', 'category', 'user', 'invoice', 'tripReport', 'inspection', 'payments', 'bookingItems']);
+        $booking->load(['vehicle.category', 'driver.user', 'category', 'user', 'invoice', 'tripReport', 'inspection', 'payments', 'bookingItems']);
 
-        return view('bookings.show', compact('booking'));
+        $replacements = $booking->replacements()->with(['originalVehicle', 'replacementVehicle', 'requestedBy'])->get();
+
+        $swappableVehicles = collect();
+        if ($booking->vehicle && in_array($booking->status, ['confirmed', 'ongoing']) && in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            $swappableVehicles = Vehicle::where('status', 'available')
+                ->where('is_active', true)
+                ->where('category_id', $booking->vehicle->category_id)
+                ->where('id', '!=', $booking->vehicle_id)
+                ->get();
+        }
+
+        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles'));
+    }
+
+    public function replaceVehicle(Request $request, Booking $booking)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+
+        if (!in_array($booking->status, ['confirmed', 'ongoing']) || !$booking->vehicle_id) {
+            return back()->with('error', 'Booking tidak memenuhi syarat untuk penggantian kendaraan');
+        }
+
+        $validated = $request->validate([
+            'replacement_vehicle_id' => 'required|exists:vehicles,id',
+            'reason' => 'nullable|string|max:500',
+            'price_difference' => 'nullable|numeric',
+            'mark_maintenance' => 'nullable|in:0,1',
+        ]);
+
+        if ($validated['replacement_vehicle_id'] == $booking->vehicle_id) {
+            return back()->with('error', 'Kendaraan pengganti tidak boleh sama dengan kendaraan saat ini');
+        }
+
+        $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
+        if ($replacementVehicle->category_id !== $booking->vehicle->category_id) {
+            return back()->with('error', 'Kendaraan pengganti harus dalam kategori yang sama');
+        }
+
+        $originalVehicle = $booking->vehicle;
+
+        \App\Models\VehicleReplacement::create([
+            'booking_id' => $booking->id,
+            'original_vehicle_id' => $originalVehicle->id,
+            'replacement_vehicle_id' => $replacementVehicle->id,
+            'requested_by' => Auth::id(),
+            'approved_by' => Auth::id(),
+            'status' => 'approved',
+            'reason' => $validated['reason'] ?? null,
+            'price_difference' => $validated['price_difference'] ?? 0,
+            'swapped_at' => now(),
+        ]);
+
+        $booking->update(['vehicle_id' => $replacementVehicle->id]);
+
+        $replacementVehicle->update(['status' => 'reserved']);
+        $originalVehicle->update(['status' => ($validated['mark_maintenance'] ?? '1') === '1' ? 'maintenance' : 'available']);
+
+        $priceDiff = (float) ($validated['price_difference'] ?? 0);
+        if ($priceDiff != 0) {
+            $booking->update([
+                'total_price' => $booking->total_price + $priceDiff,
+                'final_price' => $booking->final_price + $priceDiff,
+            ]);
+        }
+
+        return back()->with('success', 'Kendaraan berhasil diganti');
     }
 
     public function uploadKtp(Request $request, Booking $booking)

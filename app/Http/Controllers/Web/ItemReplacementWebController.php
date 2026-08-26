@@ -165,6 +165,7 @@ class ItemReplacementWebController extends Controller
 
         $booking = $replacement->booking;
         $booking->update([
+            'item_type' => $replacement->item_type === 'hp' ? \App\Models\Phone::class : ($replacement->item_type === 'camera' ? \App\Models\Camera::class : \App\Models\CampingEquipment::class),
             'item_id' => $replacement->replacement_item_id,
             'final_price' => $booking->final_price + $replacement->price_difference,
         ]);

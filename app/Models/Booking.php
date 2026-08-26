@@ -48,7 +48,7 @@ class Booking extends Model
     public function inspection() { return $this->hasOne(Inspection::class); }
     public function tripReport() { return $this->hasOne(TripReport::class); }
     public function invoice() { return $this->hasOne(Invoice::class); }
-    public function replacement() { return $this->hasOne(VehicleReplacement::class); }
+    public function replacements() { return $this->hasMany(VehicleReplacement::class); }
     public function review() { return $this->hasOne(Review::class); }
     public function payments() { return $this->hasManyThrough(Payment::class, Invoice::class); }
     public function bookingItems() { return $this->hasMany(BookingItem::class); }

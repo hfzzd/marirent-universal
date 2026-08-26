@@ -55,10 +55,11 @@ class DashboardController extends Controller
 
         $driverOngoingCount = \App\Models\Driver::where('status', 'on_trip')->count();
         $pendingReplacementCount = \App\Models\VehicleReplacement::where('status', 'pending')->count();
+        $pendingItemReplacementCount = \App\Models\ItemReplacement::where('status', 'pending')->count();
 
         return view('dashboard.superadmin', compact(
             'overdueBookings', 'pendingPayments', 'upcomingBookings',
-            'maintenanceVehicles', 'driverOngoingCount', 'pendingReplacementCount'
+            'maintenanceVehicles', 'driverOngoingCount', 'pendingReplacementCount', 'pendingItemReplacementCount'
         ));
     }
 

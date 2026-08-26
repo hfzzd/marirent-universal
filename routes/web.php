@@ -12,6 +12,7 @@ use App\Http\Controllers\Web\InspectionWebController;
 use App\Http\Controllers\Web\TripReportWebController;
 use App\Http\Controllers\Web\SalaryWebController;
 use App\Http\Controllers\Web\ReplacementWebController;
+use App\Http\Controllers\Web\ItemReplacementWebController;
 use App\Http\Controllers\Web\SuperadminController;
 use App\Http\Controllers\Web\ElektronikController;
 use App\Http\Controllers\Web\ContactWebController;
@@ -127,6 +128,9 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
     Route::get('/create-multi', [BookingWebController::class, 'createMulti'])->name('bookings.create-multi');
     Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
+    Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
+    Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
+    Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');
     Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
     Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm');
@@ -188,8 +192,6 @@ Route::middleware('auth')->prefix('replacements')->group(function () {
 });
 
 // Item Replacement Routes (Electronics)
-use App\Http\Controllers\Web\ItemReplacementWebController;
-
 Route::middleware('auth')->prefix('item-replacements')->group(function () {
     Route::get('/', [ItemReplacementWebController::class, 'index'])->name('item-replacements.index');
     Route::get('/create', [ItemReplacementWebController::class, 'create'])->name('item-replacements.create');
