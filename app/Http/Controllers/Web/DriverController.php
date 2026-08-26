@@ -74,8 +74,7 @@ class DriverController extends Controller
             'license_number'    => 'required|string|max:50|unique:drivers,license_number',
             'license_type'      => 'required|string|max:50',
             'license_expiry'    => 'required|date|after:today',
-            'daily_rate'        => 'required|numeric|min:0',
-            'salary_type'       => 'required|in:daily,monthly,commission',
+            'daily_salary'      => 'required|numeric|min:0',
         ]);
 
         try {
@@ -94,12 +93,9 @@ class DriverController extends Controller
                 'license_number'     => $request->license_number,
                 'license_type'       => $request->license_type,
                 'license_expiry'     => $request->license_expiry,
-                'daily_rate'         => $request->daily_rate,
-                'salary_type'        => $request->salary_type,
-                'is_available'       => true,
+                'daily_salary'       => $request->daily_salary,
+                'is_active'          => true,
                 'status'             => 'active',
-                'rating'             => 5.00,
-                'total_trips'        => 0,
             ]);
 
             return redirect()->route('drivers.show', $driver->id)
@@ -170,9 +166,8 @@ class DriverController extends Controller
             'license_number'    => 'sometimes|string|max:50|unique:drivers,license_number,' . $driver->id,
             'license_type'      => 'sometimes|string|max:50',
             'license_expiry'    => 'sometimes|date',
-            'daily_rate'        => 'sometimes|numeric|min:0',
-            'salary_type'       => 'sometimes|in:daily,monthly,commission',
-            'is_available'      => 'boolean',
+            'daily_salary'      => 'sometimes|numeric|min:0',
+            'is_active'         => 'boolean',
             'status'            => 'sometimes|in:active,inactive,suspended',
         ]);
 
@@ -187,9 +182,8 @@ class DriverController extends Controller
                 'license_number'  => $request->input('license_number', $driver->license_number),
                 'license_type'    => $request->input('license_type', $driver->license_type),
                 'license_expiry'  => $request->input('license_expiry', $driver->license_expiry),
-                'daily_rate'      => $request->input('daily_rate', $driver->daily_rate),
-                'salary_type'     => $request->input('salary_type', $driver->salary_type),
-                'is_available'    => $request->boolean('is_available', $driver->is_available),
+                'daily_salary'    => $request->input('daily_salary', $driver->daily_salary),
+                'is_active'       => $request->boolean('is_active', $driver->is_active),
                 'status'          => $request->input('status', $driver->status),
             ]);
 

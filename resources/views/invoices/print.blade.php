@@ -69,12 +69,12 @@
         <div class="grid grid-cols-2 gap-8 mb-8">
             <div>
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Ditagihkan Kepada</p>
-                <p class="font-bold text-navy-800">{{ $invoice->user->name }}</p>
-                <p class="text-sm text-gray-500">{{ $invoice->user->email }}</p>
-                @if($invoice->user->phone)
+                <p class="font-bold text-navy-800">{{ $invoice->user?->name }}</p>
+                <p class="text-sm text-gray-500">{{ $invoice->user?->email }}</p>
+                @if($invoice->user?->phone)
                 <p class="text-sm text-gray-500">{{ $invoice->user->phone }}</p>
                 @endif
-                @if($invoice->user->address)
+                @if($invoice->user?->address)
                 <p class="text-sm text-gray-500">{{ $invoice->user->address }}</p>
                 @endif
             </div>
@@ -82,7 +82,7 @@
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Detail Booking</p>
                 @if($invoice->booking)
                 <p class="text-sm"><span class="font-semibold text-navy-700">Kode Booking:</span> {{ $invoice->booking->booking_code }}</p>
-                <p class="text-sm"><span class="font-semibold text-navy-700">Unit:</span> {{ $invoice->booking->vehicle->name ?? $invoice->booking->category->name ?? '-' }}</p>
+                <p class="text-sm"><span class="font-semibold text-navy-700">Unit:</span> {{ $invoice->booking->vehicle?->name ?? $invoice->booking->category?->name ?? '-' }}</p>
                 <p class="text-sm"><span class="font-semibold text-navy-700">Periode:</span> {{ $invoice->booking->start_date?->format('d/m/Y') }} - {{ $invoice->booking->end_date?->format('d/m/Y') }}</p>
                 @endif
             </div>
@@ -198,7 +198,7 @@
             <div class="text-center">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-16">Penerima</p>
                 <div class="border-t border-gray-400 w-48 mx-auto mb-2"></div>
-                <p class="text-sm font-bold text-navy-800">{{ $invoice->user->name }}</p>
+                <p class="text-sm font-bold text-navy-800">{{ $invoice->user?->name }}</p>
                 <p class="text-xs text-gray-400">{{ $invoice->created_at->format('d/m/Y') }}</p>
             </div>
             <div class="text-center">

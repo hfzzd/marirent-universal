@@ -148,8 +148,8 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
-                        <span class="font-bold text-navy-800 text-sm">{{ $b->vehicle->name ?? 'Unit Kendaraan' }}</span>
-                        <span class="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-navy-700 font-semibold">{{ $b->vehicle->license_plate ?? '-' }}</span>
+                        <span class="font-bold text-navy-800 text-sm">{{ $b->vehicle?->name ?? 'Unit Kendaraan' }}</span>
+                        <span class="font-mono text-[11px] bg-gray-100 px-2 py-0.5 rounded text-navy-700 font-semibold">{{ $b->vehicle?->license_plate ?? '-' }}</span>
                         @if($b->status == 'ongoing') <span class="badge badge-blue">Sedang Berjalan</span>
                         @elseif($b->status == 'confirmed') <span class="badge badge-teal">Terkonfirmasi</span>
                         @else <span class="badge badge-yellow">Pending</span>

@@ -162,6 +162,11 @@ class Rental extends Model
         return $this->hasOne(CameraRental::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     /**
      * Scope a query to filter by status.
      */

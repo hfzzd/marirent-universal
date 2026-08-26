@@ -28,7 +28,7 @@
                 @forelse($reports as $r)
                 <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30">
                     <td class="py-3 px-5 font-medium text-sky-600">{{ $r->booking->booking_code ?? '-' }}</td>
-                    <td class="py-3 px-5 text-navy-700">{{ $r->vehicle->name }}</td>
+                    <td class="py-3 px-5 text-navy-700">{{ $r->vehicle?->name ?? '-' }}</td>
                     <td class="py-3 px-5 text-navy-600">{{ $r->total_distance ? number_format($r->total_distance, 1) . ' km' : '-' }}</td>
                     <td class="py-3 px-5 text-right font-medium text-navy-700">Rp {{ number_format($r->total_operational_cost,0,',','.') }}</td>
                     <td class="py-3 px-5 text-center">

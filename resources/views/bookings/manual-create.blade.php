@@ -12,6 +12,7 @@
 
     <form method="POST" action="{{ route('bookings.manual-store') }}" x-data="manualBooking()" class="space-y-5">
         @csrf
+        <input type="hidden" name="customer_mode" :value="mode">
 
         {{-- Data Pelanggan --}}
         <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">

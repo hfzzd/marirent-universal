@@ -143,23 +143,24 @@ class PayrollController extends Controller
                 ->get();
 
             $totalTrips = $completedRentals->count();
-            $totalEarnings = $completedRentals->sum('driver_fee');
+            $commission = $completedRentals->sum('driver_fee');
             $bonus = 0;
-            $deductions = 0;
+            $deduction = 0;
 
-            $netPay = $totalEarnings + $bonus - $deductions;
+            $baseSalary = 0;
+            $totalAmount = $baseSalary + $commission + $bonus - $deduction;
 
             $payroll = Payroll::create([
-                'driver_id'     => $request->driver_id,
-                'period_start'  => $request->period_start,
-                'period_end'    => $request->period_end,
-                'total_trips'   => $totalTrips,
-                'total_earnings' => $totalEarnings,
-                'bonus'         => $bonus,
-                'deductions'    => $deductions,
-                'net_pay'       => $netPay,
-                'status'        => 'pending',
-                'rental_ids'    => $completedRentals->pluck('id')->toArray(),
+                'driver_id'        => $request->driver_id,
+                'period_start'     => $request->period_start,
+                'period_end'       => $request->period_end,
+                'base_salary'      => $baseSalary,
+                'commission'       => $commission,
+                'bonus'            => $bonus,
+                'deduction'        => $deduction,
+                'total_trips'      => $totalTrips,
+                'total_amount'     => $totalAmount,
+                'status'           => 'pending',
             ]);
 
             $payroll->load('driver');

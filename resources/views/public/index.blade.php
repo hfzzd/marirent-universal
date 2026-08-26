@@ -1,5 +1,6 @@
 @extends('layouts.public')
 @section('title', 'MariRent - Rental Universal')
+@section('meta_description', 'Platform rental universal untuk kendaraan, gadget, dan alat outdoor. Mudah, cepat, dan terpercaya.')
 
 @section('content')
 @php
@@ -189,7 +190,7 @@
         <div class="vehicle-card bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
             <div class="relative h-48 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center overflow-hidden">
                 @if($p['image'])
-                    <img src="{{ asset('storage/' . $p['image']) }}" alt="{{ $p['name'] }}" class="w-full h-full object-cover">
+                    <img src="{{ asset('storage/' . $p['image']) }}" alt="{{ $p['name'] }}" loading="lazy" class="w-full h-full object-cover">
                 @else
                     <i class="fas {{ $p['icon'] }} text-6xl {{ $p['icon_class'] }}"></i>
                 @endif

@@ -31,7 +31,7 @@
             <tbody>
                 @forelse($salaries as $s)
                 <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30">
-                    <td class="py-3 px-5 font-medium text-navy-800">{{ $s->driver->user->name }}</td>
+                    <td class="py-3 px-5 font-medium text-navy-800">{{ $s->driver?->user?->name }}</td>
                     <td class="py-3 px-5 text-[12px] text-navy-600">{{ $s->period_month }}</td>
                     <td class="py-3 px-5 text-right text-navy-600">Rp {{ number_format($s->base_salary,0,',','.') }}</td>
                     <td class="py-3 px-5 text-right text-navy-600">Rp {{ number_format($s->trip_bonus + $s->overtime_pay,0,',','.') }}</td>

@@ -4,59 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard - MariRent')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <meta name="robots" content="noindex, nofollow">
+
+    {{-- Fonts & Icons --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: {
-                sky: { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#0ea5e9',600:'#0284c7',700:'#0369a1',800:'#075985',900:'#0c4a6e' },
-                navy: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a' },
-            }}}
-        }
-    </script>
-    <style>
-        * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        .sidebar { background: linear-gradient(180deg, #0c1929 0%, #0f2340 50%, #132f52 100%); }
-        .sidebar-link { transition: all 0.2s ease; border-left: 3px solid transparent; }
-        .sidebar-link:hover { background: rgba(56,189,248,0.08); border-left-color: #38bdf8; }
-        .sidebar-link.active { background: rgba(56,189,248,0.12); border-left-color: #38bdf8; color: #38bdf8; }
-        .stat-card { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
-        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-        .btn-primary:hover { background: linear-gradient(135deg, #0284c7, #0369a1); }
-        .badge { padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-green { background: #dcfce7; color: #166534; }
-        .badge-yellow { background: #fef3c7; color: #92400e; }
-        .badge-red { background: #fee2e2; color: #991b1b; }
-        .badge-blue { background: #e0f2fe; color: #075985; }
-        .badge-gray { background: #f1f5f9; color: #475569; }
-        .badge-teal { background: #ccfbf1; color: #115e59; }
-        .sidebar-group-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; padding: 8px 12px 4px; }
-        .glass-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); }
-        .gradient-sky { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
-        .gradient-card-1 { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
-        .gradient-card-2 { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%); }
-        .gradient-card-3 { background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%); }
-        .gradient-card-4 { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-        .animate-slide-up { animation: slideUp 0.4s ease-out; }
-        .animate-count { animation: countUp 1s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-        .tooltip { position: relative; }
-        .tooltip::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-        .tooltip:hover::after { opacity: 1; }
-        @yield('styles')
-    </style>
+
+    {{-- Vite (Tailwind + Custom CSS) --}}
+    @vite(['resources/css/app.css'])
+
+    @yield('styles')
     @stack('styles')
 </head>
 <body class="bg-sky-50/50 flex">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {{-- SIDEBAR --}}
     <aside id="sidebar" class="sidebar w-60 h-screen sticky top-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
         <div class="p-4">

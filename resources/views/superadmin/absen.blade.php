@@ -40,11 +40,11 @@
                     <td class="py-3 px-5">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span class="text-sky-700 font-bold text-[11px]">{{ strtoupper(substr($d->user->name, 0, 1)) }}</span>
+                                <span class="text-sky-700 font-bold text-[11px]">{{ strtoupper(substr($d->user?->name ?? '', 0, 1)) }}</span>
                             </div>
                             <div>
-                                <p class="font-medium text-navy-800">{{ $d->user->name }}</p>
-                                <p class="text-[11px] text-gray-400">{{ $d->user->email }}</p>
+                                <p class="font-medium text-navy-800">{{ $d->user?->name }}</p>
+                                <p class="text-[11px] text-gray-400">{{ $d->user?->email }}</p>
                             </div>
                         </div>
                     </td>

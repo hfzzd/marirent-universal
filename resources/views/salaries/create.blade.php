@@ -12,7 +12,7 @@
                     <select name="driver_id" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
                         <option value="">Pilih Driver</option>
                         @foreach($drivers as $d)
-                        <option value="{{ $d->id }}">{{ $d->user->name }} (Gaji/Hari: Rp {{ number_format($d->daily_salary,0,',','.') }})</option>
+                        <option value="{{ $d->id }}">{{ $d->user?->name }} (Gaji/Hari: Rp {{ number_format($d->daily_salary,0,',','.') }})</option>
                         @endforeach
                     </select>
                 </div>

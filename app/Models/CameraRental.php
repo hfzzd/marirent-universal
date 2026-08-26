@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CameraRental extends Model
 {
@@ -26,6 +27,22 @@ class CameraRental extends Model
         'deposit',
         'condition_before',
         'condition_after',
+        'camera_code',
+        'vehicle_id',
+        'equipment_name',
+        'equipment_type',
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+        'rental_date',
+        'return_date',
+        'days',
+        'quantity',
+        'rental_cost',
+        'delivery_address',
+        'status',
+        'created_by',
+        'notes',
     ];
 
     /**
@@ -49,5 +66,20 @@ class CameraRental extends Model
     public function rental(): BelongsTo
     {
         return $this->belongsTo(Rental::class);
+    }
+
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 }

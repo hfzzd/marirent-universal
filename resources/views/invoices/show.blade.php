@@ -27,8 +27,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
                 <p class="text-xs text-navy-500 mb-1">Ditagihkan Kepada</p>
-                <p class="font-bold text-navy-800">{{ $invoice->user->name }}</p>
-                <p class="text-sm text-navy-500">{{ $invoice->user->email }}</p>
+                <p class="font-bold text-navy-800">{{ $invoice->user?->name }}</p>
+                <p class="text-sm text-navy-500">{{ $invoice->user?->email }}</p>
             </div>
             <div class="text-right">
                 <p class="text-xs text-navy-500 mb-1">Jatuh Tempo</p>

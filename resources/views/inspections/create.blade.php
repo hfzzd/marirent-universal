@@ -54,7 +54,7 @@
                                     data-item-type="{{ $b->item_type }}"
                                     data-item-id="{{ $b->item_id }}"
                                     data-scope="{{ $b->vehicle_id ? 'kendaraan' : ($b->item_type === 'App\Models\Phone' || $b->item_type === 'App\Models\Camera' ? 'elektronik' : 'camping') }}">
-                                    {{ $b->booking_code }} - {{ $b->vehicle->name ?? $b->bookingItems->first()?->item_type ?? ($b->category->name ?? '-') }}
+                                    {{ $b->booking_code }} - {{ $b->vehicle?->name ?? $b->bookingItems->first()?->item_type ?? ($b->category?->name ?? '-') }}
                                 </option>
                                 @endforeach
                             </select>

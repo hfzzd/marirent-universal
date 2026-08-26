@@ -32,6 +32,8 @@ class TripReport extends Model
     public function booking() { return $this->belongsTo(Booking::class); }
     public function driver() { return $this->belongsTo(Driver::class); }
     public function vehicle() { return $this->belongsTo(Vehicle::class); }
+    public function rental() { return $this->belongsTo(Rental::class); }
+    public function reviewer() { return $this->belongsTo(User::class, 'reviewer_id'); }
 
     public function calculateTotalCost(): float
     {

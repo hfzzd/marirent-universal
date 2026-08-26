@@ -87,14 +87,19 @@
     </div>
 
     {{-- SEARCH & FILTER BAR --}}
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/80 mb-8 reveal" style="box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
-        <form action="{{ route('products') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/80 mb-8 reveal" style="box-shadow: 0 4px 24px rgba(0,0,0,0.03);" x-data="{ searchQuery: '{{ request('search') }}', loading: false }" x-init="$watch('searchQuery', () => { clearTimeout(window._searchTimer); window._searchTimer = setTimeout(() => { $refs.searchForm.submit(); }, 500); })">
+        <form action="{{ route('products') }}" method="GET" x-ref="searchForm" class="flex flex-col md:flex-row gap-3 items-end">
+            <input type="hidden" name="category" value="{{ request('category') }}">
+            <input type="hidden" name="sort" value="{{ request('sort') }}">
             <div class="flex-1 w-full">
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Cari Produk</label>
                 <div class="relative">
                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama, merek, atau tipe..."
-                        class="w-full border border-gray-200 rounded-2xl pl-11 pr-4 py-3 text-[13px] focus:ring-0 focus:border-sky-400 outline-none transition-all duration-300 hover:border-gray-300 search-glow bg-gray-50/50">
+                    <input type="text" name="search" x-model="searchQuery" placeholder="Nama, merek, atau tipe..."
+                        class="w-full border border-gray-200 rounded-2xl pl-11 pr-10 py-3 text-[13px] focus:ring-0 focus:border-sky-400 outline-none transition-all duration-300 hover:border-gray-300 search-glow bg-gray-50/50">
+                    <div x-show="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
+                        <i class="fas fa-spinner fa-spin text-sky-400 text-sm"></i>
+                    </div>
                 </div>
             </div>
             <div>
@@ -132,8 +137,30 @@
                 untuk "<span class="text-sky-600 font-semibold">{{ request('search') }}</span>"
             @endif
         </p>
-        <div class="flex items-center gap-1.5 text-[11px] text-gray-400 bg-white px-3 py-1.5 rounded-xl border border-gray-100">
-            <i class="fas fa-th-large text-sky-400"></i> Grid
+        <div class="flex items-center gap-2">
+            {{-- Sort Dropdown --}}
+            <div class="relative" x-data="{ sortOpen: false }">
+                <button @click="sortOpen = !sortOpen" class="flex items-center gap-1.5 text-[11px] text-gray-500 bg-white px-3 py-1.5 rounded-xl border border-gray-100 hover:border-sky-200 transition">
+                    <i class="fas fa-sort text-sky-400"></i>
+                    <span x-text="sortOpen ? 'Urutkan' : '{{ match(request('sort', 'newest')) { 'price_asc' => 'Harga Terendah', 'price_desc' => 'Harga Tertinggi', 'name' => 'Nama A-Z', default => 'Terbaru' } }}'"></span>
+                    <i class="fas fa-chevron-down text-[8px]"></i>
+                </button>
+                <div x-show="sortOpen" @click.away="sortOpen = false" x-transition class="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                    @php $currentSort = request('sort', 'newest'); @endphp
+                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'newest'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'newest' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                        <i class="fas fa-clock mr-2 w-4"></i> Terbaru
+                    </a>
+                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'price_asc'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'price_asc' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                        <i class="fas fa-arrow-up mr-2 w-4"></i> Harga Terendah
+                    </a>
+                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'price_desc'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'price_desc' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                        <i class="fas fa-arrow-down mr-2 w-4"></i> Harga Tertinggi
+                    </a>
+                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'name'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'name' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                        <i class="fas fa-font mr-2 w-4"></i> Nama A-Z
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 

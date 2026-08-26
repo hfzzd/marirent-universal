@@ -486,7 +486,7 @@
                         </div>
                     </td>
                     <td class="py-3.5 px-6">
-                        <p class="font-bold text-navy-800">{{ $b->vehicle->name ?? ($b->category->name ?? 'Unit Sewa') }}</p>
+                        <p class="font-bold text-navy-800">{{ $b->vehicle?->name ?? ($b->category?->name ?? 'Unit Sewa') }}</p>
                         <span class="text-[10px] text-gray-400">{{ $b->with_driver ? '+ Dengan Supir' : 'Lepas Kunci' }}</span>
                     </td>
                     <td class="py-3.5 px-6 text-navy-600">
@@ -539,7 +539,7 @@
             <div class="px-6 py-3 hover:bg-red-50/20 transition-colors flex items-center justify-between">
                 <div>
                     <p class="font-bold text-navy-800 text-xs">{{ $b->booking_code }}</p>
-                    <p class="text-[11px] text-gray-400">{{ $b->user->name ?? '-' }} &bull; {{ $b->vehicle->name ?? ($b->bookingItems->first()?->item_type ?? '-') }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $b->user->name ?? '-' }} &bull; {{ $b->vehicle?->name ?? ($b->bookingItems->first()?->item_type ?? '-') }}</p>
                 </div>
                 <div class="text-right">
                     <p class="text-[11px] text-red-500 font-semibold">Lewat {{ \Carbon\Carbon::parse($b->end_date)->diffForHumans() }}</p>
@@ -642,7 +642,7 @@
             <div class="px-6 py-3 hover:bg-purple-50/20 transition-colors flex items-center justify-between">
                 <div>
                     <p class="font-bold text-navy-800 text-xs">{{ $v->name }}</p>
-                    <p class="text-[11px] text-gray-400">{{ $v->category->name ?? '-' }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $v->category?->name ?? '-' }}</p>
                 </div>
                 <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Maintenance</span>
             </div>

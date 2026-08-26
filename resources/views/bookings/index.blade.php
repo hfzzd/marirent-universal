@@ -82,7 +82,7 @@
                                 @endif
                             </div>
                             <div>
-                                <p class="text-navy-700 font-medium">{{ $b->vehicle->name ?? ($b->category->name ?? '-') }}</p>
+                                <p class="text-navy-700 font-medium">{{ $b->vehicle?->name ?? ($b->category?->name ?? '-') }}</p>
                                 @if($isUser)
                                 <p class="text-[11px] text-gray-400">{{ ucfirst($b->rental_type ?? '-') }}</p>
                                 @endif

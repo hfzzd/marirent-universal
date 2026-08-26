@@ -239,7 +239,7 @@
                 <h3 class="text-[14px] font-bold text-navy-800 mb-4"><i class="fas fa-id-card text-sky-500 mr-2"></i>Bukti Foto KTP</h3>
                 @if($booking->ktp_photo)
                 <div class="relative inline-block">
-                    <img src="{{ asset('storage/' . $booking->ktp_photo) }}" alt="KTP {{ $booking->user->name }}" class="max-w-full md:max-w-md rounded-xl border border-gray-200 shadow-sm">
+                    <img src="{{ asset('storage/' . $booking->ktp_photo) }}" alt="KTP {{ $booking->user?->name }}" class="max-w-full md:max-w-md rounded-xl border border-gray-200 shadow-sm">
                     <div class="mt-2 flex items-center gap-2">
                         <span class="badge badge-green"><i class="fas fa-check-circle mr-1"></i> KTP Telah Diunggah</span>
                         <span class="text-[11px] text-gray-400">{{ $booking->updated_at->format('d M Y H:i') }}</span>

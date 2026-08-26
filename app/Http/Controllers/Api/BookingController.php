@@ -82,6 +82,8 @@ class BookingController extends Controller
             'vehicle_id' => $vehicle->id,
             'driver_id' => null,
             'category_id' => $vehicle->category_id,
+            'item_type' => null,
+            'item_id' => null,
             'rental_type' => $validated['rental_type'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],

@@ -84,7 +84,7 @@
                             </div>
                         </div>
                     </td>
-                    <td class="py-3 px-5 text-navy-600">{{ $v->category->name }}</td>
+                    <td class="py-3 px-5 text-navy-600">{{ $v->category?->name ?? '-' }}</td>
                     <td class="py-3 px-5 font-mono text-[12px] text-navy-600">{{ $v->license_plate }}</td>
                     <td class="py-3 px-5">
                         @if($v->condition == 'excellent') <span class="badge badge-green">Sangat Baik</span>

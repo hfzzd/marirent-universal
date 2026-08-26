@@ -4,97 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'MariRent Universal')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="description" content="@yield('meta_description', 'Platform rental universal untuk kendaraan, gadget, dan alat outdoor. Mudah, cepat, dan terpercaya.')">
+
+    {{-- Open Graph --}}
+    <meta property="og:title" content="@yield('og_title', 'MariRent Universal')">
+    <meta property="og:description" content="@yield('og_description', 'Platform rental universal untuk kendaraan, gadget, dan alat outdoor.')">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('og_title', 'MariRent Universal')">
+    <meta name="twitter:description" content="@yield('og_description', 'Platform rental universal untuk kendaraan, gadget, dan alat outdoor.')">
+
+    {{-- Favicon --}}
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+
+    {{-- Fonts & Icons --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: {
-                sky: { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#0ea5e9',600:'#0284c7',700:'#0369a1',800:'#075985',900:'#0c4a6e' },
-                navy: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a' },
-            }, fontFamily: { sans: ['Inter', 'sans-serif'] }}}
-        }
-    </script>
-    <style>
-        [x-cloak] { display: none !important; }
 
-        /* Loading screen */
-        #loader { position: fixed; inset: 0; z-index: [9999]; background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s ease; }
-        #loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-        .loader-logo { animation: loaderPulse 1.2s ease-in-out infinite; }
-        .loader-bar { width: 180px; height: 3px; background: rgba(255,255,255,0.15); border-radius: 10px; overflow: hidden; margin-top: 28px; }
-        .loader-bar-inner { height: 100%; width: 40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent); border-radius: 10px; animation: loaderSlide 1.2s ease-in-out infinite; }
-        .loader-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.5); display: inline-block; margin: 0 4px; animation: loaderDots 1.4s ease-in-out infinite; }
-        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes loaderPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-        @keyframes loaderSlide { 0% { transform: translateX(-150%); } 100% { transform: translateX(400%); } }
-        @keyframes loaderDots { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+    {{-- Vite (Tailwind + Custom CSS) --}}
+    @vite(['resources/css/app.css'])
 
-        /* Navbar transition */
-        .navbar { transition: all 0.4s cubic-bezier(0.4,0,0.2,1); }
-        .navbar.scrolled { background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(20px) !important; box-shadow: 0 4px 30px rgba(0,0,0,0.06); border-color: rgba(226,232,240,0.8) !important; }
-        .navbar.scrolled .nav-link { color: #334155 !important; }
-        .navbar.scrolled .nav-logo-text { color: #0f172a !important; }
-        .navbar.at-top { background: transparent !important; backdrop-filter: none !important; border-color: transparent !important; }
-        .navbar.at-top .nav-link { color: rgba(255,255,255,0.85) !important; }
-        .navbar.at-top .nav-link:hover { color: #fff !important; background: rgba(255,255,255,0.1) !important; }
-        .navbar.at-top .nav-link.active { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
-        .navbar.at-top .nav-logo-text { color: #fff !important; }
-        .navbar.at-top .nav-logo-icon { background: rgba(255,255,255,0.2) !important; box-shadow: none !important; }
-        .navbar.at-top .nav-cta { background: rgba(255,255,255,0.2) !important; backdrop-filter: blur(8px) !important; border: 1px solid rgba(255,255,255,0.25) !important; box-shadow: none !important; }
-        .navbar.at-top .mobile-toggle { color: #fff !important; }
-        .navbar.at-top .mobile-menu { background: rgba(15,23,42,0.95) !important; backdrop-filter: blur(20px) !important; }
-
-        /* Buttons */
-        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); transition: all 0.3s ease; }
-        .btn-primary:hover { background: linear-gradient(135deg, #0284c7, #0369a1); transform: translateY(-1px); box-shadow: 0 8px 25px rgba(14,165,233,0.3); }
-        .btn-primary:active { transform: translateY(0); }
-
-        /* Cards */
-        .category-card { transition: all 0.35s cubic-bezier(0.4,0,0.2,1); }
-        .category-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(14,165,233,0.12); }
-        .vehicle-card { transition: all 0.35s cubic-bezier(0.4,0,0.2,1); }
-        .vehicle-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.08); }
-        .vehicle-card:hover .vehicle-img { transform: scale(1.05); }
-        .vehicle-img { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); }
-
-        /* Scroll reveal */
-        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.7s cubic-bezier(0.4,0,0.2,1); }
-        .reveal.visible { opacity: 1; transform: translateY(0); }
-        .reveal-delay-1 { transition-delay: 0.1s; }
-        .reveal-delay-2 { transition-delay: 0.2s; }
-        .reveal-delay-3 { transition-delay: 0.3s; }
-        .reveal-delay-4 { transition-delay: 0.4s; }
-
-        /* Fade in */
-        .fade-in { animation: fadeIn 0.8s ease-out both; }
-        .fade-in-up { animation: fadeInUp 0.8s ease-out both; }
-        .fade-in-up-delay-1 { animation-delay: 0.1s; }
-        .fade-in-up-delay-2 { animation-delay: 0.2s; }
-        .fade-in-up-delay-3 { animation-delay: 0.3s; }
-        .fade-in-up-delay-4 { animation-delay: 0.4s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
-        @keyframes floatReverse { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(12px) rotate(-2deg); } }
-        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 20px 4px rgba(14,165,233,0.15); } }
-        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        .float { animation: float 6s ease-in-out infinite; }
-        .float-reverse { animation: floatReverse 5s ease-in-out infinite; }
-        .float-delay { animation: float 7s ease-in-out 1s infinite; }
-        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
-        .gradient-shift { background-size: 200% 200%; animation: gradientShift 8s ease infinite; }
-
-        /* Smooth scroll */
-        html { scroll-behavior: smooth; }
-
-        /* Selection color */
-        ::selection { background: #bae6fd; color: #0c4a6e; }
-
-        @yield('styles')
-    </style>
+    @yield('styles')
     @stack('styles')
 </head>
 <body class="bg-sky-50/30">
@@ -223,9 +159,22 @@
                     </div>
                     <p class="text-gray-400 text-[13px] leading-relaxed">Platform rental universal untuk kendaraan, gadget, dan alat outdoor. Mudah, cepat, dan terpercaya.</p>
                     <div class="flex gap-3 mt-5">
-                        <a href="#" class="w-9 h-9 bg-white/10 hover:bg-sky-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-instagram text-sm"></i></a>
-                        <a href="#" class="w-9 h-9 bg-white/10 hover:bg-sky-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-whatsapp text-sm"></i></a>
-                        <a href="#" class="w-9 h-9 bg-white/10 hover:bg-sky-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-facebook text-sm"></i></a>
+                        <a href="https://instagram.com/marirent" target="_blank" class="w-9 h-9 bg-white/10 hover:bg-pink-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-instagram text-sm"></i></a>
+                        <a href="https://wa.me/6281234567890" target="_blank" class="w-9 h-9 bg-white/10 hover:bg-emerald-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-whatsapp text-sm"></i></a>
+                        <a href="https://facebook.com/marirent" target="_blank" class="w-9 h-9 bg-white/10 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-facebook text-sm"></i></a>
+                        <a href="https://tiktok.com/@marirent" target="_blank" class="w-9 h-9 bg-white/10 hover:bg-navy-700 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"><i class="fab fa-tiktok text-sm"></i></a>
+                    </div>
+
+                    {{-- Newsletter --}}
+                    <div class="mt-6">
+                        <p class="text-[13px] font-semibold mb-2">Newsletter</p>
+                        <div class="flex gap-2" x-data="{ email: '', subscribed: false }">
+                            <input type="email" x-model="email" placeholder="Email Anda" class="flex-1 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-[12px] text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 transition">
+                            <button @click="if(email) { subscribed = true; email = ''; }" x-show="!subscribed" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 rounded-lg text-[12px] font-semibold transition">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                            <span x-show="subscribed" class="text-emerald-400 text-[12px] flex items-center"><i class="fas fa-check mr-1"></i> Tersimpan!</span>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -252,6 +201,7 @@
                         <li><i class="fas fa-phone mr-2 text-sky-400"></i> +62 812 3456 7890</li>
                         <li><i class="fas fa-envelope mr-2 text-sky-400"></i> info@marirent.com</li>
                         <li><i class="fas fa-map-marker-alt mr-2 text-sky-400"></i> Jakarta, Indonesia</li>
+                        <li><i class="fas fa-clock mr-2 text-sky-400"></i> Buka 24 Jam</li>
                     </ul>
                 </div>
             </div>
@@ -260,6 +210,20 @@
             </div>
         </div>
     </footer>
+
+    {{-- COOKIE CONSENT --}}
+    <div x-data="cookieConsent()" x-init="init()" class="cookie-consent" :class="{ 'show': visible }">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-cookie-bite text-amber-400 text-lg"></i>
+                <p class="text-[13px] text-gray-300">Kami menggunakan cookie untuk pengalaman terbaik. <a href="{{ route('about') }}" class="text-sky-400 underline">Pelajari lebih lanjut</a></p>
+            </div>
+            <div class="flex gap-2 flex-shrink-0">
+                <button @click="accept()" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl text-[12px] font-semibold transition">Terima</button>
+                <button @click="visible = false" class="bg-white/10 hover:bg-white/20 text-gray-300 px-5 py-2 rounded-xl text-[12px] font-medium transition">Tolak</button>
+            </div>
+        </div>
+    </div>
 
     {{-- LOADER SCRIPT --}}
     <script>
@@ -306,6 +270,22 @@
     </script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        function cookieConsent() {
+            return {
+                visible: false,
+                init() {
+                    if (!localStorage.getItem('mari_cookie_consent')) {
+                        setTimeout(() => { this.visible = true; }, 2000);
+                    }
+                },
+                accept() {
+                    localStorage.setItem('mari_cookie_consent', '1');
+                    this.visible = false;
+                }
+            }
+        }
+    </script>
     @stack('scripts')
 </body>
 </html>

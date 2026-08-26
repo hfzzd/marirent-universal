@@ -285,8 +285,8 @@
                                 <i class="fas fa-{{ $b->vehicle && $b->vehicle->category && $b->vehicle->category->slug === 'motor' ? 'motorcycle' : 'car' }}"></i>
                             </div>
                             <div>
-                                <p class="font-bold text-navy-800">{{ $b->vehicle->name ?? '-' }}</p>
-                                <span class="font-mono text-[10px] text-gray-400">{{ $b->vehicle->license_plate ?? '-' }}</span>
+                                <p class="font-bold text-navy-800">{{ $b->vehicle?->name ?? '-' }}</p>
+                                <span class="font-mono text-[10px] text-gray-400">{{ $b->vehicle?->license_plate ?? '-' }}</span>
                             </div>
                         </div>
                     </td>

@@ -25,7 +25,7 @@
                     <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50">
                         <option value="">Pilih Booking</option>
                         @foreach($bookings as $b)
-                        <option value="{{ $b->id }}">{{ $b->booking_code }} - {{ $b->vehicle->name ?? ($b->category->name ?? '-') }} ({{ $b->user->name }})</option>
+                        <option value="{{ $b->id }}">{{ $b->booking_code }} - {{ $b->vehicle?->name ?? ($b->category?->name ?? '-') }} ({{ $b->user?->name }})</option>
                         @endforeach
                     </select>
                 </div>

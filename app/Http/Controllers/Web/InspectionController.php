@@ -73,26 +73,28 @@ class InspectionController extends Controller
         $request->validate([
             'rental_id'             => 'required|exists:rentals,id',
             'type'                  => 'required|in:pre_rental,post_rental,periodic',
-            'checklist'             => 'required|array|min:1',
-            'checklist.*.item'      => 'required|string|max:255',
-            'checklist.*.status'    => 'required|in:good,fair,poor',
-            'overall_condition'     => 'required|in:good,fair,poor',
+            'scope'                 => 'nullable|in:kendaraan,elektronik,camping',
+            'overall_condition'     => 'nullable|numeric|min:1|max:10',
+            'fuel_level'            => 'nullable|numeric|min:0|max:100',
+            'odometer_reading'      => 'nullable|numeric|min:0',
             'notes'                 => 'nullable|string|max:2000',
-            'next_inspection_date'  => 'nullable|date|after:today',
+            'recommendations'       => 'nullable|string|max:2000',
         ]);
 
         try {
             $rental = Rental::findOrFail($request->rental_id);
 
             $inspection = Inspection::create([
-                'rental_id'             => $rental->id,
+                'booking_id'            => $rental->booking_id ?? null,
                 'vehicle_id'            => $rental->vehicle_id,
                 'inspector_id'          => Auth::id(),
                 'type'                  => $request->type,
-                'checklist'             => $request->checklist,
+                'scope'                 => $request->scope ?? 'kendaraan',
                 'overall_condition'     => $request->overall_condition,
+                'fuel_level'            => $request->fuel_level,
+                'odometer_reading'      => $request->odometer_reading,
                 'notes'                 => $request->notes,
-                'next_inspection_date'  => $request->next_inspection_date,
+                'recommendations'       => $request->recommendations,
             ]);
 
             return redirect()->route('inspections.show', $inspection->id)

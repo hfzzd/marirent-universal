@@ -217,7 +217,7 @@
                                 @else {{ $b->category->name ?? '-' }}
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3 text-navy-600">{{ $b->user->name }}</td>
+                            <td class="py-2.5 px-3 text-navy-600">{{ $b->user?->name }}</td>
                             <td class="py-2.5 px-3 text-navy-500">{{ $b->start_date->format('d/m/Y') }}</td>
                             <td class="py-2.5 px-3 text-navy-500">{{ $b->end_date->format('d/m/Y') }}</td>
                             <td class="py-2.5 px-3 {{ $b->payment_status != 'paid' && $b->payment_due_date && \Carbon\Carbon::parse($b->payment_due_date)->isPast() ? 'text-red-600 font-semibold' : 'text-navy-500' }}">

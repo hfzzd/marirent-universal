@@ -31,6 +31,8 @@ class Driver extends Model
     public function bookings() { return $this->hasMany(Booking::class); }
     public function tripReports() { return $this->hasMany(TripReport::class); }
     public function salaries() { return $this->hasMany(DriverSalary::class); }
+    public function rentals() { return $this->hasMany(Rental::class); }
+    public function payrolls() { return $this->hasMany(Payroll::class); }
 
     public function isAvailable(): bool
     {

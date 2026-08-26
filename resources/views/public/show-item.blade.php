@@ -4,9 +4,16 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <div class="mb-6">
-        <a href="{{ route('products', ['category' => $item->category->slug ?? '']) }}" class="text-sky-600 hover:text-sky-700 text-sm"><i class="fas fa-arrow-left mr-1"></i> Kembali ke {{ $config['label'] }}</a>
-    </div>
+    {{-- BREADCRUMBS --}}
+    <nav class="flex items-center gap-2 text-[13px] text-gray-400 mb-6 reveal">
+        <a href="{{ route('home') }}" class="hover:text-sky-600 transition"><i class="fas fa-home"></i></a>
+        <i class="fas fa-chevron-right text-[9px]"></i>
+        <a href="{{ route('products') }}" class="hover:text-sky-600 transition">Produk</a>
+        <i class="fas fa-chevron-right text-[9px]"></i>
+        <a href="{{ route('products', ['category' => $item->category->slug ?? '']) }}" class="hover:text-sky-600 transition">{{ $config['label'] }}</a>
+        <i class="fas fa-chevron-right text-[9px]"></i>
+        <span class="text-navy-700 font-medium">{{ $item->name }}</span>
+    </nav>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-6">
@@ -124,4 +131,18 @@
         </div>
     </div>
 </div>
+
+{{-- BACK TO TOP --}}
+<button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="back-to-top">
+    <i class="fas fa-chevron-up"></i>
+</button>
 @endsection
+
+@push('scripts')
+<script>
+const backToTopBtn = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {
+    if (backToTopBtn) backToTopBtn.classList.toggle('visible', window.scrollY > 400);
+}, { passive: true });
+</script>
+@endpush

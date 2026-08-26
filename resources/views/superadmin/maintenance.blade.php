@@ -97,7 +97,7 @@
                 <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30 transition-colors">
                     <td class="py-3 px-5 font-mono font-medium text-sky-600 text-[12px]">{{ $m->maintenance_code }}</td>
                     <td class="py-3 px-5 text-navy-700 font-medium">{{ $m->title }}</td>
-                    <td class="py-3 px-5 text-navy-600">{{ $m->vehicle->name ?? '-' }}</td>
+                    <td class="py-3 px-5 text-navy-600">{{ $m->vehicle?->name ?? '-' }}</td>
                     <td class="py-3 px-5 text-[12px] text-navy-600">{{ $typeLabels[$m->type] ?? $m->type }}</td>
                     <td class="py-3 px-5 text-center">
                         <span class="{{ $priorityColors[$m->priority] ?? 'badge-gray' }}" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;">{{ $priorityLabels[$m->priority] ?? $m->priority }}</span>

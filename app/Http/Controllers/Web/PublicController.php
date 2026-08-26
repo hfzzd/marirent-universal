@@ -190,7 +190,13 @@ class PublicController extends Controller
 
         $products = $vehicles->concat($phones)->concat($cameras)->concat($campings);
 
-        $products = $products->sortByDesc('id')->values();
+        $sort = $request->input('sort', 'newest');
+        $products = match($sort) {
+            'price_asc' => $products->sortBy('daily_price')->values(),
+            'price_desc' => $products->sortByDesc('daily_price')->values(),
+            'name' => $products->sortBy('name')->values(),
+            default => $products->sortByDesc('id')->values(),
+        };
 
         $currentPage = (int) $request->input('page', 1);
         $perPage = 12;

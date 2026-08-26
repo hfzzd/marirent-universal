@@ -1,12 +1,12 @@
 @extends('layouts.dashboard')
-@section('page-title', 'Detail Gaji - ' . $salary->driver->user->name)
+@section('page-title', 'Detail Gaji - ' . $salary->driver?->user?->name)
 @section('content')
 <div class="max-w-3xl">
     <a href="{{ route('salaries.index') }}" class="text-sky-600 text-sm mb-4 inline-block"><i class="fas fa-arrow-left mr-1"></i> Kembali</a>
     <div class="bg-white rounded-2xl shadow-sm p-8">
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h2 class="text-xl font-bold text-navy-900">{{ $salary->driver->user->name }}</h2>
+                <h2 class="text-xl font-bold text-navy-900">{{ $salary->driver?->user?->name }}</h2>
                 <p class="text-sm text-navy-500">Periode: {{ $salary->period_month }}</p>
             </div>
             <span class="status-{{ $salary->status }} px-3 py-1.5 rounded-full text-sm font-medium capitalize">{{ $salary->status }}</span>
@@ -20,7 +20,7 @@
                 <div class="border-t pt-3 flex justify-between"><span class="font-bold text-navy-800">Total Gaji</span><span class="font-bold text-xl text-sky-600">Rp {{ number_format($salary->total_salary,0,',','.') }}</span></div>
             </div>
             <div class="space-y-3 text-sm">
-                <div class="flex justify-between"><span class="text-navy-500">Owner</span><span class="font-medium">{{ $salary->owner->name }}</span></div>
+                <div class="flex justify-between"><span class="text-navy-500">Owner</span><span class="font-medium">{{ $salary->owner?->name }}</span></div>
                 <div class="flex justify-between"><span class="text-navy-500">Status</span><span class="font-medium capitalize">{{ $salary->status }}</span></div>
                 @if($salary->invoice)
                 <div class="flex justify-between"><span class="text-navy-500">Invoice</span><a href="{{ route('invoices.show', $salary->invoice) }}" class="font-medium text-sky-600">{{ $salary->invoice->invoice_number }}</a></div>

@@ -65,43 +65,46 @@ class TripReportController extends Controller
     {
         $request->validate([
             'rental_id'         => 'required|exists:rentals,id',
-            'start_km'          => 'required|integer|min:0',
-            'end_km'            => 'required|integer|min:0|gt:start_km',
-            'start_time'        => 'required|date',
-            'end_time'          => 'required|date|after:start_time',
+            'start_odometer'    => 'required|numeric|min:0',
+            'end_odometer'      => 'required|numeric|min:0|gt:start_odometer',
+            'fuel_used'         => 'nullable|numeric|min:0',
             'fuel_cost'         => 'nullable|numeric|min:0',
             'toll_cost'         => 'nullable|numeric|min:0',
             'parking_cost'      => 'nullable|numeric|min:0',
             'other_cost'        => 'nullable|numeric|min:0',
-            'route_description' => 'nullable|string|max:1000',
-            'incidents'         => 'nullable|string|max:1000',
+            'notes'             => 'nullable|string|max:1000',
+            'issues_reported'   => 'nullable|string|max:1000',
+            'photo_front'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo_rear'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo_right'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo_left'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         try {
             $rental = Rental::with('driver')->findOrFail($request->rental_id);
 
-            $totalKm = $request->end_km - $request->start_km;
+            $totalDistance = $request->end_odometer - $request->start_odometer;
             $totalCost = ($request->fuel_cost ?? 0)
                 + ($request->toll_cost ?? 0)
                 + ($request->parking_cost ?? 0)
                 + ($request->other_cost ?? 0);
 
             $tripReport = TripReport::create([
-                'rental_id'         => $rental->id,
-                'driver_id'         => $rental->driver_id,
-                'start_km'          => $request->start_km,
-                'end_km'            => $request->end_km,
-                'total_km'          => $totalKm,
-                'start_time'        => $request->start_time,
-                'end_time'          => $request->end_time,
-                'fuel_cost'         => $request->fuel_cost ?? 0,
-                'toll_cost'         => $request->toll_cost ?? 0,
-                'parking_cost'      => $request->parking_cost ?? 0,
-                'other_cost'        => $request->other_cost ?? 0,
-                'total_cost'        => $totalCost,
-                'route_description' => $request->route_description,
-                'incidents'         => $request->incidents,
-                'status'            => 'submitted',
+                'booking_id'              => $rental->booking_id ?? null,
+                'driver_id'               => $rental->driver_id,
+                'vehicle_id'              => $rental->vehicle_id,
+                'start_odometer'          => $request->start_odometer,
+                'end_odometer'            => $request->end_odometer,
+                'total_distance'          => $totalDistance,
+                'fuel_used'               => $request->fuel_used,
+                'fuel_cost'               => $request->fuel_cost ?? 0,
+                'toll_cost'               => $request->toll_cost ?? 0,
+                'parking_cost'            => $request->parking_cost ?? 0,
+                'other_cost'              => $request->other_cost ?? 0,
+                'total_operational_cost'  => $totalCost,
+                'notes'                   => $request->notes,
+                'issues_reported'         => $request->issues_reported,
+                'status'                  => 'submitted',
             ]);
 
             return redirect()->route('trip-reports.show', $tripReport->id)

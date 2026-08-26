@@ -8,6 +8,7 @@ use App\Models\Vehicle;
 use App\Services\VehicleSwapService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -133,15 +134,6 @@ class RentalController extends Controller
                 'success' => true,
                 'message' => 'Rental created successfully',
                 'data' => $rental,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Rental created successfully',
-                'data' => [
-                    'rental' => $rental,
-                    'invoice' => $invoice,
-                ],
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();

@@ -121,13 +121,13 @@
                         @else <span class="inline-flex items-center gap-1"><i class="fas fa-file text-gray-400"></i> Lainnya</span>
                         @endif
                     </td>
-                    <td class="py-3 px-5 text-navy-700">{{ $inv->user->name }}</td>
+                    <td class="py-3 px-5 text-navy-700">{{ $inv->user?->name }}</td>
                     @else
                     <td class="py-3 px-5">
                         <div>
                             <span class="text-navy-700 font-medium">{{ $inv->booking->booking_code ?? '-' }}</span>
                             @if($inv->booking)
-                            <p class="text-[11px] text-gray-400">{{ $inv->booking->vehicle->name ?? $inv->booking->category->name ?? '-' }}</p>
+                            <p class="text-[11px] text-gray-400">{{ $inv->booking->vehicle?->name ?? $inv->booking->category?->name ?? '-' }}</p>
                             @endif
                         </div>
                     </td>

@@ -11,7 +11,7 @@ class Maintenance extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'title', 'description', 'vehicle_id', 'scheduled_date', 'completed_date',
+        'maintenance_code', 'title', 'description', 'vehicle_id', 'scheduled_date', 'completed_date',
         'type', 'status', 'priority', 'estimated_cost', 'actual_cost',
         'technician', 'notes', 'created_by',
     ];

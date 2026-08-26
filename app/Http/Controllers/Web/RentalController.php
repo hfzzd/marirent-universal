@@ -91,13 +91,13 @@ class RentalController extends Controller
             $endDate = \Carbon\Carbon::parse($request->end_date);
             $totalDays = max(1, $startDate->diffInDays($endDate));
 
-            $dailyRate = $vehicle->daily_rate;
+            $dailyRate = $vehicle->daily_price;
             $subtotal = $dailyRate * $totalDays;
             $driverFee = 0;
 
             if ($request->boolean('with_driver') && $request->filled('driver_id')) {
                 $driver = Driver::findOrFail($request->driver_id);
-                $driverFee = $driver->daily_rate * $totalDays;
+                $driverFee = $driver->daily_salary * $totalDays;
             }
 
             $tax = $subtotal * 0.11;
@@ -203,13 +203,13 @@ class RentalController extends Controller
             $endDate = \Carbon\Carbon::parse($request->end_date);
             $totalDays = max(1, $startDate->diffInDays($endDate));
 
-            $dailyRate = $vehicle->daily_rate;
+            $dailyRate = $vehicle->daily_price;
             $subtotal = $dailyRate * $totalDays;
             $driverFee = 0;
 
             if ($request->boolean('with_driver') && $request->filled('driver_id')) {
                 $driver = Driver::findOrFail($request->driver_id);
-                $driverFee = $driver->daily_rate * $totalDays;
+                $driverFee = $driver->daily_salary * $totalDays;
             }
 
             $tax = $subtotal * 0.11;

@@ -1,5 +1,5 @@
 @extends('layouts.dashboard')
-@section('page-title', 'Edit Driver - ' . $driver->user->name)
+@section('page-title', 'Edit Driver - ' . $driver->user?->name)
 @section('content')
 <div class="max-w-2xl">
     <a href="{{ route('drivers.index') }}" class="text-sky-600 text-sm mb-4 inline-block"><i class="fas fa-arrow-left mr-1"></i> Kembali</a>

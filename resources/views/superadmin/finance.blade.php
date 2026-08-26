@@ -142,7 +142,7 @@
                         @elseif($inv->type == 'damage') Kerusakan
                         @else Lainnya @endif
                     </td>
-                    <td class="py-3 px-5 text-navy-700">{{ $inv->user->name }}</td>
+                    <td class="py-3 px-5 text-navy-700">{{ $inv->user?->name }}</td>
                     <td class="py-3 px-5 text-right font-bold text-navy-800">Rp {{ number_format($inv->total_amount, 0, ',', '.') }}</td>
                     <td class="py-3 px-5 text-center">
                         @if($inv->status == 'paid') <span class="badge badge-green">Lunas</span>
