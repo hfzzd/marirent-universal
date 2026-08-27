@@ -15,7 +15,7 @@ class InvoiceWebController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['booking', 'booking.vehicle', 'booking.category', 'user', 'items']);
+        $query = Invoice::with(['booking', 'booking.vehicle', 'booking.vehicle.category', 'booking.category', 'user', 'items']);
 
         if (Auth::user()->role === 'user') {
             $query->where('user_id', Auth::id());

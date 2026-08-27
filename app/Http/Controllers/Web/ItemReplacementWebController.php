@@ -37,6 +37,15 @@ class ItemReplacementWebController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('booking', fn($b) => $b->where('booking_code', 'like', "%{$search}%"))
+                    ->orWhereHas('originalItem', fn($i) => $i->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('replacementItem', fn($i) => $i->where('name', 'like', "%{$search}%"));
+            });
+        }
+
         $replacements = $query->latest()->paginate(15);
 
         return view('item-replacements.index', compact('replacements'));
@@ -181,5 +190,31 @@ class ItemReplacementWebController extends Controller
 
         $replacement->update(['status' => 'rejected', 'approved_by' => Auth::id()]);
         return back()->with('success', 'Permintaan ditolak');
+    }
+
+    public function returnItem(Request $request, ItemReplacement $replacement)
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'condition_notes' => 'required|string|max:2000',
+            'condition_rating' => 'required|integer|min:1|max:10',
+            'is_damaged' => 'nullable|in:0,1',
+            'damage_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $replacement->update([
+            'return_notes' => $validated['condition_notes'],
+            'return_condition' => $validated['condition_rating'],
+            'is_returned' => true,
+            'returned_at' => now(),
+            'returned_by' => Auth::id(),
+            'is_damaged' => $validated['is_damaged'] ?? false,
+            'damage_notes' => $validated['damage_notes'] ?? null,
+        ]);
+
+        return back()->with('success', 'Pengembalian unit berhasil dicatat');
     }
 }

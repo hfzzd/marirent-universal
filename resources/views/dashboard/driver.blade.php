@@ -47,6 +47,24 @@
             </p>
         </div>
         <div class="flex items-center gap-3">
+            @php
+                $todayAtt = \App\Models\Attendance::where('driver_id', $driver->id)->where('date', now()->toDateString())->first();
+            @endphp
+            @if(!$todayAtt || $todayAtt->status === 'absent')
+            <form method="POST" action="{{ route('attendance.check-in') }}">
+                @csrf
+                <button class="bg-emerald-500 text-white hover:bg-emerald-600 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-2">
+                    <i class="fas fa-fingerprint"></i> Absen Masuk
+                </button>
+            </form>
+            @elseif($todayAtt->isCheckedin())
+            <form method="POST" action="{{ route('attendance.check-out') }}">
+                @csrf
+                <button class="bg-amber-500 text-white hover:bg-amber-600 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Absen Keluar
+                </button>
+            </form>
+            @endif
             <a href="{{ route('bookings.index') }}" class="bg-white text-navy-900 hover:bg-sky-50 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-2">
                 <i class="fas fa-calendar-check text-sky-600"></i> Jadwal Perjalanan
             </a>

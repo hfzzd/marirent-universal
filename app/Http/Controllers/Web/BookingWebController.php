@@ -9,6 +9,7 @@ use App\Models\Driver;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -127,6 +128,12 @@ class BookingWebController extends Controller
 
         $vehicle->update(['status' => 'reserved']);
 
+        // Notify superadmin and owner about new booking
+        $admins = User::whereIn('role', ['superadmin', 'owner'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\BookingCreated($booking));
+        }
+
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
     }
 
@@ -236,6 +243,12 @@ class BookingWebController extends Controller
         ]);
 
         $item->update(['status' => 'reserved']);
+
+        // Notify superadmin and owner about new item booking
+        $admins = User::whereIn('role', ['superadmin', 'owner'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\BookingCreated($booking));
+        }
 
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
     }
@@ -562,6 +575,13 @@ class BookingWebController extends Controller
             Driver::where('id', $driverId)->update(['status' => 'on_duty']);
         }
 
+        // Notify the customer about their new booking
+        if (isset($guestUser)) {
+            $guestUser->notify(new \App\Notifications\BookingCreated($booking));
+        } else {
+            $booking->user->notify(new \App\Notifications\BookingCreated($booking));
+        }
+
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking manual berhasil dibuat! Kode: ' . $booking->booking_code);
     }
 
@@ -661,10 +681,13 @@ class BookingWebController extends Controller
             return back()->with('error', 'Booking tidak dapat dikonfirmasi');
         }
 
+        $oldStatus = $booking->status;
         $booking->update(['status' => 'confirmed']);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'reserved']);
         }
+
+        $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'confirmed'));
 
         return back()->with('success', 'Booking berhasil dikonfirmasi');
     }
@@ -675,6 +698,7 @@ class BookingWebController extends Controller
             return back()->with('error', 'Booking tidak dapat dibatalkan');
         }
 
+        $oldStatus = $booking->status;
         $booking->update(['status' => 'cancelled']);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'available']);
@@ -683,6 +707,8 @@ class BookingWebController extends Controller
             $item = $booking->item_type::find($booking->item_id);
             if ($item) $item->update(['status' => 'available']);
         }
+
+        $booking->user->notify(new \App\Notifications\BookingCancelled($booking));
 
         return back()->with('success', 'Booking berhasil dibatalkan');
     }
@@ -693,6 +719,7 @@ class BookingWebController extends Controller
             return back()->with('error', 'Booking harus dikonfirmasi dulu');
         }
 
+        $oldStatus = $booking->status;
         $booking->update(['status' => 'ongoing', 'actual_start_date' => now()]);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'rented']);
@@ -701,6 +728,8 @@ class BookingWebController extends Controller
             $item = $booking->item_type::find($booking->item_id);
             if ($item) $item->update(['status' => 'rented']);
         }
+
+        $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'ongoing'));
 
         return back()->with('success', 'Perjalanan dimulai');
     }
@@ -711,6 +740,7 @@ class BookingWebController extends Controller
             return back()->with('error', 'Perjalanan belum dimulai');
         }
 
+        $oldStatus = $booking->status;
         $booking->update(['status' => 'completed', 'actual_end_date' => now()]);
         if ($booking->vehicle) {
             $booking->vehicle->update(['status' => 'available']);
@@ -723,6 +753,8 @@ class BookingWebController extends Controller
         if ($booking->driver_id) {
             \App\Models\Driver::where('id', $booking->driver_id)->update(['status' => 'off_duty']);
         }
+
+        $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'completed'));
 
         return back()->with('success', 'Perjalanan selesai');
     }

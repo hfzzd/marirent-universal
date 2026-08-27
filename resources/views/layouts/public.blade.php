@@ -62,6 +62,7 @@
                 <div class="hidden md:flex items-center gap-1">
                     <a href="{{ route('home') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('home') ? 'active' : '' }}">Beranda</a>
                     <a href="{{ route('about') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('about') ? 'active' : '' }}">Tentang Kami</a>
+                    <a href="{{ route('public.brands') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('public.brands') || request()->routeIs('public.brand') ? 'active' : '' }}">Brand</a>
                     <a href="{{ route('products') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('products') ? 'active' : '' }}">Produk</a>
                     <a href="{{ route('contact') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('contact') ? 'active' : '' }}">Kontak</a>
                 </div>
@@ -123,6 +124,7 @@
             <div class="px-4 py-3 space-y-1">
                 <a href="{{ route('home') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Beranda</a>
                 <a href="{{ route('about') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Tentang Kami</a>
+                <a href="{{ route('public.brands') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Brand</a>
                 <a href="{{ route('products') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Produk</a>
                 <a href="{{ route('contact') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Kontak</a>
                 @auth
@@ -182,6 +184,7 @@
                     <ul class="space-y-2.5 text-gray-400 text-[13px]">
                         <li><a href="{{ route('home') }}" class="hover:text-sky-400 transition">Beranda</a></li>
                         <li><a href="{{ route('about') }}" class="hover:text-sky-400 transition">Tentang Kami</a></li>
+                        <li><a href="{{ route('public.brands') }}" class="hover:text-sky-400 transition">Brand</a></li>
                         <li><a href="{{ route('products') }}" class="hover:text-sky-400 transition">Produk</a></li>
                         <li><a href="{{ route('contact') }}" class="hover:text-sky-400 transition">Kontak</a></li>
                     </ul>

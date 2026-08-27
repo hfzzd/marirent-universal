@@ -22,6 +22,10 @@ use App\Http\Controllers\Web\ContactDirectoryWebController;
 use App\Http\Controllers\Web\MaintenanceController;
 use App\Http\Controllers\Web\OwnerRevenueController;
 
+use App\Http\Controllers\Web\AttendanceWebController;
+use App\Http\Controllers\Web\NotificationWebController;
+use App\Http\Controllers\Web\BrandCatalogPhotoController;
+
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
 Route::get('/produk', [PublicController::class, 'products'])->name('products');
@@ -29,6 +33,8 @@ Route::get('/kontak', [PublicController::class, 'contact'])->name('contact');
 Route::post('/kontak', [ContactWebController::class, 'submit'])->name('contact.submit');
 Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.vehicle');
 Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('public.item');
+Route::get('/brands', [PublicController::class, 'brands'])->name('public.brands');
+Route::get('/brand/{type}/{brand}', [PublicController::class, 'brand'])->name('public.brand');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -45,6 +51,14 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
 
 // Communication Routes (Mail, Chat, Contacts)
 Route::middleware('auth')->group(function () {
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationWebController::class, 'index'])->name('notifications.index');
+        Route::post('/{id}/read', [NotificationWebController::class, 'markAsRead'])->name('notifications.mark-read');
+        Route::post('/read-all', [NotificationWebController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::get('/unread-count', [NotificationWebController::class, 'unreadCount'])->name('notifications.unread-count');
+    });
+
     // Mail Inbox
     Route::prefix('mail')->group(function () {
         Route::get('/', [MailWebController::class, 'index'])->name('mail.index');
@@ -88,6 +102,18 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::get('/elektronik/{type}/{id}/edit', [ElektronikController::class, 'edit'])->name('superadmin.elektronik.edit');
     Route::put('/elektronik/{type}/{id}', [ElektronikController::class, 'update'])->name('superadmin.elektronik.update');
     Route::delete('/elektronik/{type}/{id}', [ElektronikController::class, 'destroy'])->name('superadmin.elektronik.destroy');
+});
+
+// Brand Catalog Routes (superadmin CRUD, owner can edit)
+Route::middleware(['auth', 'role:superadmin,owner'])->prefix('admin/brand-catalog')->group(function () {
+    Route::get('/', [BrandCatalogPhotoController::class, 'index'])->name('admin.brand-catalog.index');
+    Route::get('/create', [BrandCatalogPhotoController::class, 'create'])->name('admin.brand-catalog.create');
+    Route::post('/', [BrandCatalogPhotoController::class, 'store'])->name('admin.brand-catalog.store');
+    Route::get('/{brandCatalogPhoto}/edit', [BrandCatalogPhotoController::class, 'edit'])->name('admin.brand-catalog.edit');
+    Route::put('/{brandCatalogPhoto}', [BrandCatalogPhotoController::class, 'update'])->name('admin.brand-catalog.update');
+    Route::delete('/{brandCatalogPhoto}', [BrandCatalogPhotoController::class, 'destroy'])->name('admin.brand-catalog.destroy');
+    Route::post('/{brandCatalogPhoto}/toggle-active', [BrandCatalogPhotoController::class, 'toggleActive'])->name('admin.brand-catalog.toggle');
+    Route::delete('/brand', [BrandCatalogPhotoController::class, 'destroyBrand'])->name('admin.brand-catalog.destroy-brand');
 });
 
 // Owner Elektronik Routes
@@ -148,6 +174,13 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('drivers')->group(f
     Route::delete('/{driver}', [DriverWebController::class, 'destroy'])->name('drivers.destroy');
 });
 
+// Attendance Routes
+Route::middleware('auth')->prefix('attendance')->group(function () {
+    Route::get('/', [AttendanceWebController::class, 'index'])->name('attendance.index');
+    Route::post('/check-in', [AttendanceWebController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('/check-out', [AttendanceWebController::class, 'checkOut'])->name('attendance.check-out');
+});
+
 Route::middleware('auth')->prefix('invoices')->group(function () {
     Route::get('/', [InvoiceWebController::class, 'index'])->name('invoices.index');
     Route::get('/create', [InvoiceWebController::class, 'create'])->name('invoices.create');
@@ -187,8 +220,10 @@ Route::middleware('auth')->prefix('replacements')->group(function () {
     Route::get('/', [ReplacementWebController::class, 'index'])->name('replacements.index');
     Route::get('/create', [ReplacementWebController::class, 'create'])->name('replacements.create');
     Route::post('/', [ReplacementWebController::class, 'store'])->name('replacements.store');
+    Route::get('/{replacement}', [ReplacementWebController::class, 'show'])->name('replacements.show');
     Route::post('/{replacement}/approve', [ReplacementWebController::class, 'approve'])->name('replacements.approve');
     Route::post('/{replacement}/reject', [ReplacementWebController::class, 'reject'])->name('replacements.reject');
+    Route::post('/{replacement}/update-status', [ReplacementWebController::class, 'updateStatus'])->name('replacements.update-status');
 });
 
 // Item Replacement Routes (Electronics)
@@ -198,6 +233,7 @@ Route::middleware('auth')->prefix('item-replacements')->group(function () {
     Route::post('/', [ItemReplacementWebController::class, 'store'])->name('item-replacements.store');
     Route::post('/{replacement}/approve', [ItemReplacementWebController::class, 'approve'])->name('item-replacements.approve');
     Route::post('/{replacement}/reject', [ItemReplacementWebController::class, 'reject'])->name('item-replacements.reject');
+    Route::post('/{replacement}/return', [ItemReplacementWebController::class, 'returnItem'])->name('item-replacements.return');
 });
 
 // Maintenance Routes

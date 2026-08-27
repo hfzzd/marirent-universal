@@ -63,12 +63,6 @@ class DemoSeeder extends Seeder
         $kameraCat = Category::where('slug', 'sewa-kamera')->first();
         $tendaCat = Category::where('slug', 'sewa-tenda')->first();
 
-        $vehicles = Vehicle::where('category_id', $mobil->id)->get();
-        $motorVehicles = Vehicle::where('category_id', $motor->id)->get();
-        $phones = Phone::all();
-        $cameras = Camera::all();
-        $camping = CampingEquipment::all();
-
         // ── Extra Vehicles (more variety) ──────────────────────────
         Vehicle::create([
             'category_id' => $motor->id, 'owner_id' => $owner->id,
@@ -81,6 +75,15 @@ class DemoSeeder extends Seeder
         ]);
         Vehicle::create([
             'category_id' => $mobil->id, 'owner_id' => $owner->id,
+            'name' => 'Toyota Avanza Veloz', 'slug' => 'toyota-avanza-veloz-2023',
+            'brand' => 'Toyota', 'model' => 'Avanza Veloz', 'year' => 2023, 'color' => 'Putih',
+            'license_plate' => 'B 2222 BBB', 'description' => 'Toyota Avanza Veloz, MPV nyaman untuk keluarga.',
+            'daily_price' => 350000, 'weekly_price' => 2200000, 'monthly_price' => 8000000, 'hourly_price' => 50000,
+            'status' => 'available', 'condition' => 'good', 'seats' => 7,
+            'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'is_active' => true,
+        ]);
+        Vehicle::create([
+            'category_id' => $mobil->id, 'owner_id' => $owner->id,
             'name' => 'Toyota Fortuner VRZ', 'slug' => 'toyota-fortuner-vrz-2023',
             'brand' => 'Toyota', 'model' => 'Fortuner VRZ', 'year' => 2023, 'color' => 'Hitam',
             'license_plate' => 'B 4444 DDD', 'description' => 'Toyota Fortuner VRZ, SUV premium untuk perjalanan mewah.',
@@ -89,6 +92,12 @@ class DemoSeeder extends Seeder
             'status' => 'available', 'condition' => 'excellent', 'seats' => 7,
             'transmission' => 'automatic', 'fuel_type' => 'diesel', 'with_driver' => true, 'is_active' => true,
         ]);
+
+        $vehicles = Vehicle::where('category_id', $mobil->id)->get();
+        $motorVehicles = Vehicle::where('category_id', $motor->id)->get();
+        $phones = Phone::all();
+        $cameras = Camera::all();
+        $camping = CampingEquipment::all();
 
         $allVehicles = Vehicle::all();
 
@@ -183,7 +192,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => null,
                 'driver_id' => null,
                 'category_id' => $hpCat->id,
-                'item_type' => Phone::class,
+                'item_type' => 'phone',
                 'item_id' => $phone->id,
                 'rental_type' => 'daily',
                 'start_date' => $start, 'end_date' => $end,
@@ -213,7 +222,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => null,
                 'driver_id' => null,
                 'category_id' => $kameraCat->id,
-                'item_type' => Camera::class,
+                'item_type' => 'camera',
                 'item_id' => $cam->id,
                 'rental_type' => 'daily',
                 'start_date' => $start, 'end_date' => $end,
@@ -243,7 +252,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => null,
                 'driver_id' => null,
                 'category_id' => $tendaCat->id,
-                'item_type' => CampingEquipment::class,
+                'item_type' => 'camping',
                 'item_id' => $cp->id,
                 'rental_type' => 'daily',
                 'start_date' => $start, 'end_date' => $end,
@@ -417,7 +426,8 @@ class DemoSeeder extends Seeder
             Review::create([
                 'booking_id' => $b->id,
                 'user_id' => $b->user_id,
-                'vehicle_id' => $b->vehicle_id,
+                'item_type' => 'App\Models\Vehicle',
+                'item_id' => $b->vehicle_id,
                 'rating' => $rating,
                 'comment' => $reviewComments[$rating] ?? 'Good service.',
                 'is_visible' => true,
@@ -425,18 +435,71 @@ class DemoSeeder extends Seeder
         }
 
         // ── Vehicle Replacements ───────────────────────────────────
-        if (count($bookings) >= 4) {
-            $ogVehicles = Vehicle::where('category_id', $mobil->id)->get();
-            if ($ogVehicles->count() >= 2) {
+        $ogVehicles = Vehicle::where('category_id', $mobil->id)->get();
+        if ($ogVehicles->count() >= 2 && count($bookings) >= 4) {
+            // 1. User (customer) meminta penggantian
+            VehicleReplacement::create([
+                'booking_id' => $bookings[3]->id,
+                'original_vehicle_id' => $ogVehicles[0]->id,
+                'replacement_vehicle_id' => $ogVehicles[1]->id,
+                'requested_by' => $customer->id,
+                'approved_by' => $owner->id,
+                'status' => 'approved',
+                'reason' => 'Kendaraan awal mengalami masalah mesin ringan saat perjalanan',
+                'admin_notes' => 'Disetujui, unit pengganti sudah disiapkan',
+                'price_difference' => 0,
+            ]);
+
+            // 2. Driver meminta penggantian (booking dengan driver)
+            if ($firstDriver && count($bookings) >= 1) {
                 VehicleReplacement::create([
-                    'booking_id' => $bookings[3]->id,
-                    'original_vehicle_id' => $ogVehicles[0]->id,
-                    'replacement_vehicle_id' => $ogVehicles[1]->id,
-                    'requested_by' => $customer->id,
+                    'booking_id' => $bookings[0]->id,
+                    'original_vehicle_id' => $ogVehicles->skip(2)->first()?->id ?? $ogVehicles[0]->id,
+                    'replacement_vehicle_id' => $ogVehicles->first()->id,
+                    'requested_by' => $firstDriver->user_id,
                     'approved_by' => $owner->id,
                     'status' => 'approved',
-                    'reason' => 'Kendaraan awal mengalami masalah mesin ringan saat perjalanan',
-                    'admin_notes' => 'Disetujui, unit pengganti sudah disiapkan',
+                    'reason' => 'AC kendaraan tidak berfungsi dengan baik di tengah perjalanan',
+                    'admin_notes' => 'Disetujui, unit diganti untuk kenyamanan pelanggan',
+                    'price_difference' => 0,
+                ]);
+            }
+
+            // 3. User lain mengajukan - pending (create second user if needed)
+            if (count($bookings) >= 7) {
+                $secondCustomer = User::where('role', 'user')->where('id', '!=', $customer->id)->first();
+                if (!$secondCustomer) {
+                    $secondCustomer = User::create([
+                        'name' => 'Budi Santoso',
+                        'email' => 'user2@marirent.com',
+                        'password' => Hash::make('password'),
+                        'role' => 'user',
+                        'phone' => '081555666777',
+                        'is_active' => true,
+                    ]);
+                }
+                VehicleReplacement::create([
+                    'booking_id' => $bookings[6]->id,
+                    'original_vehicle_id' => $ogVehicles[1]->id,
+                    'replacement_vehicle_id' => $ogVehicles->skip(3)->first()?->id ?? $ogVehicles[0]->id,
+                    'requested_by' => $secondCustomer->id,
+                    'status' => 'pending',
+                    'reason' => 'Minta kendaraan yang lebih baru untuk perjalanan dinas',
+                    'price_difference' => 50000,
+                ]);
+            }
+
+            // 4. Driver lain mengajukan - ditolak
+            if ($ogVehicles->count() >= 3 && count($bookings) >= 3 && count($driverUsers) >= 1) {
+                VehicleReplacement::create([
+                    'booking_id' => $bookings[2]->id,
+                    'original_vehicle_id' => $ogVehicles[0]->id,
+                    'replacement_vehicle_id' => $ogVehicles[2]->id,
+                    'requested_by' => $driverUsers[0]->id,
+                    'approved_by' => $owner->id,
+                    'status' => 'rejected',
+                    'reason' => 'Ban kendaraan aus dan perlu diganti',
+                    'admin_notes' => 'Ditolak, kendaraan masih dalam kondisi layak jalan',
                     'price_difference' => 0,
                 ]);
             }

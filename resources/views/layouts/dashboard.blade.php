@@ -73,6 +73,9 @@
                 <a href="{{ route('superadmin.elektronik.type', 'kamera') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.elektronik*') ? 'active' : '' }}">
                     <i class="fas fa-camera w-5 mr-2.5 text-sm"></i> Elektronik & Alat
                 </a>
+                <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
+                    <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
+                </a>
 
                 <div class="sidebar-group-title mt-4">Keuangan</div>
                 <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
@@ -121,6 +124,9 @@
                 <a href="{{ route('owner.elektronik.type', 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*') ? 'active' : '' }}">
                     <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> HP, Kamera & Alat
                 </a>
+                <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
+                    <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
+                </a>
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
                     <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
                 </a>
@@ -152,6 +158,10 @@
                 </a>
 
                 @elseif($role === 'driver')
+                <div class="sidebar-group-title mt-4">Absensi</div>
+                <a href="{{ route('attendance.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
+                    <i class="fas fa-fingerprint w-5 mr-2.5 text-sm"></i> Absen
+                </a>
                 <div class="sidebar-group-title mt-4">Menu</div>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Perjalanan
@@ -222,6 +232,32 @@
                     <h1 class="text-[15px] font-semibold text-navy-800 hidden md:block">@yield('page-title', 'Dashboard')</h1>
                 </div>
                 <div class="flex items-center gap-3">
+                    {{-- Notification Bell --}}
+                    <div class="relative" x-data="{ notifOpen: false, notifCount: 0 }" x-init="
+                        fetch('{{ route('notifications.unread-count') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                            .then(r => r.json()).then(d => notifCount = d.count);
+                        setInterval(() => {
+                            fetch('{{ route('notifications.unread-count') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                                .then(r => r.json()).then(d => notifCount = d.count);
+                        }, 30000);
+                    ">
+                        <a href="{{ route('notifications.index') }}" class="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-sky-50 transition" @click.prevent="notifOpen = !notifOpen">
+                            <i class="fas fa-bell text-navy-500 text-sm"></i>
+                            <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak></span>
+                        </a>
+                        <div x-show="notifOpen" @click.away="notifOpen = false" x-transition class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
+                            <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+                                <span class="text-[13px] font-bold text-navy-800">Notifikasi</span>
+                                <a href="{{ route('notifications.index') }}" class="text-[11px] text-sky-600 hover:text-sky-700 font-semibold">Lihat Semua</a>
+                            </div>
+                            <div class="max-h-72 overflow-y-auto" id="notif-dropdown-list">
+                                <div class="px-4 py-6 text-center text-gray-400 text-[12px]">
+                                    <i class="fas fa-bell-slash text-gray-300 mb-1"></i><br>Memuat notifikasi...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="relative" x-data="{ open: false }">
                         <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="flex items-center gap-2.5 hover:bg-sky-50 rounded-xl px-2.5 py-1.5 transition">
                             <div class="w-8 h-8 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-md shadow-sky-500/20">
@@ -317,5 +353,42 @@
     </script>
 
     @stack('scripts')
+    <script>
+        // Notification dropdown fetcher
+        document.addEventListener('DOMContentLoaded', function() {
+            const notifList = document.getElementById('notif-dropdown-list');
+            if (notifList) {
+                fetch('{{ route("notifications.index") }}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
+                }).then(r => r.text()).then(html => {
+                    // Parse and extract notification items from the HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const cards = doc.querySelectorAll('.glass-card');
+                    if (cards.length === 0) {
+                        notifList.innerHTML = '<div class="px-4 py-6 text-center text-gray-400 text-[12px]"><i class="fas fa-bell-slash text-gray-300 mb-1"></i><br>Belum ada notifikasi</div>';
+                        return;
+                    }
+                    notifList.innerHTML = '';
+                    cards.forEach((card, i) => {
+                        if (i >= 5) return; // Show max 5 in dropdown
+                        const title = card.querySelector('h4')?.textContent || '';
+                        const msg = card.querySelector('p')?.textContent || '';
+                        const time = card.querySelector('.whitespace-nowrap')?.textContent || '';
+                        const link = card.querySelector('a[href*="bookings"]')?.href || '#';
+                        const unread = card.querySelector('.bg-sky-500') !== null;
+                        notifList.innerHTML += '<a href="' + link + '" class="block px-4 py-3 hover:bg-sky-50 transition border-b border-gray-50 last:border-0">' +
+                            '<div class="flex items-start gap-2">' +
+                            (unread ? '<span class="w-2 h-2 rounded-full bg-sky-500 mt-1.5 flex-shrink-0"></span>' : '') +
+                            '<div class="min-w-0"><p class="text-[12px] font-semibold text-navy-800 truncate">' + title + '</p>' +
+                            '<p class="text-[11px] text-gray-500 truncate">' + msg + '</p>' +
+                            '<p class="text-[10px] text-gray-400 mt-0.5">' + time + '</p></div></div></a>';
+                    });
+                }).catch(() => {
+                    notifList.innerHTML = '<div class="px-4 py-6 text-center text-gray-400 text-[12px]">Gagal memuat notifikasi</div>';
+                });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -130,6 +130,23 @@
     </div>
 
     {{-- INFO BAR --}}
+    @if(request('brand') || request('model'))
+    <div class="bg-white rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm flex items-center gap-3 reveal">
+        <div class="w-8 h-8 bg-sky-50 rounded-lg flex items-center justify-center">
+            <i class="fas fa-filter text-sky-500 text-[11px]"></i>
+        </div>
+        <div class="flex-1">
+            <p class="text-[13px] font-medium text-navy-800">
+                @if(request('brand')) {{ request('brand') }} @endif
+                @if(request('model')) <span class="text-gray-400">·</span> {{ request('model') }} @endif
+            </p>
+            <p class="text-[11px] text-gray-400">Filtered dari <a href="{{ route('public.brands') }}" class="text-sky-500 hover:text-sky-600 font-medium">Brand</a></p>
+        </div>
+        <a href="{{ route('products') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-xl text-[11px] font-medium transition border border-red-100">
+            <i class="fas fa-times text-[9px]"></i> Hapus Filter
+        </a>
+    </div>
+    @endif
     <div class="flex items-center justify-between mb-6 reveal">
         <p class="text-[13px] text-gray-400">
             Menampilkan <span class="font-bold text-navy-800">{{ $products->count() }}</span> dari <span class="font-bold text-navy-800">{{ $products->total() }}</span> produk

@@ -42,8 +42,212 @@ class PublicController extends Controller
     public function products(Request $request)
     {
         $products = $this->getAllProducts($request, 12);
+        $brands = $this->getBrands();
 
-        return view('pages.products', ['products' => $products]);
+        return view('pages.products', ['products' => $products, 'brands' => $brands]);
+    }
+
+    public function brands()
+    {
+        $hiddenBrands = ['hp' => ['Nothing'], 'kamera' => ['RED'], 'tenda' => ['CAMP']];
+
+        $categories = [
+            'mobil' => [
+                'label' => 'Mobil', 'icon' => 'fa-car', 'slug' => 'mobil',
+                'color' => 'from-sky-500 to-blue-600', 'bg' => 'from-sky-50 to-blue-50',
+            ],
+            'motor' => [
+                'label' => 'Motor', 'icon' => 'fa-motorcycle', 'slug' => 'motor',
+                'color' => 'from-amber-500 to-orange-600', 'bg' => 'from-amber-50 to-orange-50',
+            ],
+            'hp' => [
+                'label' => 'Handphone', 'icon' => 'fa-mobile-alt', 'slug' => 'hp',
+                'color' => 'from-blue-500 to-indigo-600', 'bg' => 'from-blue-50 to-indigo-50',
+            ],
+            'kamera' => [
+                'label' => 'Kamera', 'icon' => 'fa-camera', 'slug' => 'kamera',
+                'color' => 'from-violet-500 to-purple-600', 'bg' => 'from-violet-50 to-purple-50',
+            ],
+            'tenda' => [
+                'label' => 'Alat Camping', 'icon' => 'fa-campground', 'slug' => 'tenda',
+                'color' => 'from-emerald-500 to-teal-600', 'bg' => 'from-emerald-50 to-teal-50',
+            ],
+        ];
+
+        $brandData = [];
+        $catalogPhotos = \App\Models\BrandCatalogPhoto::where('is_active', true)
+            ->orderBy('item_type')
+            ->orderBy('brand_name')
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('item_type');
+
+        foreach ($categories as $typeKey => $catConfig) {
+            $modelClass = match($typeKey) {
+                'mobil', 'motor' => Vehicle::class,
+                'hp' => Phone::class,
+                'kamera' => Camera::class,
+                'tenda' => CampingEquipment::class,
+            };
+
+            $query = $modelClass::where('is_active', true)->where('status', 'available');
+
+            if ($typeKey === 'mobil' || $typeKey === 'motor') {
+                $query->whereHas('category', fn($q) => $q->where('slug', $catConfig['slug']));
+            }
+
+            $brands = $query->selectRaw('brand, COUNT(*) as item_count, MIN(daily_price) as min_price')
+                ->whereNotNull('brand')
+                ->where('brand', '!=', '')
+                ->groupBy('brand')
+                ->orderBy('brand')
+                ->get();
+
+            $brands = $brands->reject(function ($b) use ($typeKey, $hiddenBrands) {
+                return in_array(strtolower($b->brand), array_map('strtolower', $hiddenBrands[$typeKey] ?? []));
+            })->values();
+
+            if ($brands->isNotEmpty()) {
+                $itemType = $typeKey === 'tenda' ? 'camping' : $typeKey;
+                $photosForType = $catalogPhotos->get($itemType, collect())->groupBy('brand_name');
+                $brandData[$typeKey] = [
+                    'config' => $catConfig,
+                    'brands' => $brands,
+                    'photos' => $photosForType,
+                ];
+            }
+        }
+
+        return view('pages.brands', ['brandData' => $brandData]);
+    }
+
+    public function brand(Request $request, string $type, string $brand)
+    {
+        $brandDecoded = urldecode($brand);
+        $validTypes = ['mobil', 'motor', 'hp', 'kamera', 'tenda'];
+
+        if (!in_array($type, $validTypes)) {
+            abort(404);
+        }
+
+        $config = match($type) {
+            'mobil' => ['model' => Vehicle::class, 'category_slug' => 'mobil', 'label' => 'Mobil', 'icon' => 'fa-car'],
+            'motor' => ['model' => Vehicle::class, 'category_slug' => 'motor', 'label' => 'Motor', 'icon' => 'fa-motorcycle'],
+            'hp' => ['model' => Phone::class, 'category_slug' => 'sewa-hp', 'label' => 'Handphone', 'icon' => 'fa-mobile-alt'],
+            'kamera' => ['model' => Camera::class, 'category_slug' => 'sewa-kamera', 'label' => 'Kamera', 'icon' => 'fa-camera'],
+            'tenda' => ['model' => CampingEquipment::class, 'category_slug' => 'sewa-tenda', 'label' => 'Alat Camping', 'icon' => 'fa-campground'],
+        };
+
+        $model = $config['model'];
+
+        $query = $model::with('category')
+            ->where('brand', $brandDecoded)
+            ->where('is_active', true)
+            ->where('status', 'available');
+
+        if ($type === 'mobil' || $type === 'motor') {
+            $query->whereHas('category', fn($q) => $q->where('slug', $config['category_slug']));
+        }
+
+        $products = $query->orderBy('daily_price')->get()->map(fn($item) => $this->normalizeItem($item, $type));
+
+        $otherBrands = $model::where('brand', '!=', $brandDecoded)
+            ->where('is_active', true)
+            ->where('status', 'available')
+            ->distinct()
+            ->pluck('brand')
+            ->filter()
+            ->sort()
+            ->values()
+            ->take(8);
+
+        $totalProducts = $products->count();
+
+        return view('pages.brand', [
+            'products' => $products,
+            'brand' => $brandDecoded,
+            'type' => $type,
+            'config' => $config,
+            'otherBrands' => $otherBrands,
+            'totalProducts' => $totalProducts,
+        ]);
+    }
+
+    private function normalizeItem($item, string $type): array
+    {
+        if ($type === 'mobil' || $type === 'motor') {
+            return [
+                'type' => 'vehicle',
+                'id' => $item->id,
+                'name' => $item->name,
+                'slug' => $item->slug,
+                'brand' => $item->brand,
+                'subtitle' => $item->model . ' ' . $item->year,
+                'daily_price' => (float) $item->daily_price,
+                'image' => $item->image,
+                'category_slug' => $item->category->slug ?? '',
+                'icon' => ($item->category->slug ?? '') == 'motor' ? 'fa-motorcycle' : 'fa-car',
+                'tags' => array_filter([
+                    $item->seats ? $item->seats . ' Kursi' : null,
+                    $item->year,
+                    ucfirst($item->transmission),
+                    $item->with_driver ? 'Driver' : null,
+                ]),
+                'link' => route('public.vehicle', $item->slug),
+            ];
+        }
+
+        return [
+            'type' => $type,
+            'id' => $item->id,
+            'name' => $item->name,
+            'slug' => $item->slug,
+            'brand' => $item->brand,
+            'subtitle' => match ($type) {
+                'hp' => $item->phone_model,
+                'kamera' => $item->camera_model,
+                'tenda' => $item->equipment_model,
+                default => '-',
+            },
+            'daily_price' => (float) $item->daily_price,
+            'image' => $item->image,
+            'category_slug' => $item->category->slug ?? '',
+            'icon' => $this->getItemConfig($type)['icon'],
+            'tags' => array_filter([
+                $item->color ?? null,
+                match ($type) {
+                    'hp' => $item->storage_gb ? $item->storage_gb . 'GB' : null,
+                    'kamera' => $item->sensor_type ?? null,
+                    'tenda' => $item->equipment_type ?? null,
+                    default => null,
+                },
+            ]),
+            'link' => route('public.item', [$type, $item->slug]),
+        ];
+    }
+
+    public function getBrands(): array
+    {
+        $mobilBrands = Vehicle::where('is_active', true)->where('status', 'available')
+            ->whereHas('category', fn($q) => $q->where('slug', 'mobil'))
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+        $motorBrands = Vehicle::where('is_active', true)->where('status', 'available')
+            ->whereHas('category', fn($q) => $q->where('slug', 'motor'))
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+        $hpBrands = Phone::where('is_active', true)->where('status', 'available')
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+        $cameraBrands = Camera::where('is_active', true)->where('status', 'available')
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+        $campingBrands = CampingEquipment::where('is_active', true)->where('status', 'available')
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+
+        return [
+            'mobil' => $mobilBrands,
+            'motor' => $motorBrands,
+            'hp' => $hpBrands,
+            'kamera' => $cameraBrands,
+            'tenda' => $campingBrands,
+        ];
     }
 
     public function contact()
@@ -157,6 +361,20 @@ class PublicController extends Controller
             $phoneQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
             $cameraQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
             $campingQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
+        }
+
+        if ($request->brand) {
+            $vehicleQuery->where('brand', $request->brand);
+            $phoneQuery->where('brand', $request->brand);
+            $cameraQuery->where('brand', $request->brand);
+            $campingQuery->where('brand', $request->brand);
+        }
+
+        if ($request->model) {
+            $vehicleQuery->where('model', $request->model);
+            $phoneQuery->where('phone_model', $request->model);
+            $cameraQuery->where('camera_model', $request->model);
+            $campingQuery->where('equipment_model', $request->model);
         }
 
         if ($request->search) {

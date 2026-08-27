@@ -40,7 +40,7 @@
 
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     {{-- Item --}}
-                    <div class="bg-sky-50/50 p-4 rounded-xl">
+                    <div class="bg-gradient-to-br from-sky-50/80 to-sky-100/40 p-4 rounded-xl border border-sky-100/60">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Barang / Kendaraan</p>
                         @if($booking->vehicle)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->vehicle->name }}</p>
@@ -54,14 +54,14 @@
                     </div>
 
                     {{-- Pengguna --}}
-                    <div class="bg-sky-50/50 p-4 rounded-xl">
+                    <div class="bg-gradient-to-br from-emerald-50/60 to-emerald-100/30 p-4 rounded-xl border border-emerald-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Pengguna</p>
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->user->name ?? '-' }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->user->email ?? '-' }}</p>
                     </div>
 
                     {{-- Tanggal --}}
-                    <div class="bg-sky-50/50 p-4 rounded-xl">
+                    <div class="bg-gradient-to-br from-amber-50/60 to-amber-100/30 p-4 rounded-xl border border-amber-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Tanggal Sewa</p>
                         <p class="font-medium text-navy-800 text-[14px]">{{ $booking->start_date->format('d M Y H:i') }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">s/d {{ $booking->end_date->format('d M Y H:i') }}</p>
@@ -69,7 +69,7 @@
                     </div>
 
                     {{-- Driver --}}
-                    <div class="bg-sky-50/50 p-4 rounded-xl">
+                    <div class="bg-gradient-to-br from-purple-50/60 to-purple-100/30 p-4 rounded-xl border border-purple-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Driver</p>
                         @if($booking->driver)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->driver->user->name ?? '-' }}</p>
@@ -110,22 +110,22 @@
                 <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
                     @if($booking->status == 'pending')
                     <form method="POST" action="{{ route('bookings.confirm', $booking) }}">@csrf
-                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-check"></i> Konfirmasi</button>
+                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md hover:shadow-emerald-500/20 active:scale-[0.97]"><i class="fas fa-check"></i> Konfirmasi</button>
                     </form>
                     @endif
                     @if($booking->status == 'confirmed')
                     <form method="POST" action="{{ route('bookings.start', $booking) }}">@csrf
-                        <button class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-play"></i> Mulai Perjalanan</button>
+                        <button class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md hover:shadow-sky-500/20 active:scale-[0.97]"><i class="fas fa-play"></i> Mulai Perjalanan</button>
                     </form>
                     @endif
                     @if($booking->status == 'ongoing')
                     <form method="POST" action="{{ route('bookings.complete', $booking) }}">@csrf
-                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-check-double"></i> Selesai</button>
+                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md hover:shadow-emerald-500/20 active:scale-[0.97]"><i class="fas fa-check-double"></i> Selesai</button>
                     </form>
                     @endif
                     @if(!in_array($booking->status, ['completed','cancelled']))
                     <form method="POST" action="{{ route('bookings.cancel', $booking) }}" onsubmit="return confirm('Yakin batalkan booking ini?')">@csrf
-                        <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-times"></i> Batalkan</button>
+                        <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md hover:shadow-red-500/20 active:scale-[0.97]"><i class="fas fa-times"></i> Batalkan</button>
                     </form>
                     @endif
                 </div>
@@ -283,7 +283,7 @@
 
         <div class="space-y-5">
             {{-- Ringkasan Biaya --}}
-            <div class="glass-card rounded-2xl p-6">
+            <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-white to-sky-50/30">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-4"><i class="fas fa-receipt text-sky-500 mr-2"></i>Ringkasan Biaya</h3>
                 <div class="space-y-3">
                     <div class="flex justify-between text-[13px]">
@@ -329,53 +329,58 @@
                 @endif
             </div>
 
-            {{-- Link Terkait --}}
+            {{-- Link Terkait (Admin/Owner only) --}}
+            @if(in_array(auth()->user()->role, ['superadmin','owner']))
             <div class="glass-card rounded-2xl p-6">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-3"><i class="fas fa-link text-sky-500 mr-2"></i>Link Terkait</h3>
                 <div class="space-y-2">
-                    <a href="{{ route('inspections.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition">
-                        <i class="fas fa-clipboard-check w-4"></i> Inspeksi
+                    <a href="{{ route('inspections.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
+                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-clipboard-check text-sky-600 text-[11px]"></i></span>
+                        Inspeksi
                     </a>
-                    <a href="{{ route('reports.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition">
-                        <i class="fas fa-route w-4"></i> Laporan Perjalanan
+                    <a href="{{ route('reports.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
+                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-route text-sky-600 text-[11px]"></i></span>
+                        Laporan Perjalanan
                     </a>
-                    <a href="{{ route('invoices.index') }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition">
-                        <i class="fas fa-file-invoice-dollar w-4"></i> Invoice
+                    <a href="{{ route('invoices.index') }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
+                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-file-invoice-dollar text-sky-600 text-[11px]"></i></span>
+                        Invoice
                     </a>
                 </div>
             </div>
+            @endif
 
             {{-- Timeline --}}
             <div class="glass-card rounded-2xl p-6">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-4"><i class="fas fa-clock text-sky-500 mr-2"></i>Timeline</h3>
-                <div class="space-y-4 relative">
-                    <div class="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-100"></div>
-                    <div class="flex items-start gap-3 relative">
-                        <div class="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center flex-shrink-0 z-10"><i class="fas fa-plus text-sky-500 text-[8px]"></i></div>
-                        <div><p class="text-[12px] font-medium text-navy-700">Booking Dibuat</p><p class="text-[11px] text-gray-400">{{ $booking->created_at->format('d M Y H:i') }}</p></div>
+                <div class="space-y-5 relative">
+                    <div class="absolute left-3.5 top-3 bottom-3 w-0.5 bg-gradient-to-b from-sky-200 via-emerald-200 to-gray-100"></div>
+                    <div class="flex items-start gap-3.5 relative">
+                        <div class="w-7 h-7 bg-gradient-to-br from-sky-400 to-sky-500 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-sm shadow-sky-500/20"><i class="fas fa-plus text-white text-[9px]"></i></div>
+                        <div class="pt-0.5"><p class="text-[12px] font-semibold text-navy-700">Booking Dibuat</p><p class="text-[11px] text-gray-400">{{ $booking->created_at->format('d M Y H:i') }}</p></div>
                     </div>
                     @if($booking->status !== 'pending')
-                    <div class="flex items-start gap-3 relative">
-                        <div class="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 z-10"><i class="fas fa-check text-emerald-500 text-[8px]"></i></div>
-                        <div><p class="text-[12px] font-medium text-navy-700">Dikonfirmasi</p></div>
+                    <div class="flex items-start gap-3.5 relative">
+                        <div class="w-7 h-7 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-sm shadow-emerald-500/20"><i class="fas fa-check text-white text-[9px]"></i></div>
+                        <div class="pt-0.5"><p class="text-[12px] font-semibold text-navy-700">Dikonfirmasi</p></div>
                     </div>
                     @endif
                     @if($booking->actual_start_date)
-                    <div class="flex items-start gap-3 relative">
-                        <div class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 z-10"><i class="fas fa-play text-amber-500 text-[8px]"></i></div>
-                        <div><p class="text-[12px] font-medium text-navy-700">Perjalanan Dimulai</p><p class="text-[11px] text-gray-400">{{ $booking->actual_start_date->format('d M Y H:i') }}</p></div>
+                    <div class="flex items-start gap-3.5 relative">
+                        <div class="w-7 h-7 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-sm shadow-amber-500/20"><i class="fas fa-play text-white text-[9px]"></i></div>
+                        <div class="pt-0.5"><p class="text-[12px] font-semibold text-navy-700">Perjalanan Dimulai</p><p class="text-[11px] text-gray-400">{{ $booking->actual_start_date->format('d M Y H:i') }}</p></div>
                     </div>
                     @endif
                     @if($booking->actual_end_date)
-                    <div class="flex items-start gap-3 relative">
-                        <div class="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 z-10"><i class="fas fa-flag-checkered text-emerald-500 text-[8px]"></i></div>
-                        <div><p class="text-[12px] font-medium text-navy-700">Selesai</p><p class="text-[11px] text-gray-400">{{ $booking->actual_end_date->format('d M Y H:i') }}</p></div>
+                    <div class="flex items-start gap-3.5 relative">
+                        <div class="w-7 h-7 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-sm shadow-emerald-500/20"><i class="fas fa-flag-checkered text-white text-[9px]"></i></div>
+                        <div class="pt-0.5"><p class="text-[12px] font-semibold text-navy-700">Selesai</p><p class="text-[11px] text-gray-400">{{ $booking->actual_end_date->format('d M Y H:i') }}</p></div>
                     </div>
                     @endif
                     @if($booking->status == 'cancelled')
-                    <div class="flex items-start gap-3 relative">
-                        <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 z-10"><i class="fas fa-times text-red-500 text-[8px]"></i></div>
-                        <div><p class="text-[12px] font-medium text-red-600">Dibatalkan</p></div>
+                    <div class="flex items-start gap-3.5 relative">
+                        <div class="w-7 h-7 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-sm shadow-red-500/20"><i class="fas fa-times text-white text-[9px]"></i></div>
+                        <div class="pt-0.5"><p class="text-[12px] font-semibold text-red-600">Dibatalkan</p></div>
                     </div>
                     @endif
                 </div>

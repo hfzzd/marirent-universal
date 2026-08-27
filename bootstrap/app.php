@@ -21,7 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (\Throwable $e) {
             $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
             if (in_array($status, [404, 500])) {
-                return response()->view('errors.' . $status, [], $status);
+                try {
+                    return response()->view('errors.' . $status, [], $status);
+                } catch (\Throwable $viewError) {
+                    return response()->plain("Error {$status}", $status);
+                }
             }
         });
     })->create();

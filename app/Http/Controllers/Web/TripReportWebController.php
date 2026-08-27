@@ -26,6 +26,14 @@ class TripReportWebController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('booking', fn($b) => $b->where('booking_code', 'like', "%{$search}%"))
+                    ->orWhereHas('vehicle', fn($v) => $v->where('name', 'like', "%{$search}%"));
+            });
+        }
+
         $reports = $query->latest()->paginate(15);
 
         return view('reports.index', compact('reports'));

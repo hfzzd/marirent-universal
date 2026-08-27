@@ -114,21 +114,59 @@
                     <td class="py-3 px-5 font-medium text-sky-600">{{ $inv->invoice_number }}</td>
                     @if(!$isUser)
                     <td class="py-3 px-5 text-[12px] text-navy-600">
-                        @if($inv->type == 'rental') <span class="inline-flex items-center gap-1"><i class="fas fa-car text-sky-400"></i> Sewa</span>
-                        @elseif($inv->type == 'driver_salary') <span class="inline-flex items-center gap-1"><i class="fas fa-id-card text-emerald-400"></i> Gaji</span>
-                        @elseif($inv->type == 'replacement') <span class="inline-flex items-center gap-1"><i class="fas fa-exchange-alt text-amber-400"></i> Penggantian</span>
-                        @elseif($inv->type == 'damage') <span class="inline-flex items-center gap-1"><i class="fas fa-tools text-red-400"></i> Kerusakan</span>
-                        @else <span class="inline-flex items-center gap-1"><i class="fas fa-file text-gray-400"></i> Lainnya</span>
-                        @endif
+                        @php
+                            $invCategory = $inv->booking?->vehicle?->category?->slug ?? $inv->booking?->category?->slug ?? null;
+                            $invTypeIcon = match($invCategory) {
+                                'mobil' => ['icon' => 'fa-car', 'color' => 'text-sky-500'],
+                                'motor' => ['icon' => 'fa-motorcycle', 'color' => 'text-amber-500'],
+                                'sewa-hp' => ['icon' => 'fa-mobile-alt', 'color' => 'text-blue-500'],
+                                'sewa-kamera' => ['icon' => 'fa-camera', 'color' => 'text-violet-500'],
+                                'sewa-tenda' => ['icon' => 'fa-campground', 'color' => 'text-emerald-500'],
+                                default => null,
+                            };
+                        @endphp
+                        <div class="flex items-center gap-1.5">
+                            @if($invTypeIcon)
+                            <span class="w-6 h-6 {{ str_replace('text-', 'bg-', $invTypeIcon['color']) }} bg-opacity-10 rounded flex items-center justify-center">
+                                <i class="fas {{ $invTypeIcon['icon'] }} {{ $invTypeIcon['color'] }} text-[10px]"></i>
+                            </span>
+                            @endif
+                            @if($inv->type == 'rental') <span>Sewa</span>
+                            @elseif($inv->type == 'driver_salary') <span>Gaji Driver</span>
+                            @elseif($inv->type == 'replacement') <span>Penggantian</span>
+                            @elseif($inv->type == 'damage') <span>Kerusakan</span>
+                            @else <span>Lainnya</span>
+                            @endif
+                        </div>
                     </td>
                     <td class="py-3 px-5 text-navy-700">{{ $inv->user?->name }}</td>
                     @else
                     <td class="py-3 px-5">
                         <div>
-                            <span class="text-navy-700 font-medium">{{ $inv->booking->booking_code ?? '-' }}</span>
-                            @if($inv->booking)
-                            <p class="text-[11px] text-gray-400">{{ $inv->booking->vehicle?->name ?? $inv->booking->category?->name ?? '-' }}</p>
-                            @endif
+                            @php
+                                $uInvCategory = $inv->booking?->vehicle?->category?->slug ?? $inv->booking?->category?->slug ?? null;
+                                $uInvTypeIcon = match($uInvCategory) {
+                                    'mobil' => ['icon' => 'fa-car', 'color' => 'text-sky-500'],
+                                    'motor' => ['icon' => 'fa-motorcycle', 'color' => 'text-amber-500'],
+                                    'sewa-hp' => ['icon' => 'fa-mobile-alt', 'color' => 'text-blue-500'],
+                                    'sewa-kamera' => ['icon' => 'fa-camera', 'color' => 'text-violet-500'],
+                                    'sewa-tenda' => ['icon' => 'fa-campground', 'color' => 'text-emerald-500'],
+                                    default => null,
+                                };
+                            @endphp
+                            <div class="flex items-center gap-2">
+                                @if($uInvTypeIcon)
+                                <span class="w-6 h-6 {{ str_replace('text-', 'bg-', $uInvTypeIcon['color']) }} bg-opacity-10 rounded flex items-center justify-center flex-shrink-0">
+                                    <i class="fas {{ $uInvTypeIcon['icon'] }} {{ $uInvTypeIcon['color'] }} text-[10px]"></i>
+                                </span>
+                                @endif
+                                <div>
+                                    <span class="text-navy-700 font-medium">{{ $inv->booking->booking_code ?? '-' }}</span>
+                                    @if($inv->booking)
+                                    <p class="text-[11px] text-gray-400">{{ $inv->booking->vehicle?->name ?? $inv->booking->category?->name ?? '-' }}</p>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </td>
                     @endif

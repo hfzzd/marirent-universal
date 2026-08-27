@@ -44,19 +44,7 @@
     $recentBookings = \App\Models\Booking::with(['user', 'vehicle', 'category'])->latest()->limit(6)->get();
     $driversOnTrip = \App\Models\Driver::with(['user', 'bookings' => fn($q) => $q->where('status','ongoing')->with('vehicle')])->where('status', 'on_trip')->limit(4)->get();
 
-    // Jadwal pembayaran terdekat
     $totalInspectors = \App\Models\User::where('role', 'inspector')->count();
-    $dueToday = \App\Models\Booking::whereIn('payment_status', ['unpaid', 'partial'])
-        ->whereDate('payment_due_date', today())->count();
-    $overduePayments = \App\Models\Booking::whereIn('payment_status', ['unpaid', 'partial'])
-        ->whereNotNull('payment_due_date')->whereDate('payment_due_date', '<', today())->count();
-    $upcomingPayments = \App\Models\Booking::with(['user', 'vehicle', 'category'])
-        ->whereIn('payment_status', ['unpaid', 'partial'])
-        ->whereNotNull('payment_due_date')
-        ->whereDate('payment_due_date', '>=', today())
-        ->orderBy('payment_due_date')
-        ->limit(5)
-        ->get();
 @endphp
 
 {{-- DAdmin Hero Welcome Banner --}}
@@ -234,48 +222,8 @@
     </div>
 </div>
 
-{{-- Secondary Row: Payment Scheduler, Fleet Status & Quick Actions --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    {{-- Payment Scheduler Mini --}}
-    <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm flex flex-col">
-        <div class="flex items-center justify-between mb-1">
-            <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
-                <i class="fas fa-calendar-days text-orange-500"></i> Jadwal Pembayaran
-            </h3>
-            @if($overduePayments > 0) <span class="badge badge-red">{{ $overduePayments }} Telat</span> @endif
-        </div>
-        <p class="text-[11px] text-gray-400 mb-4">Tagihan jatuh tempo terdekat.</p>
-
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <a href="{{ route('superadmin.monitoring') }}" class="bg-red-50 hover:bg-red-100 rounded-xl p-3 text-center transition">
-                <p class="text-lg font-black text-red-600">{{ $dueToday }}</p>
-                <p class="text-[10px] font-semibold text-red-500 uppercase">Jatuh Tempo Hari Ini</p>
-            </a>
-            <a href="{{ route('superadmin.monitoring') }}" class="bg-amber-50 hover:bg-amber-100 rounded-xl p-3 text-center transition">
-                <p class="text-lg font-black text-amber-600">{{ $overduePayments }}</p>
-                <p class="text-[10px] font-semibold text-amber-600 uppercase">Terlambat Bayar</p>
-            </a>
-        </div>
-
-        <div class="space-y-2.5 flex-1">
-            @forelse($upcomingPayments as $p)
-            <div class="flex items-center justify-between gap-2 bg-sky-50/50 rounded-xl px-3 py-2">
-                <div class="min-w-0">
-                    <p class="text-[12px] font-bold text-navy-800 truncate">{{ $p->vehicle?->name ?? ($p->category?->name ?? 'Unit Sewa') }}</p>
-                    <p class="text-[10px] text-gray-400 truncate">{{ $p->booking_code }} &bull; {{ \Carbon\Carbon::parse($p->payment_due_date)->translatedFormat('d M Y') }}</p>
-                </div>
-                <span class="text-[11px] font-bold text-navy-700 whitespace-nowrap">Rp {{ number_format($p->final_price, 0, ',', '.') }}</span>
-            </div>
-            @empty
-            <div class="text-center py-4 text-gray-300 text-xs">Belum ada tagihan terjadwal.</div>
-            @endforelse
-        </div>
-
-        <a href="{{ route('superadmin.monitoring') }}" class="mt-4 pt-3 border-t border-gray-100 text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center justify-between">
-            Buka Scheduler Pembayaran <i class="fas fa-arrow-right text-[10px]"></i>
-        </a>
-    </div>
-
+{{-- Secondary Row: Fleet Status & Quick Actions --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     {{-- Fleet Availability Tracker --}}
     <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm">
         <h3 class="text-sm font-extrabold text-navy-800 mb-1 flex items-center gap-2">
