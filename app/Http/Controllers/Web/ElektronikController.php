@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Camera;
 use App\Models\Phone;
 use App\Models\CampingEquipment;
+use App\Models\Playstation;
+use App\Models\Drone;
+use App\Models\MusicalInstrument;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,9 +19,7 @@ class ElektronikController extends Controller
     private function getType($type)
     {
         return match ($type) {
-            'kamera' => 'kamera',
-            'hp' => 'hp',
-            'tenda' => 'tenda',
+            'kamera', 'hp', 'tenda', 'ps', 'drone', 'musik' => $type,
             default => null,
         };
     }
@@ -29,6 +30,9 @@ class ElektronikController extends Controller
             'kamera' => new Camera(),
             'hp' => new Phone(),
             'tenda' => new CampingEquipment(),
+            'ps' => new Playstation(),
+            'drone' => new Drone(),
+            'musik' => new MusicalInstrument(),
             default => null,
         };
     }
@@ -39,6 +43,9 @@ class ElektronikController extends Controller
             'kamera' => 'cameras',
             'hp' => 'phones',
             'tenda' => 'camping_equipments',
+            'ps' => 'playstations',
+            'drone' => 'drones',
+            'musik' => 'musical_instruments',
             default => null,
         };
     }
@@ -80,6 +87,9 @@ class ElektronikController extends Controller
             'kamera' => $ownerFilter ? Camera::where('owner_id', Auth::id())->count() : Camera::count(),
             'hp' => $ownerFilter ? Phone::where('owner_id', Auth::id())->count() : Phone::count(),
             'tenda' => $ownerFilter ? CampingEquipment::where('owner_id', Auth::id())->count() : CampingEquipment::count(),
+            'ps' => $ownerFilter ? Playstation::where('owner_id', Auth::id())->count() : Playstation::count(),
+            'drone' => $ownerFilter ? Drone::where('owner_id', Auth::id())->count() : Drone::count(),
+            'musik' => $ownerFilter ? MusicalInstrument::where('owner_id', Auth::id())->count() : MusicalInstrument::count(),
         ];
 
         $prefix = $this->getRoutePrefix();
@@ -135,6 +145,27 @@ class ElektronikController extends Controller
                 'weight' => 'nullable|string|max:20',
                 'material' => 'nullable|string|max:100',
             ],
+            'ps' => [
+                'console_model' => 'nullable|string|max:100',
+                'storage_capacity' => 'nullable|string|max:20',
+                'controllers_count' => 'nullable|integer|min:1',
+                'color' => 'nullable|string|max:50',
+                'accessories' => 'nullable|string',
+            ],
+            'drone' => [
+                'drone_model' => 'nullable|string|max:100',
+                'camera_resolution' => 'nullable|string|max:100',
+                'flight_time' => 'nullable|string|max:50',
+                'max_range' => 'nullable|string|max:50',
+                'weight' => 'nullable|string|max:50',
+                'accessories' => 'nullable|string',
+            ],
+            'musik' => [
+                'instrument_type' => 'nullable|in:gitar,keyboard,drum,bass,ukulele,lainnya',
+                'instrument_model' => 'nullable|string|max:100',
+                'color' => 'nullable|string|max:50',
+                'accessories' => 'nullable|string',
+            ],
             default => [],
         };
 
@@ -146,7 +177,7 @@ class ElektronikController extends Controller
             $validated['image'] = $request->file('image')->store('elektronik', 'public');
         }
 
-        if ($type === 'kamera' && isset($validated['accessories'])) {
+        if (($type === 'kamera' || $type === 'ps' || $type === 'drone' || $type === 'musik') && isset($validated['accessories'])) {
             $validated['accessories'] = array_map('trim', explode(',', $validated['accessories']));
         }
 
@@ -226,6 +257,27 @@ class ElektronikController extends Controller
                 'weight' => 'nullable|string|max:20',
                 'material' => 'nullable|string|max:100',
             ],
+            'ps' => [
+                'console_model' => 'nullable|string|max:100',
+                'storage_capacity' => 'nullable|string|max:20',
+                'controllers_count' => 'nullable|integer|min:1',
+                'color' => 'nullable|string|max:50',
+                'accessories' => 'nullable|string',
+            ],
+            'drone' => [
+                'drone_model' => 'nullable|string|max:100',
+                'camera_resolution' => 'nullable|string|max:100',
+                'flight_time' => 'nullable|string|max:50',
+                'max_range' => 'nullable|string|max:50',
+                'weight' => 'nullable|string|max:50',
+                'accessories' => 'nullable|string',
+            ],
+            'musik' => [
+                'instrument_type' => 'nullable|in:gitar,keyboard,drum,bass,ukulele,lainnya',
+                'instrument_model' => 'nullable|string|max:100',
+                'color' => 'nullable|string|max:50',
+                'accessories' => 'nullable|string',
+            ],
             default => [],
         };
 
@@ -236,7 +288,7 @@ class ElektronikController extends Controller
             $validated['image'] = $request->file('image')->store('elektronik', 'public');
         }
 
-        if ($type === 'kamera' && isset($validated['accessories'])) {
+        if (($type === 'kamera' || $type === 'ps' || $type === 'drone' || $type === 'musik') && isset($validated['accessories'])) {
             $validated['accessories'] = array_map('trim', explode(',', $validated['accessories']));
         }
 

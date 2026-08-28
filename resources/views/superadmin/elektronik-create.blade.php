@@ -7,9 +7,12 @@
 
     <div class="glass-card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 {{ $type == 'kamera' ? 'bg-violet-100' : ($type == 'tenda' ? 'bg-emerald-100' : 'bg-blue-100') }} rounded-xl flex items-center justify-center">
+            <div class="w-10 h-10 {{ $type == 'kamera' ? 'bg-violet-100' : ($type == 'tenda' ? 'bg-emerald-100' : ($type == 'ps' ? 'bg-indigo-100' : ($type == 'drone' ? 'bg-cyan-100' : ($type == 'musik' ? 'bg-rose-100' : 'bg-blue-100')))) }} rounded-xl flex items-center justify-center">
                 @if($type == 'kamera') <i class="fas fa-camera text-violet-500"></i>
                 @elseif($type == 'tenda') <i class="fas fa-campground text-emerald-500"></i>
+                @elseif($type == 'ps') <i class="fas fa-gamepad text-indigo-500"></i>
+                @elseif($type == 'drone') <i class="fas fa-drone text-cyan-500"></i>
+                @elseif($type == 'musik') <i class="fas fa-guitar text-rose-500"></i>
                 @else <i class="fas fa-mobile-alt text-blue-500"></i>
                 @endif
             </div>
@@ -108,6 +111,82 @@
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Material</label>
                     <input type="text" name="material" value="{{ old('material') }}" placeholder="Contoh: Polyester 3000mm" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                @endif
+
+                @if($type == 'ps')
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Model Konsol</label>
+                    <input type="text" name="console_model" value="{{ old('console_model') }}" placeholder="Contoh: PS5 Slim" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Kapasitas Storage</label>
+                    <input type="text" name="storage_capacity" value="{{ old('storage_capacity') }}" placeholder="Contoh: 1TB" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Jumlah Controller</label>
+                    <input type="number" name="controllers_count" value="{{ old('controllers_count', 2) }}" min="1" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Warna</label>
+                    <input type="text" name="color" value="{{ old('color') }}" placeholder="Contoh: White" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Aksesoris (koma-separated)</label>
+                    <input type="text" name="accessories" value="{{ old('accessories') }}" placeholder="Contoh: Controller, Disk Game, HDMI" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                @endif
+
+                @if($type == 'drone')
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Model Drone</label>
+                    <input type="text" name="drone_model" value="{{ old('drone_model') }}" placeholder="Contoh: Mavic 3 Pro" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Resolusi Kamera</label>
+                    <input type="text" name="camera_resolution" value="{{ old('camera_resolution') }}" placeholder="Contoh: 4K/60fps 48MP" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Durasi Terbang</label>
+                    <input type="text" name="flight_time" value="{{ old('flight_time') }}" placeholder="Contoh: 40 menit" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Jarak Maksimal</label>
+                    <input type="text" name="max_range" value="{{ old('max_range') }}" placeholder="Contoh: 15 km" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Berat</label>
+                    <input type="text" name="weight" value="{{ old('weight') }}" placeholder="Contoh: 900 g" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Aksesoris (koma-separated)</label>
+                    <input type="text" name="accessories" value="{{ old('accessories') }}" placeholder="Contoh: Battery, Charger, Propeller" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                @endif
+
+                @if($type == 'musik')
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tipe Alat Musik</label>
+                    <select name="instrument_type" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                        <option value="gitar" {{ old('instrument_type', 'gitar') == 'gitar' ? 'selected' : '' }}>Gitar</option>
+                        <option value="keyboard" {{ old('instrument_type') == 'keyboard' ? 'selected' : '' }}>Keyboard</option>
+                        <option value="drum" {{ old('instrument_type') == 'drum' ? 'selected' : '' }}>Drum</option>
+                        <option value="bass" {{ old('instrument_type') == 'bass' ? 'selected' : '' }}>Bass</option>
+                        <option value="ukulele" {{ old('instrument_type') == 'ukulele' ? 'selected' : '' }}>Ukulele</option>
+                        <option value="lainnya" {{ old('instrument_type') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Model Alat Musik</label>
+                    <input type="text" name="instrument_model" value="{{ old('instrument_model') }}" placeholder="Contoh: F310" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Warna</label>
+                    <input type="text" name="color" value="{{ old('color') }}" placeholder="Contoh: Natural" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Aksesoris (koma-separated)</label>
+                    <input type="text" name="accessories" value="{{ old('accessories') }}" placeholder="Contoh: Softcase, Tuner, Kabel" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
                 </div>
                 @endif
 

@@ -196,6 +196,9 @@
                         <li><a href="{{ route('products', ['category' => 'motor']) }}" class="hover:text-sky-400 transition">Sewa Motor</a></li>
                         <li><a href="{{ route('products', ['category' => 'sewa-kamera']) }}" class="hover:text-sky-400 transition">Sewa Kamera</a></li>
                         <li><a href="{{ route('products', ['category' => 'sewa-tenda']) }}" class="hover:text-sky-400 transition">Sewa Tenda</a></li>
+                        <li><a href="{{ route('products', ['category' => 'sewa-ps']) }}" class="hover:text-sky-400 transition">Sewa Playstation</a></li>
+                        <li><a href="{{ route('products', ['category' => 'sewa-drone']) }}" class="hover:text-sky-400 transition">Sewa Drone</a></li>
+                        <li><a href="{{ route('products', ['category' => 'sewa-alat-musik']) }}" class="hover:text-sky-400 transition">Sewa Alat Musik</a></li>
                     </ul>
                 </div>
                 <div>

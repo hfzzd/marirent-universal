@@ -7,6 +7,9 @@ use App\Models\Vehicle;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
+use App\Models\Playstation;
+use App\Models\Drone;
+use App\Models\MusicalInstrument;
 use App\Models\Category;
 use App\Models\Review;
 use Illuminate\Http\Request;
@@ -24,6 +27,9 @@ class PublicController extends Controller
                 'sewa-hp' => Phone::where('status', 'available')->where('is_active', true)->count(),
                 'sewa-kamera' => Camera::where('status', 'available')->where('is_active', true)->count(),
                 'sewa-tenda' => CampingEquipment::where('status', 'available')->where('is_active', true)->count(),
+                'sewa-ps' => Playstation::where('status', 'available')->where('is_active', true)->count(),
+                'sewa-drone' => Drone::where('status', 'available')->where('is_active', true)->count(),
+                'sewa-alat-musik' => MusicalInstrument::where('status', 'available')->where('is_active', true)->count(),
                 default => 0,
             };
         }
@@ -72,6 +78,18 @@ class PublicController extends Controller
                 'label' => 'Alat Camping', 'icon' => 'fa-campground', 'slug' => 'tenda',
                 'color' => 'from-emerald-500 to-teal-600', 'bg' => 'from-emerald-50 to-teal-50',
             ],
+            'ps' => [
+                'label' => 'Playstation', 'icon' => 'fa-gamepad', 'slug' => 'ps',
+                'color' => 'from-indigo-500 to-blue-700', 'bg' => 'from-indigo-50 to-blue-50',
+            ],
+            'drone' => [
+                'label' => 'Drone', 'icon' => 'fa-drone', 'slug' => 'drone',
+                'color' => 'from-cyan-500 to-sky-700', 'bg' => 'from-cyan-50 to-sky-50',
+            ],
+            'musik' => [
+                'label' => 'Alat Musik', 'icon' => 'fa-guitar', 'slug' => 'musik',
+                'color' => 'from-rose-500 to-pink-700', 'bg' => 'from-rose-50 to-pink-50',
+            ],
         ];
 
         $brandData = [];
@@ -88,6 +106,9 @@ class PublicController extends Controller
                 'hp' => Phone::class,
                 'kamera' => Camera::class,
                 'tenda' => CampingEquipment::class,
+                'ps' => Playstation::class,
+                'drone' => Drone::class,
+                'musik' => MusicalInstrument::class,
             };
 
             $query = $modelClass::where('is_active', true)->where('status', 'available');
@@ -124,7 +145,7 @@ class PublicController extends Controller
     public function brand(Request $request, string $type, string $brand)
     {
         $brandDecoded = urldecode($brand);
-        $validTypes = ['mobil', 'motor', 'hp', 'kamera', 'tenda'];
+        $validTypes = ['mobil', 'motor', 'hp', 'kamera', 'tenda', 'ps', 'drone', 'musik'];
 
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -136,6 +157,9 @@ class PublicController extends Controller
             'hp' => ['model' => Phone::class, 'category_slug' => 'sewa-hp', 'label' => 'Handphone', 'icon' => 'fa-mobile-alt'],
             'kamera' => ['model' => Camera::class, 'category_slug' => 'sewa-kamera', 'label' => 'Kamera', 'icon' => 'fa-camera'],
             'tenda' => ['model' => CampingEquipment::class, 'category_slug' => 'sewa-tenda', 'label' => 'Alat Camping', 'icon' => 'fa-campground'],
+            'ps' => ['model' => Playstation::class, 'category_slug' => 'sewa-ps', 'label' => 'Playstation', 'icon' => 'fa-gamepad'],
+            'drone' => ['model' => Drone::class, 'category_slug' => 'sewa-drone', 'label' => 'Drone', 'icon' => 'fa-drone'],
+            'musik' => ['model' => MusicalInstrument::class, 'category_slug' => 'sewa-alat-musik', 'label' => 'Alat Musik', 'icon' => 'fa-guitar'],
         };
 
         $model = $config['model'];
@@ -207,6 +231,9 @@ class PublicController extends Controller
                 'hp' => $item->phone_model,
                 'kamera' => $item->camera_model,
                 'tenda' => $item->equipment_model,
+                'ps' => $item->console_model,
+                'drone' => $item->drone_model,
+                'musik' => $item->instrument_model,
                 default => '-',
             },
             'daily_price' => (float) $item->daily_price,
@@ -219,6 +246,9 @@ class PublicController extends Controller
                     'hp' => $item->storage_gb ? $item->storage_gb . 'GB' : null,
                     'kamera' => $item->sensor_type ?? null,
                     'tenda' => $item->equipment_type ?? null,
+                    'ps' => $item->storage_capacity ?? null,
+                    'drone' => $item->flight_time ?? null,
+                    'musik' => $item->instrument_type ?? null,
                     default => null,
                 },
             ]),
@@ -240,6 +270,12 @@ class PublicController extends Controller
             ->distinct()->pluck('brand')->filter()->sort()->values();
         $campingBrands = CampingEquipment::where('is_active', true)->where('status', 'available')
             ->distinct()->pluck('brand')->filter()->sort()->values();
+        $psBrands = Playstation::where('is_active', true)->where('status', 'available')
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+        $droneBrands = Drone::where('is_active', true)->where('status', 'available')
+            ->distinct()->pluck('brand')->filter()->sort()->values();
+        $musikBrands = MusicalInstrument::where('is_active', true)->where('status', 'available')
+            ->distinct()->pluck('brand')->filter()->sort()->values();
 
         return [
             'mobil' => $mobilBrands,
@@ -247,6 +283,9 @@ class PublicController extends Controller
             'hp' => $hpBrands,
             'kamera' => $cameraBrands,
             'tenda' => $campingBrands,
+            'ps' => $psBrands,
+            'drone' => $droneBrands,
+            'musik' => $musikBrands,
         ];
     }
 
@@ -329,6 +368,39 @@ class PublicController extends Controller
                     $item->material,
                 ]),
             ],
+            'ps' => [
+                'icon' => 'fa-gamepad',
+                'label' => 'Sewa Playstation',
+                'model' => Playstation::class,
+                'subtitle' => fn($item) => $item->console_model,
+                'specs' => fn($item) => array_filter([
+                    $item->storage_capacity,
+                    $item->controllers_count ? $item->controllers_count . ' Controller' : null,
+                    $item->color,
+                ]),
+            ],
+            'drone' => [
+                'icon' => 'fa-drone',
+                'label' => 'Sewa Drone',
+                'model' => Drone::class,
+                'subtitle' => fn($item) => $item->drone_model,
+                'specs' => fn($item) => array_filter([
+                    $item->camera_resolution,
+                    $item->flight_time,
+                    $item->max_range,
+                    $item->weight,
+                ]),
+            ],
+            'musik' => [
+                'icon' => 'fa-guitar',
+                'label' => 'Sewa Alat Musik',
+                'model' => MusicalInstrument::class,
+                'subtitle' => fn($item) => $item->instrument_model,
+                'specs' => fn($item) => array_filter([
+                    ucfirst($item->instrument_type),
+                    $item->color,
+                ]),
+            ],
             default => [
                 'icon' => 'fa-box',
                 'label' => 'Sewa Barang',
@@ -355,12 +427,24 @@ class PublicController extends Controller
         $campingQuery = CampingEquipment::with('category')
             ->where('is_active', true)
             ->where('status', 'available');
+        $psQuery = Playstation::with('category')
+            ->where('is_active', true)
+            ->where('status', 'available');
+        $droneQuery = Drone::with('category')
+            ->where('is_active', true)
+            ->where('status', 'available');
+        $musikQuery = MusicalInstrument::with('category')
+            ->where('is_active', true)
+            ->where('status', 'available');
 
         if ($request->category) {
             $vehicleQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
             $phoneQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
             $cameraQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
             $campingQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
+            $psQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
+            $droneQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
+            $musikQuery->whereHas('category', fn($q) => $q->where('slug', $request->category));
         }
 
         if ($request->brand) {
@@ -368,6 +452,9 @@ class PublicController extends Controller
             $phoneQuery->where('brand', $request->brand);
             $cameraQuery->where('brand', $request->brand);
             $campingQuery->where('brand', $request->brand);
+            $psQuery->where('brand', $request->brand);
+            $droneQuery->where('brand', $request->brand);
+            $musikQuery->where('brand', $request->brand);
         }
 
         if ($request->model) {
@@ -375,6 +462,9 @@ class PublicController extends Controller
             $phoneQuery->where('phone_model', $request->model);
             $cameraQuery->where('camera_model', $request->model);
             $campingQuery->where('equipment_model', $request->model);
+            $psQuery->where('console_model', $request->model);
+            $droneQuery->where('drone_model', $request->model);
+            $musikQuery->where('instrument_model', $request->model);
         }
 
         if ($request->search) {
@@ -391,6 +481,15 @@ class PublicController extends Controller
             $campingQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', $search)->orWhere('brand', 'like', $search)->orWhere('equipment_model', 'like', $search);
             });
+            $psQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)->orWhere('brand', 'like', $search)->orWhere('console_model', 'like', $search);
+            });
+            $droneQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)->orWhere('brand', 'like', $search)->orWhere('drone_model', 'like', $search);
+            });
+            $musikQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)->orWhere('brand', 'like', $search)->orWhere('instrument_model', 'like', $search);
+            });
         }
 
         if ($request->max_price) {
@@ -399,14 +498,21 @@ class PublicController extends Controller
             $phoneQuery->where('daily_price', '<=', $max);
             $cameraQuery->where('daily_price', '<=', $max);
             $campingQuery->where('daily_price', '<=', $max);
+            $psQuery->where('daily_price', '<=', $max);
+            $droneQuery->where('daily_price', '<=', $max);
+            $musikQuery->where('daily_price', '<=', $max);
         }
 
         $vehicles = $vehicleQuery->get()->map(fn($v) => $this->normalizeVehicle($v));
         $phones = $phoneQuery->get()->map(fn($p) => $this->normalizePhone($p));
         $cameras = $cameraQuery->get()->map(fn($c) => $this->normalizeCamera($c));
         $campings = $campingQuery->get()->map(fn($c) => $this->normalizeCamping($c));
+        $psList = $psQuery->get()->map(fn($p) => $this->normalizePs($p));
+        $drones = $droneQuery->get()->map(fn($d) => $this->normalizeDrone($d));
+        $instruments = $musikQuery->get()->map(fn($m) => $this->normalizeMusik($m));
 
-        $products = $vehicles->concat($phones)->concat($cameras)->concat($campings);
+        $products = $vehicles->concat($phones)->concat($cameras)->concat($campings)
+            ->concat($psList)->concat($drones)->concat($instruments);
 
         $sort = $request->input('sort', 'newest');
         $products = match($sort) {
@@ -532,6 +638,83 @@ class PublicController extends Controller
             'rating' => round($c->getAverageRating()),
             'review_count' => $c->reviews->count(),
             'created_at' => $c->created_at,
+        ];
+    }
+
+    private function normalizePs(Playstation $p): array
+    {
+        return [
+            'type' => 'ps',
+            'id' => $p->id,
+            'name' => $p->name,
+            'slug' => $p->slug,
+            'brand' => $p->brand,
+            'subtitle' => $p->console_model,
+            'daily_price' => (float) $p->daily_price,
+            'image' => $p->image,
+            'category' => $p->category,
+            'status' => $p->status,
+            'icon' => 'fa-gamepad',
+            'icon_color' => 'text-indigo',
+            'tags' => array_filter([
+                $p->storage_capacity,
+                $p->controllers_count ? $p->controllers_count . ' Controller' : null,
+                $p->color,
+            ]),
+            'rating' => round($p->getAverageRating()),
+            'review_count' => $p->reviews->count(),
+            'created_at' => $p->created_at,
+        ];
+    }
+
+    private function normalizeDrone(Drone $d): array
+    {
+        return [
+            'type' => 'drone',
+            'id' => $d->id,
+            'name' => $d->name,
+            'slug' => $d->slug,
+            'brand' => $d->brand,
+            'subtitle' => $d->drone_model,
+            'daily_price' => (float) $d->daily_price,
+            'image' => $d->image,
+            'category' => $d->category,
+            'status' => $d->status,
+            'icon' => 'fa-drone',
+            'icon_color' => 'text-cyan',
+            'tags' => array_filter([
+                $d->camera_resolution,
+                $d->flight_time,
+                $d->max_range,
+            ]),
+            'rating' => round($d->getAverageRating()),
+            'review_count' => $d->reviews->count(),
+            'created_at' => $d->created_at,
+        ];
+    }
+
+    private function normalizeMusik(MusicalInstrument $m): array
+    {
+        return [
+            'type' => 'musik',
+            'id' => $m->id,
+            'name' => $m->name,
+            'slug' => $m->slug,
+            'brand' => $m->brand,
+            'subtitle' => $m->instrument_model,
+            'daily_price' => (float) $m->daily_price,
+            'image' => $m->image,
+            'category' => $m->category,
+            'status' => $m->status,
+            'icon' => 'fa-guitar',
+            'icon_color' => 'text-rose',
+            'tags' => array_filter([
+                $m->instrument_type ? ucfirst($m->instrument_type) : null,
+                $m->color,
+            ]),
+            'rating' => round($m->getAverageRating()),
+            'review_count' => $m->reviews->count(),
+            'created_at' => $m->created_at,
         ];
     }
 }

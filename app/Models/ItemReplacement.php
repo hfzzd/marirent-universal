@@ -33,6 +33,9 @@ class ItemReplacement extends Model
             'hp' => $this->belongsTo(Phone::class, 'original_item_id'),
             'camera' => $this->belongsTo(Camera::class, 'original_item_id'),
             'tenda' => $this->belongsTo(CampingEquipment::class, 'original_item_id'),
+            'ps' => $this->belongsTo(Playstation::class, 'original_item_id'),
+            'drone' => $this->belongsTo(Drone::class, 'original_item_id'),
+            'musik' => $this->belongsTo(MusicalInstrument::class, 'original_item_id'),
             default => $this->belongsTo(Phone::class, 'original_item_id'),
         };
     }
@@ -43,6 +46,9 @@ class ItemReplacement extends Model
             'hp' => $this->belongsTo(Phone::class, 'replacement_item_id'),
             'camera' => $this->belongsTo(Camera::class, 'replacement_item_id'),
             'tenda' => $this->belongsTo(CampingEquipment::class, 'replacement_item_id'),
+            'ps' => $this->belongsTo(Playstation::class, 'replacement_item_id'),
+            'drone' => $this->belongsTo(Drone::class, 'replacement_item_id'),
+            'musik' => $this->belongsTo(MusicalInstrument::class, 'replacement_item_id'),
             default => $this->belongsTo(Phone::class, 'replacement_item_id'),
         };
     }

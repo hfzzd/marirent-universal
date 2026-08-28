@@ -7,6 +7,7 @@
     $typeLabels = [
         'mobil' => 'Sewa Mobil', 'motor' => 'Sewa Motor',
         'sewa-hp' => 'Sewa HP', 'sewa-kamera' => 'Sewa Kamera', 'sewa-tenda' => 'Sewa Tenda',
+        'sewa-ps' => 'Sewa Playstation', 'sewa-drone' => 'Sewa Drone', 'sewa-alat-musik' => 'Sewa Alat Musik',
     ];
 @endphp
 
@@ -39,8 +40,18 @@
                                 <i class="fas fa-motorcycle text-sky-300 text-8xl"></i>
                             @elseif($vehicle->category->slug == 'sewa-hp')
                                 <i class="fas fa-mobile-alt text-sky-300 text-8xl"></i>
-                            @else
+                            @elseif($vehicle->category->slug == 'sewa-kamera')
                                 <i class="fas fa-camera text-sky-300 text-8xl"></i>
+                            @elseif($vehicle->category->slug == 'sewa-tenda')
+                                <i class="fas fa-campground text-sky-300 text-8xl"></i>
+                            @elseif($vehicle->category->slug == 'sewa-ps')
+                                <i class="fas fa-gamepad text-sky-300 text-8xl"></i>
+                            @elseif($vehicle->category->slug == 'sewa-drone')
+                                <i class="fas fa-drone text-sky-300 text-8xl"></i>
+                            @elseif($vehicle->category->slug == 'sewa-alat-musik')
+                                <i class="fas fa-guitar text-sky-300 text-8xl"></i>
+                            @else
+                                <i class="fas fa-box text-sky-300 text-8xl"></i>
                             @endif
                         </div>
                     @endif
@@ -225,6 +236,16 @@
                         <i class="fas fa-motorcycle text-sky-300 text-5xl"></i>
                     @elseif($rv->category->slug == 'sewa-hp')
                         <i class="fas fa-mobile-alt text-sky-300 text-5xl"></i>
+                    @elseif($rv->category->slug == 'sewa-kamera')
+                        <i class="fas fa-camera text-sky-300 text-5xl"></i>
+                    @elseif($rv->category->slug == 'sewa-tenda')
+                        <i class="fas fa-campground text-sky-300 text-5xl"></i>
+                    @elseif($rv->category->slug == 'sewa-ps')
+                        <i class="fas fa-gamepad text-sky-300 text-5xl"></i>
+                    @elseif($rv->category->slug == 'sewa-drone')
+                        <i class="fas fa-drone text-sky-300 text-5xl"></i>
+                    @elseif($rv->category->slug == 'sewa-alat-musik')
+                        <i class="fas fa-guitar text-sky-300 text-5xl"></i>
                     @else
                         <i class="fas fa-camera text-sky-300 text-5xl"></i>
                     @endif

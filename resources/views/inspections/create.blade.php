@@ -53,7 +53,7 @@
                                     data-vehicle="{{ $b->vehicle_id }}"
                                     data-item-type="{{ $b->item_type }}"
                                     data-item-id="{{ $b->item_id }}"
-                                    data-scope="{{ $b->vehicle_id ? 'kendaraan' : ($b->item_type === 'App\Models\Phone' || $b->item_type === 'App\Models\Camera' ? 'elektronik' : 'camping') }}">
+                                    data-scope="{{ $b->vehicle_id ? 'kendaraan' : (in_array($b->item_type, ['App\Models\Phone','App\Models\Camera','App\Models\Playstation','App\Models\Drone','App\Models\MusicalInstrument']) ? 'elektronik' : 'camping') }}">
                                     {{ $b->booking_code }} - {{ $b->vehicle?->name ?? $b->bookingItems->first()?->item_type ?? ($b->category?->name ?? '-') }}
                                 </option>
                                 @endforeach
@@ -96,7 +96,7 @@
                         <div class="grid grid-cols-3 gap-3">
                             @foreach([
                                 ['val' => 'kendaraan', 'icon' => 'fa-car', 'color' => 'blue', 'label' => 'Kendaraan', 'desc' => 'Mobil & Motor'],
-                                ['val' => 'elektronik', 'icon' => 'fa-mobile-alt', 'color' => 'purple', 'label' => 'Elektronik', 'desc' => 'HP & Kamera'],
+                                ['val' => 'elektronik', 'icon' => 'fa-mobile-alt', 'color' => 'purple', 'label' => 'Elektronik', 'desc' => 'HP, Kamera, PS, Drone & Musik'],
                                 ['val' => 'camping', 'icon' => 'fa-campground', 'color' => 'emerald', 'label' => 'Alat Camping', 'desc' => 'Tenda & Alat'],
                             ] as $opt)
                             <label class="relative cursor-pointer">
@@ -124,7 +124,7 @@
                                 </template>
                             </template>
                             <template x-if="scope === 'elektronik'">
-                                <template x-for="e in [...phones, ...cameras]" :key="e.id">
+                                <template x-for="e in [...phones, ...cameras, ...playstations, ...drones, ...instruments]" :key="e.id">
                                     <option :value="e.id" x-text="e.name + ' (' + e.brand + ')'"></option>
                                 </template>
                             </template>
@@ -351,6 +351,9 @@ function inspectionForm() {
         phones: @json($phones),
         cameras: @json($cameras),
         equipments: @json($equipments),
+        playstations: @json($playstations),
+        drones: @json($drones),
+        instruments: @json($instruments),
 
         detectScope() {
             const select = document.querySelector('select[name="booking_id"]');
@@ -375,7 +378,7 @@ function inspectionForm() {
 
         getSelectedItemName() {
             if (!this.selectedItemId) return '';
-            const all = [...this.vehicles, ...this.phones, ...this.cameras, ...this.equipments];
+            const all = [...this.vehicles, ...this.phones, ...this.cameras, ...this.equipments, ...this.playstations, ...this.drones, ...this.instruments];
             const found = all.find(i => i.id == this.selectedItemId);
             return found ? found.name : '';
         },

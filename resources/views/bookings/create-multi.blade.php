@@ -52,7 +52,7 @@
                 <div class="bg-white rounded-2xl shadow-sm p-6">
                     <h3 class="text-sm font-bold text-navy-800 mb-4"><i class="fas fa-plus-circle mr-2 text-sky-500"></i>Tambah Item</h3>
 
-                    @if($phones->count() > 0 || $cameras->count() > 0 || $equipments->count() > 0)
+                    @if($phones->count() > 0 || $cameras->count() > 0 || $equipments->count() > 0 || $playstations->count() > 0 || $drones->count() > 0 || $instruments->count() > 0)
                     <div class="grid grid-cols-3 gap-3 mb-4">
                         @if($phones->count() > 0)
                         <button type="button" @click="showPicker = 'hp'" class="border-2 border-gray-200 rounded-xl p-3 text-center hover:border-sky-400 transition-all">
@@ -70,6 +70,24 @@
                         <button type="button" @click="showPicker = 'tenda'" class="border-2 border-gray-200 rounded-xl p-3 text-center hover:border-sky-400 transition-all">
                             <div class="w-10 h-10 mx-auto mb-2 bg-green-100 text-green-600 rounded-lg flex items-center justify-center"><i class="fas fa-campground"></i></div>
                             <span class="text-xs font-semibold text-navy-700">Alat Camping</span>
+                        </button>
+                        @endif
+                        @if($playstations->count() > 0)
+                        <button type="button" @click="showPicker = 'ps'" class="border-2 border-gray-200 rounded-xl p-3 text-center hover:border-sky-400 transition-all">
+                            <div class="w-10 h-10 mx-auto mb-2 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center"><i class="fas fa-gamepad"></i></div>
+                            <span class="text-xs font-semibold text-navy-700">Playstation</span>
+                        </button>
+                        @endif
+                        @if($drones->count() > 0)
+                        <button type="button" @click="showPicker = 'drone'" class="border-2 border-gray-200 rounded-xl p-3 text-center hover:border-sky-400 transition-all">
+                            <div class="w-10 h-10 mx-auto mb-2 bg-cyan-100 text-cyan-600 rounded-lg flex items-center justify-center"><i class="fas fa-drone"></i></div>
+                            <span class="text-xs font-semibold text-navy-700">Drone</span>
+                        </button>
+                        @endif
+                        @if($instruments->count() > 0)
+                        <button type="button" @click="showPicker = 'musik'" class="border-2 border-gray-200 rounded-xl p-3 text-center hover:border-sky-400 transition-all">
+                            <div class="w-10 h-10 mx-auto mb-2 bg-rose-100 text-rose-600 rounded-lg flex items-center justify-center"><i class="fas fa-guitar"></i></div>
+                            <span class="text-xs font-semibold text-navy-700">Alat Musik</span>
                         </button>
                         @endif
                     </div>
@@ -123,6 +141,60 @@
                                 <div class="font-medium text-xs text-navy-800">{{ $e->name }}</div>
                                 <div class="text-xs text-navy-500">{{ $e->equipment_model }} - {{ $e->capacity }}</div>
                                 <div class="text-xs font-bold text-green-600 mt-1">Rp {{ number_format($e->daily_price,0,',','.') }}/hari</div>
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Playstation Picker --}}
+                    <div x-show="showPicker === 'ps'" x-transition class="border border-indigo-200 rounded-xl p-4 bg-indigo-50/50">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-bold text-indigo-700"><i class="fas fa-gamepad mr-2"></i>Pilih Playstation</span>
+                            <button type="button" @click="showPicker = null" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                            @foreach($playstations as $p)
+                            <button type="button" @click="addItem('ps', {{ $p->id }}, '{{ addslashes($p->name) }}', {{ $p->daily_price }}, {{ $p->hourly_price ?? 0 }}, {{ $p->weekly_price ?? 0 }}, {{ $p->monthly_price ?? 0 }}); showPicker = null"
+                                class="text-left border border-gray-200 rounded-lg p-3 hover:border-indigo-400 hover:bg-white transition-all">
+                                <div class="font-medium text-xs text-navy-800">{{ $p->name }}</div>
+                                <div class="text-xs text-navy-500">{{ $p->console_model }} - {{ $p->storage_capacity }}</div>
+                                <div class="text-xs font-bold text-indigo-600 mt-1">Rp {{ number_format($p->daily_price,0,',','.') }}/hari</div>
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Drone Picker --}}
+                    <div x-show="showPicker === 'drone'" x-transition class="border border-cyan-200 rounded-xl p-4 bg-cyan-50/50">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-bold text-cyan-700"><i class="fas fa-drone mr-2"></i>Pilih Drone</span>
+                            <button type="button" @click="showPicker = null" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                            @foreach($drones as $d)
+                            <button type="button" @click="addItem('drone', {{ $d->id }}, '{{ addslashes($d->name) }}', {{ $d->daily_price }}, {{ $d->hourly_price ?? 0 }}, {{ $d->weekly_price ?? 0 }}, {{ $d->monthly_price ?? 0 }}); showPicker = null"
+                                class="text-left border border-gray-200 rounded-lg p-3 hover:border-cyan-400 hover:bg-white transition-all">
+                                <div class="font-medium text-xs text-navy-800">{{ $d->name }}</div>
+                                <div class="text-xs text-navy-500">{{ $d->drone_model }} - {{ $d->camera_resolution }}</div>
+                                <div class="text-xs font-bold text-cyan-600 mt-1">Rp {{ number_format($d->daily_price,0,',','.') }}/hari</div>
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Musical Instrument Picker --}}
+                    <div x-show="showPicker === 'musik'" x-transition class="border border-rose-200 rounded-xl p-4 bg-rose-50/50">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-bold text-rose-700"><i class="fas fa-guitar mr-2"></i>Pilih Alat Musik</span>
+                            <button type="button" @click="showPicker = null" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                            @foreach($instruments as $m)
+                            <button type="button" @click="addItem('musik', {{ $m->id }}, '{{ addslashes($m->name) }}', {{ $m->daily_price }}, {{ $m->hourly_price ?? 0 }}, {{ $m->weekly_price ?? 0 }}, {{ $m->monthly_price ?? 0 }}); showPicker = null"
+                                class="text-left border border-gray-200 rounded-lg p-3 hover:border-rose-400 hover:bg-white transition-all">
+                                <div class="font-medium text-xs text-navy-800">{{ $m->name }}</div>
+                                <div class="text-xs text-navy-500">{{ $m->instrument_model }} - {{ $m->instrument_type ? ucfirst($m->instrument_type) : '' }}</div>
+                                <div class="text-xs font-bold text-rose-600 mt-1">Rp {{ number_format($m->daily_price,0,',','.') }}/hari</div>
                             </button>
                             @endforeach
                         </div>
@@ -314,6 +386,24 @@ function multiItemForm() {
                 {'name': 'Lampu Tenda', 'price': 5000},
                 {'name': 'Sleeping Bag', 'price': 15000},
                 {'name': 'Matras', 'price': 8000},
+            ],
+            ps: [
+                {'name': 'Controller Tambahan', 'price': 15000},
+                {'name': 'Disk Game', 'price': 20000},
+                {'name': 'Kabel HDMI', 'price': 5000},
+                {'name': 'Charging Dock', 'price': 8000},
+            ],
+            drone: [
+                {'name': 'Battery Tambahan', 'price': 20000},
+                {'name': 'Charger', 'price': 5000},
+                {'name': 'Propeller Cadangan', 'price': 10000},
+                {'name': 'Tas Drone', 'price': 10000},
+            ],
+            musik: [
+                {'name': 'Softcase', 'price': 10000},
+                {'name': 'Tuner', 'price': 5000},
+                {'name': 'Kabel', 'price': 8000},
+                {'name': 'Pick Spare', 'price': 3000},
             ],
         },
 

@@ -9,6 +9,9 @@ use App\Models\Driver;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
+use App\Models\Playstation;
+use App\Models\Drone;
+use App\Models\MusicalInstrument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -296,6 +299,42 @@ class BookingWebController extends Controller
                     ['name' => 'Matras', 'price' => 8000],
                 ],
             ],
+            'ps' => [
+                'icon' => 'fa-gamepad',
+                'label' => 'Sewa Playstation',
+                'model' => Playstation::class,
+                'subtitle' => fn($item) => $item->console_model,
+                'accessories' => [
+                    ['name' => 'Controller Tambahan', 'price' => 15000],
+                    ['name' => 'Disk Game', 'price' => 20000],
+                    ['name' => 'HDMI Tambahan', 'price' => 5000],
+                    ['name' => 'TV/Proyektor Mini', 'price' => 30000],
+                ],
+            ],
+            'drone' => [
+                'icon' => 'fa-drone',
+                'label' => 'Sewa Drone',
+                'model' => Drone::class,
+                'subtitle' => fn($item) => $item->drone_model,
+                'accessories' => [
+                    ['name' => 'Battery Extra', 'price' => 30000],
+                    ['name' => 'Memory Card 128GB', 'price' => 15000],
+                    ['name' => 'Filter ND', 'price' => 10000],
+                    ['name' => 'Carry Case', 'price' => 10000],
+                ],
+            ],
+            'musik' => [
+                'icon' => 'fa-guitar',
+                'label' => 'Sewa Alat Musik',
+                'model' => MusicalInstrument::class,
+                'subtitle' => fn($item) => $item->instrument_model,
+                'accessories' => [
+                    ['name' => 'Softcase', 'price' => 5000],
+                    ['name' => 'Tuner', 'price' => 5000],
+                    ['name' => 'Kabel & Ampli', 'price' => 15000],
+                    ['name' => 'Pik/Senar Cadangan', 'price' => 3000],
+                ],
+            ],
             default => [
                 'icon' => 'fa-box',
                 'label' => 'Sewa Barang',
@@ -312,6 +351,9 @@ class BookingWebController extends Controller
             'hp' => Phone::class,
             'kamera' => Camera::class,
             'tenda' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
             default => Phone::class,
         };
     }
@@ -321,8 +363,11 @@ class BookingWebController extends Controller
         $phones = Phone::where('status', 'available')->where('is_active', true)->with('category')->get();
         $cameras = Camera::where('status', 'available')->where('is_active', true)->with('category')->get();
         $equipments = CampingEquipment::where('status', 'available')->where('is_active', true)->with('category')->get();
+        $playstations = Playstation::where('status', 'available')->where('is_active', true)->with('category')->get();
+        $drones = Drone::where('status', 'available')->where('is_active', true)->with('category')->get();
+        $instruments = MusicalInstrument::where('status', 'available')->where('is_active', true)->with('category')->get();
 
-        return view('bookings.create-multi', compact('phones', 'cameras', 'equipments'));
+        return view('bookings.create-multi', compact('phones', 'cameras', 'equipments', 'playstations', 'drones', 'instruments'));
     }
 
     public function storeMulti(Request $request)
@@ -332,7 +377,7 @@ class BookingWebController extends Controller
             'start_date' => 'required|date|after:now',
             'end_date' => 'required|date|after_or_equal:start_date',
             'items' => 'required|array|min:1',
-            'items.*.type' => 'required|in:hp,kamera,tenda',
+            'items.*.type' => 'required|in:hp,kamera,tenda,ps,drone,musik',
             'items.*.id' => 'required|integer',
             'items.*.with_insurance' => 'required|in:0,1',
             'items.*.accessories' => 'nullable|array',
@@ -458,8 +503,11 @@ class BookingWebController extends Controller
         $cameras = Camera::where('status', 'available')->get();
         $phones = Phone::where('status', 'available')->get();
         $campings = CampingEquipment::where('status', 'available')->get();
+        $playstations = Playstation::where('status', 'available')->get();
+        $drones = Drone::where('status', 'available')->get();
+        $instruments = MusicalInstrument::where('status', 'available')->get();
 
-        return view('bookings.manual-create', compact('customers', 'vehicles', 'drivers', 'cameras', 'phones', 'campings'));
+        return view('bookings.manual-create', compact('customers', 'vehicles', 'drivers', 'cameras', 'phones', 'campings', 'playstations', 'drones', 'instruments'));
     }
 
     public function manualStore(Request $request)
@@ -469,7 +517,7 @@ class BookingWebController extends Controller
             'user_id' => 'required_if:customer_mode,existing|nullable|exists:users,id',
             'guest_name' => 'required_if:customer_mode,new|nullable|string|max:255',
             'guest_phone' => 'required_if:customer_mode,new|nullable|string|max:20',
-            'item_kind' => 'required|in:mobil,motor,kamera,hp,tenda',
+            'item_kind' => 'required|in:mobil,motor,kamera,hp,tenda,ps,drone,musik',
             'item_id' => 'required|integer',
             'rental_type' => 'required|in:hourly,daily,weekly,monthly',
             'driver_id' => 'nullable|exists:drivers,id',
@@ -524,6 +572,15 @@ class BookingWebController extends Controller
         } elseif ($itemKind === 'tenda') {
             $item = CampingEquipment::findOrFail($itemId);
             $itemType = CampingEquipment::class;
+        } elseif ($itemKind === 'ps') {
+            $item = Playstation::findOrFail($itemId);
+            $itemType = Playstation::class;
+        } elseif ($itemKind === 'drone') {
+            $item = Drone::findOrFail($itemId);
+            $itemType = Drone::class;
+        } elseif ($itemKind === 'musik') {
+            $item = MusicalInstrument::findOrFail($itemId);
+            $itemType = MusicalInstrument::class;
         }
 
         $basePrice = $item->getPriceForType($validated['rental_type']);

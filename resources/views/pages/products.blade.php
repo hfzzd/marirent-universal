@@ -190,9 +190,12 @@
                 'phone' => ['bg' => 'from-blue-50 to-indigo-50', 'badge' => 'bg-blue-600', 'icon' => 'text-blue-300', 'accent' => 'text-blue-600'],
                 'camera' => ['bg' => 'from-violet-50 to-purple-50', 'badge' => 'bg-violet-600', 'icon' => 'text-violet-300', 'accent' => 'text-violet-600'],
                 'camping' => ['bg' => 'from-emerald-50 to-teal-50', 'badge' => 'bg-emerald-600', 'icon' => 'text-emerald-300', 'accent' => 'text-emerald-600'],
+                'ps' => ['bg' => 'from-indigo-50 to-blue-50', 'badge' => 'bg-indigo-600', 'icon' => 'text-indigo-300', 'accent' => 'text-indigo-600'],
+                'drone' => ['bg' => 'from-cyan-50 to-sky-50', 'badge' => 'bg-cyan-600', 'icon' => 'text-cyan-300', 'accent' => 'text-cyan-600'],
+                'musik' => ['bg' => 'from-rose-50 to-pink-50', 'badge' => 'bg-rose-600', 'icon' => 'text-rose-300', 'accent' => 'text-rose-600'],
                 default => ['bg' => 'from-gray-50 to-slate-50', 'badge' => 'bg-gray-600', 'icon' => 'text-gray-300', 'accent' => 'text-gray-600'],
             };
-            $typeLabels = ['vehicle' => 'Kendaraan', 'phone' => 'Handphone', 'camera' => 'Kamera', 'camping' => 'Camping'];
+            $typeLabels = ['vehicle' => 'Kendaraan', 'phone' => 'Handphone', 'camera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Alat Musik'];
         @endphp
         <div class="product-card bg-white rounded-2xl overflow-hidden border border-gray-100/60 group reveal" style="box-shadow: 0 2px 16px rgba(0,0,0,0.03);">
             <div class="relative h-48 bg-gradient-to-br {{ $typeStyles['bg'] }} flex items-center justify-center overflow-hidden">

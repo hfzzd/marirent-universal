@@ -122,6 +122,9 @@
                                 'sewa-hp' => ['icon' => 'fa-mobile-alt', 'color' => 'text-blue-500'],
                                 'sewa-kamera' => ['icon' => 'fa-camera', 'color' => 'text-violet-500'],
                                 'sewa-tenda' => ['icon' => 'fa-campground', 'color' => 'text-emerald-500'],
+                                'sewa-ps' => ['icon' => 'fa-gamepad', 'color' => 'text-indigo-500'],
+                                'sewa-drone' => ['icon' => 'fa-drone', 'color' => 'text-cyan-500'],
+                                'sewa-alat-musik' => ['icon' => 'fa-guitar', 'color' => 'text-rose-500'],
                                 default => null,
                             };
                         @endphp
@@ -151,6 +154,9 @@
                                     'sewa-hp' => ['icon' => 'fa-mobile-alt', 'color' => 'text-blue-500'],
                                     'sewa-kamera' => ['icon' => 'fa-camera', 'color' => 'text-violet-500'],
                                     'sewa-tenda' => ['icon' => 'fa-campground', 'color' => 'text-emerald-500'],
+                                    'sewa-ps' => ['icon' => 'fa-gamepad', 'color' => 'text-indigo-500'],
+                                    'sewa-drone' => ['icon' => 'fa-drone', 'color' => 'text-cyan-500'],
+                                    'sewa-alat-musik' => ['icon' => 'fa-guitar', 'color' => 'text-rose-500'],
                                     default => null,
                                 };
                             @endphp

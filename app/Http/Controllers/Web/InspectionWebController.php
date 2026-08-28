@@ -9,6 +9,9 @@ use App\Models\Vehicle;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
+use App\Models\Playstation;
+use App\Models\Drone;
+use App\Models\MusicalInstrument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -51,8 +54,11 @@ class InspectionWebController extends Controller
         $phones = Phone::where('status', '!=', 'maintenance')->get();
         $cameras = Camera::where('status', '!=', 'maintenance')->get();
         $equipments = CampingEquipment::where('status', '!=', 'maintenance')->get();
+        $playstations = Playstation::where('status', '!=', 'maintenance')->get();
+        $drones = Drone::where('status', '!=', 'maintenance')->get();
+        $instruments = MusicalInstrument::where('status', '!=', 'maintenance')->get();
 
-        return view('inspections.create', compact('bookings', 'booking', 'vehicles', 'phones', 'cameras', 'equipments'));
+        return view('inspections.create', compact('bookings', 'booking', 'vehicles', 'phones', 'cameras', 'equipments', 'playstations', 'drones', 'instruments'));
     }
 
     public function store(Request $request)
@@ -87,17 +93,13 @@ class InspectionWebController extends Controller
 
         $itemType = match($scope) {
             'kendaraan' => Vehicle::class,
-            'elektronik' => in_array($itemId, $request->phones ?? []) ? Phone::class : Camera::class,
+            'elektronik' => $this->resolveElectronicsType($itemId),
             'camping' => CampingEquipment::class,
             default => Vehicle::class,
         };
 
         if ($scope === 'elektronik') {
-            if (Phone::find($itemId)) {
-                $itemType = Phone::class;
-            } elseif (Camera::find($itemId)) {
-                $itemType = Camera::class;
-            }
+            $itemType = $this->resolveElectronicsType($itemId);
         }
 
         $vehicleId = null;
@@ -138,5 +140,15 @@ class InspectionWebController extends Controller
     {
         $inspection->load(['booking', 'vehicle', 'inspector']);
         return view('inspections.show', compact('inspection'));
+    }
+
+    private function resolveElectronicsType(int $itemId): string
+    {
+        if (Phone::find($itemId)) return Phone::class;
+        if (Camera::find($itemId)) return Camera::class;
+        if (Playstation::find($itemId)) return Playstation::class;
+        if (Drone::find($itemId)) return Drone::class;
+        if (MusicalInstrument::find($itemId)) return MusicalInstrument::class;
+        return Phone::class;
     }
 }

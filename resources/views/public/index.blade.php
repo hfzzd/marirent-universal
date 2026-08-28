@@ -12,6 +12,9 @@
             'sewa-hp' => \App\Models\Phone::where('status', 'available')->where('is_active', true)->count(),
             'sewa-kamera' => \App\Models\Camera::where('status', 'available')->where('is_active', true)->count(),
             'sewa-tenda' => \App\Models\CampingEquipment::where('status', 'available')->where('is_active', true)->count(),
+            'sewa-ps' => \App\Models\Playstation::where('status', 'available')->where('is_active', true)->count(),
+            'sewa-drone' => \App\Models\Drone::where('status', 'available')->where('is_active', true)->count(),
+            'sewa-alat-musik' => \App\Models\MusicalInstrument::where('status', 'available')->where('is_active', true)->count(),
             default => 0,
         };
     }
@@ -23,6 +26,9 @@
         \App\Models\Phone::with('category')->where('is_active', true)->where('status', 'available'),
         \App\Models\Camera::with('category')->where('is_active', true)->where('status', 'available'),
         \App\Models\CampingEquipment::with('category')->where('is_active', true)->where('status', 'available'),
+        \App\Models\Playstation::with('category')->where('is_active', true)->where('status', 'available'),
+        \App\Models\Drone::with('category')->where('is_active', true)->where('status', 'available'),
+        \App\Models\MusicalInstrument::with('category')->where('is_active', true)->where('status', 'available'),
     ];
     foreach ($allQueries as $q) {
         $items = $q->inRandomOrder()->limit(2)->get();
@@ -79,6 +85,45 @@
                     'category' => $item->category,
                     'icon' => 'fa-campground',
                     'icon_class' => 'text-emerald-200',
+                ]);
+            } elseif ($item instanceof \App\Models\Playstation) {
+                $featuredVehicles->push([
+                    'type' => 'ps',
+                    'name' => $item->name,
+                    'slug' => $item->slug,
+                    'brand' => $item->brand,
+                    'subtitle' => $item->console_model,
+                    'daily_price' => (float) $item->daily_price,
+                    'image' => $item->image,
+                    'category' => $item->category,
+                    'icon' => 'fa-gamepad',
+                    'icon_class' => 'text-indigo-200',
+                ]);
+            } elseif ($item instanceof \App\Models\Drone) {
+                $featuredVehicles->push([
+                    'type' => 'drone',
+                    'name' => $item->name,
+                    'slug' => $item->slug,
+                    'brand' => $item->brand,
+                    'subtitle' => $item->drone_model,
+                    'daily_price' => (float) $item->daily_price,
+                    'image' => $item->image,
+                    'category' => $item->category,
+                    'icon' => 'fa-drone',
+                    'icon_class' => 'text-cyan-200',
+                ]);
+            } elseif ($item instanceof \App\Models\MusicalInstrument) {
+                $featuredVehicles->push([
+                    'type' => 'musik',
+                    'name' => $item->name,
+                    'slug' => $item->slug,
+                    'brand' => $item->brand,
+                    'subtitle' => $item->instrument_model,
+                    'daily_price' => (float) $item->daily_price,
+                    'image' => $item->image,
+                    'category' => $item->category,
+                    'icon' => 'fa-guitar',
+                    'icon_class' => 'text-rose-200',
                 ]);
             }
         }
@@ -166,7 +211,11 @@
                 @elseif($cat->slug == 'motor') <i class="fas fa-motorcycle text-amber-500 text-xl"></i>
                 @elseif($cat->slug == 'sewa-hp') <i class="fas fa-mobile-alt text-violet-500 text-xl"></i>
                 @elseif($cat->slug == 'sewa-kamera') <i class="fas fa-camera text-violet-500 text-xl"></i>
-                @else <i class="fas fa-campground text-emerald-500 text-xl"></i>
+                @elseif($cat->slug == 'sewa-tenda') <i class="fas fa-campground text-emerald-500 text-xl"></i>
+                @elseif($cat->slug == 'sewa-ps') <i class="fas fa-gamepad text-indigo-500 text-xl"></i>
+                @elseif($cat->slug == 'sewa-drone') <i class="fas fa-drone text-cyan-500 text-xl"></i>
+                @elseif($cat->slug == 'sewa-alat-musik') <i class="fas fa-guitar text-rose-500 text-xl"></i>
+                @else <i class="fas fa-box text-gray-400 text-xl"></i>
                 @endif
             </div>
             <h3 class="font-bold text-navy-800 text-[15px] mb-1">{{ $cat->name }}</h3>

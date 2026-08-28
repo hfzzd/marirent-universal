@@ -99,6 +99,11 @@ html { scroll-behavior: smooth; }
 .badge-blue { background: #e0f2fe; color: #075985; }
 .badge-gray { background: #f1f5f9; color: #475569; }
 .badge-teal { background: #ccfbf1; color: #115e59; }
+.badge-violet { background: #ede9fe; color: #5b21b6; }
+.badge-indigo { background: #e0e7ff; color: #3730a3; }
+.badge-cyan { background: #cffafe; color: #0e7490; }
+.badge-rose { background: #ffe4e6; color: #9f1239; }
+.badge-emerald { background: #d1fae5; color: #065f46; }
 .sidebar-group-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; padding: 8px 12px 4px; }
 .glass-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); }
 .gradient-sky { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }

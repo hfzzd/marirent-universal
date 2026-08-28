@@ -8,6 +8,9 @@ use App\Models\Vehicle;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
+use App\Models\Playstation;
+use App\Models\Drone;
+use App\Models\MusicalInstrument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,6 +26,9 @@ class BrandCatalogPhotoController extends Controller
             'hp' => Phone::class,
             'kamera' => Camera::class,
             'camping' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
         ];
 
         $hiddenBrands = ['hp' => ['Nothing'], 'kamera' => ['RED'], 'camping' => ['CAMP']];
@@ -75,7 +81,7 @@ class BrandCatalogPhotoController extends Controller
             $allBrands = $allBrands->where('item_type', $itemType);
         }
 
-        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping'];
+        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
 
         return view('admin.brand-catalog.index', [
             'allBrands' => $allBrands,
@@ -86,7 +92,7 @@ class BrandCatalogPhotoController extends Controller
 
     public function create(Request $request)
     {
-        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping'];
+        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
         $existingBrands = $this->getExistingBrands();
 
         return view('admin.brand-catalog.create', [
@@ -101,7 +107,7 @@ class BrandCatalogPhotoController extends Controller
     {
         $validated = $request->validate([
             'brand_name' => 'required|string|max:255',
-            'item_type' => 'required|in:mobil,motor,hp,kamera,camping',
+            'item_type' => 'required|in:mobil,motor,hp,kamera,camping,ps,drone,musik',
             'photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'caption' => 'nullable|string|max:500',
             'sort_order' => 'nullable|integer|min:0',
@@ -122,7 +128,7 @@ class BrandCatalogPhotoController extends Controller
 
     public function edit(BrandCatalogPhoto $brandCatalogPhoto)
     {
-        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping'];
+        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
         $existingBrands = $this->getExistingBrands();
 
         return view('admin.brand-catalog.edit', [
@@ -136,7 +142,7 @@ class BrandCatalogPhotoController extends Controller
     {
         $validated = $request->validate([
             'brand_name' => 'required|string|max:255',
-            'item_type' => 'required|in:mobil,motor,hp,kamera,camping',
+            'item_type' => 'required|in:mobil,motor,hp,kamera,camping,ps,drone,musik',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'caption' => 'nullable|string|max:500',
             'sort_order' => 'nullable|integer|min:0',
@@ -185,7 +191,7 @@ class BrandCatalogPhotoController extends Controller
     {
         $validated = $request->validate([
             'brand_name' => 'required|string|max:255',
-            'item_type' => 'required|in:mobil,motor,hp,kamera,camping',
+            'item_type' => 'required|in:mobil,motor,hp,kamera,camping,ps,drone,musik',
         ]);
 
         $photos = BrandCatalogPhoto::where('brand_name', $validated['brand_name'])
@@ -210,6 +216,9 @@ class BrandCatalogPhotoController extends Controller
             'hp' => Phone::class,
             'kamera' => Camera::class,
             'camping' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
         ];
 
         $hiddenBrands = ['hp' => ['Nothing'], 'kamera' => ['RED'], 'camping' => ['CAMP']];

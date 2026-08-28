@@ -75,6 +75,10 @@
                                 @elseif($cat == 'motor') <i class="fas fa-motorcycle text-amber-500 text-sm"></i>
                                 @elseif($cat == 'sewa-kamera') <i class="fas fa-camera text-violet-500 text-sm"></i>
                                 @elseif($cat == 'sewa-tenda') <i class="fas fa-campground text-emerald-500 text-sm"></i>
+                                @elseif($cat == 'sewa-hp') <i class="fas fa-mobile-alt text-blue-500 text-sm"></i>
+                                @elseif($cat == 'sewa-ps') <i class="fas fa-gamepad text-indigo-500 text-sm"></i>
+                                @elseif($cat == 'sewa-drone') <i class="fas fa-drone text-cyan-500 text-sm"></i>
+                                @elseif($cat == 'sewa-alat-musik') <i class="fas fa-guitar text-rose-500 text-sm"></i>
                                 @else <i class="fas fa-box text-gray-400 text-sm"></i>
                                 @endif
                             </div>

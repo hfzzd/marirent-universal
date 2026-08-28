@@ -16,6 +16,18 @@
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'tenda' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-campground mr-1"></i> Tenda ({{ $counts['tenda'] }})
         </a>
+        <a href="{{ route($prefix . '.elektronik.type', 'ps') }}"
+           class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'ps' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
+            <i class="fas fa-gamepad mr-1"></i> Playstation ({{ $counts['ps'] }})
+        </a>
+        <a href="{{ route($prefix . '.elektronik.type', 'drone') }}"
+           class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'drone' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
+            <i class="fas fa-drone mr-1"></i> Drone ({{ $counts['drone'] }})
+        </a>
+        <a href="{{ route($prefix . '.elektronik.type', 'musik') }}"
+           class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'musik' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
+            <i class="fas fa-guitar mr-1"></i> Musik ({{ $counts['musik'] }})
+        </a>
     </div>
     <div class="flex gap-2">
         <form action="{{ route($prefix . '.elektronik.type', $type) }}" method="GET" class="flex gap-2">
@@ -45,6 +57,12 @@
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Sensor</th>
                     @elseif($type == 'hp')
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Storage</th>
+                    @elseif($type == 'ps')
+                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Storage</th>
+                    @elseif($type == 'drone')
+                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Kamera</th>
+                    @elseif($type == 'musik')
+                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Tipe</th>
                     @else
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Kapasitas</th>
                     @endif
@@ -60,19 +78,22 @@
                 <tr class="border-b border-gray-50 last:border-0 hover:bg-sky-50/30">
                     <td class="py-3 px-5">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 {{ $type == 'kamera' ? 'bg-violet-50' : ($type == 'tenda' ? 'bg-emerald-50' : 'bg-blue-50') }} rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <div class="w-9 h-9 {{ $type == 'kamera' ? 'bg-violet-50' : ($type == 'tenda' ? 'bg-emerald-50' : ($type == 'ps' ? 'bg-indigo-50' : ($type == 'drone' ? 'bg-cyan-50' : ($type == 'musik' ? 'bg-rose-50' : 'bg-blue-50')))) }} rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                                 @if($item->image)
                                     <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" class="w-full h-full object-cover">
                                 @else
                                     @if($type == 'kamera') <i class="fas fa-camera text-violet-500 text-sm"></i>
                                     @elseif($type == 'tenda') <i class="fas fa-campground text-emerald-500 text-sm"></i>
+                                    @elseif($type == 'ps') <i class="fas fa-gamepad text-indigo-500 text-sm"></i>
+                                    @elseif($type == 'drone') <i class="fas fa-drone text-cyan-500 text-sm"></i>
+                                    @elseif($type == 'musik') <i class="fas fa-guitar text-rose-500 text-sm"></i>
                                     @else <i class="fas fa-mobile-alt text-blue-500 text-sm"></i>
                                     @endif
                                 @endif
                             </div>
                             <div>
                                 <p class="font-medium text-navy-800">{{ $item->name }}</p>
-                                <p class="text-[11px] text-gray-400">{{ $item->brand }} @if($type == 'kamera') {{ $item->camera_model ?? '' }} @elseif($type == 'hp') {{ $item->phone_model ?? '' }} @else {{ $item->equipment_model ?? '' }} @endif</p>
+                                <p class="text-[11px] text-gray-400">{{ $item->brand }} @if($type == 'kamera') {{ $item->camera_model ?? '' }} @elseif($type == 'hp') {{ $item->phone_model ?? '' }} @elseif($type == 'tenda') {{ $item->equipment_model ?? '' }} @elseif($type == 'ps') {{ $item->console_model ?? '' }} @elseif($type == 'drone') {{ $item->drone_model ?? '' }} @elseif($type == 'musik') {{ $item->instrument_model ?? '' }} @endif</p>
                             </div>
                         </div>
                     </td>
@@ -81,6 +102,12 @@
                     <td class="py-3 px-5 text-navy-600 text-[12px]">{{ $item->sensor_size ?? '-' }}</td>
                     @elseif($type == 'hp')
                     <td class="py-3 px-5 text-navy-600 text-[12px]">{{ $item->storage_capacity ?? '-' }} / {{ $item->ram ?? '-' }}</td>
+                    @elseif($type == 'ps')
+                    <td class="py-3 px-5 text-navy-600 text-[12px]">{{ $item->storage_capacity ?? '-' }} / {{ $item->controllers_count ?? '-' }} Ctrl</td>
+                    @elseif($type == 'drone')
+                    <td class="py-3 px-5 text-navy-600 text-[12px]">{{ $item->camera_resolution ?? '-' }}</td>
+                    @elseif($type == 'musik')
+                    <td class="py-3 px-5 text-navy-600 text-[12px]">{{ $item->instrument_type ? ucfirst($item->instrument_type) : '-' }}</td>
                     @else
                     <td class="py-3 px-5 text-navy-600 text-[12px]">{{ $item->capacity ?? '-' }} orang</td>
                     @endif

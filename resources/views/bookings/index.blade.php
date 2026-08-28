@@ -74,10 +74,13 @@
                     <td class="py-3 px-5">
                         <div class="flex items-center gap-2">
                             @php $cat = $b->category->slug ?? ''; @endphp
-                            <div class="w-8 h-8 {{ $cat == 'sewa-kamera' ? 'bg-violet-50' : ($cat == 'sewa-tenda' ? 'bg-emerald-50' : 'bg-sky-50') }} rounded-lg flex items-center justify-center flex-shrink-0">
+                            <div class="w-8 h-8 {{ $cat == 'sewa-kamera' ? 'bg-violet-50' : ($cat == 'sewa-tenda' ? 'bg-emerald-50' : ($cat == 'sewa-ps' ? 'bg-indigo-50' : ($cat == 'sewa-drone' ? 'bg-cyan-50' : ($cat == 'sewa-alat-musik' ? 'bg-rose-50' : 'bg-sky-50')))) }} rounded-lg flex items-center justify-center flex-shrink-0">
                                 @if($cat == 'sewa-kamera') <i class="fas fa-camera text-violet-400 text-[10px]"></i>
                                 @elseif($cat == 'sewa-tenda') <i class="fas fa-campground text-emerald-400 text-[10px]"></i>
                                 @elseif($cat == 'sewa-hp') <i class="fas fa-mobile-alt text-blue-400 text-[10px]"></i>
+                                @elseif($cat == 'sewa-ps') <i class="fas fa-gamepad text-indigo-400 text-[10px]"></i>
+                                @elseif($cat == 'sewa-drone') <i class="fas fa-drone text-cyan-400 text-[10px]"></i>
+                                @elseif($cat == 'sewa-alat-musik') <i class="fas fa-guitar text-rose-400 text-[10px]"></i>
                                 @else <i class="fas fa-car text-sky-400 text-[10px]"></i>
                                 @endif
                             </div>

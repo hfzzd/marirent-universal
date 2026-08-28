@@ -193,5 +193,8 @@ class DatabaseSeeder extends Seeder
 
         // Run bulk electronics seed data (50+ per category)
         $this->call(ElectronicsSeeder::class);
+
+        // Run additional products seed (Playstation, Drone, Alat Musik)
+        $this->call(AdditionalProductsSeeder::class);
     }
 }

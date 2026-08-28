@@ -68,6 +68,9 @@
                         @elseif($catSlug == 'sewa-kamera') <span class="badge badge-teal">Kamera</span>
                         @elseif($catSlug == 'sewa-tenda') <span class="badge badge-green">Tenda</span>
                         @elseif($catSlug == 'sewa-hp') <span class="badge badge-gray">HP</span>
+                        @elseif($catSlug == 'sewa-ps') <span class="badge badge-indigo">Playstation</span>
+                        @elseif($catSlug == 'sewa-drone') <span class="badge badge-cyan">Drone</span>
+                        @elseif($catSlug == 'sewa-alat-musik') <span class="badge badge-rose">Alat Musik</span>
                         @else <span class="badge badge-gray">{{ $catSlug ?: '-' }}</span>
                         @endif
                     </td>

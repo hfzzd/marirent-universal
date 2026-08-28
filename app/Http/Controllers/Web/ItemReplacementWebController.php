@@ -7,6 +7,9 @@ use App\Models\ItemReplacement;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
+use App\Models\Playstation;
+use App\Models\Drone;
+use App\Models\MusicalInstrument;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +22,9 @@ class ItemReplacementWebController extends Controller
             'hp' => new Phone(),
             'camera' => new Camera(),
             'tenda' => new CampingEquipment(),
+            'ps' => new Playstation(),
+            'drone' => new Drone(),
+            'musik' => new MusicalInstrument(),
             default => null,
         };
     }
@@ -58,7 +64,7 @@ class ItemReplacementWebController extends Controller
         }
 
         $type = $request->type ?? 'hp';
-        if (!in_array($type, ['hp', 'camera', 'tenda'])) {
+        if (!in_array($type, ['hp', 'camera', 'tenda', 'ps', 'drone', 'musik'])) {
             abort(404);
         }
 
@@ -79,6 +85,9 @@ class ItemReplacementWebController extends Controller
             'hp' => Phone::class,
             'camera' => Camera::class,
             'tenda' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
         };
 
         return $modelClass::where('status', 'available')
@@ -95,7 +104,7 @@ class ItemReplacementWebController extends Controller
 
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            'item_type' => 'required|in:hp,camera,tenda',
+            'item_type' => 'required|in:hp,camera,tenda,ps,drone,musik',
             'original_item_id' => 'required|integer',
             'replacement_item_id' => 'required|integer',
             'reason' => 'required|string|max:2000',
@@ -112,6 +121,9 @@ class ItemReplacementWebController extends Controller
             'hp' => Phone::class,
             'camera' => Camera::class,
             'tenda' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
         };
 
         $originalItem = $modelClass::findOrFail($validated['original_item_id']);
@@ -160,6 +172,9 @@ class ItemReplacementWebController extends Controller
             'hp' => Phone::class,
             'camera' => Camera::class,
             'tenda' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
         };
 
         $originalItem = $modelClass::find($replacement->original_item_id);
@@ -174,7 +189,7 @@ class ItemReplacementWebController extends Controller
 
         $booking = $replacement->booking;
         $booking->update([
-            'item_type' => $replacement->item_type === 'hp' ? \App\Models\Phone::class : ($replacement->item_type === 'camera' ? \App\Models\Camera::class : \App\Models\CampingEquipment::class),
+            'item_type' => $modelClass,
             'item_id' => $replacement->replacement_item_id,
             'final_price' => $booking->final_price + $replacement->price_difference,
         ]);
