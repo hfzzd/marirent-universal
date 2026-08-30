@@ -13,10 +13,23 @@ class ElectronicsSeeder extends Seeder
 {
     public function run(): void
     {
-        $owner = User::where('role', 'owner')->first();
         $hpCat = Category::where('slug', 'sewa-hp')->first();
         $kameraCat = Category::where('slug', 'sewa-kamera')->first();
         $tendaCat = Category::where('slug', 'sewa-tenda')->first();
+
+        $ownerHp = $hpCat
+            ? User::where('role', 'owner')->where('category_id', $hpCat->id)->first()
+            : null;
+        $ownerKamera = $kameraCat
+            ? User::where('role', 'owner')->where('category_id', $kameraCat->id)->first()
+            : null;
+        $ownerTenda = $tendaCat
+            ? User::where('role', 'owner')->where('category_id', $tendaCat->id)->first()
+            : null;
+
+        $ownerHp ??= User::where('role', 'owner')->first();
+        $ownerKamera ??= $ownerHp;
+        $ownerTenda ??= $ownerHp;
 
         // ── PHONES (50+) ────────────────────────────────────────────
         $phones = [
@@ -127,9 +140,10 @@ class ElectronicsSeeder extends Seeder
         ];
 
         foreach ($phones as $p) {
+            $image = SeedMediaHelper::resolve('Hp', $p['name'], $p['phone_model'], $p['brand']);
             Phone::create([
                 'category_id' => $hpCat->id,
-                'owner_id' => $owner->id,
+                'owner_id' => $ownerHp->id,
                 'name' => $p['name'],
                 'slug' => \Illuminate\Support\Str::slug($p['name']) . '-' . \Illuminate\Support\Str::random(5),
                 'brand' => $p['brand'],
@@ -138,6 +152,7 @@ class ElectronicsSeeder extends Seeder
                 'ram' => $p['ram'],
                 'color' => $p['color'],
                 'description' => $p['desc'],
+                'image' => $image,
                 'daily_price' => $p['daily'],
                 'weekly_price' => $p['daily'] * 6,
                 'monthly_price' => $p['daily'] * 25,
@@ -227,9 +242,10 @@ class ElectronicsSeeder extends Seeder
         ];
 
         foreach ($cameras as $c) {
+            $image = SeedMediaHelper::resolve('Kamera', $c['name'], $c['model'], $c['brand']);
             Camera::create([
                 'category_id' => $kameraCat->id,
-                'owner_id' => $owner->id,
+                'owner_id' => $ownerKamera->id,
                 'name' => $c['name'],
                 'slug' => \Illuminate\Support\Str::slug($c['name']) . '-' . \Illuminate\Support\Str::random(5),
                 'brand' => $c['brand'],
@@ -238,6 +254,7 @@ class ElectronicsSeeder extends Seeder
                 'lens_included' => $c['lens'],
                 'accessories' => ['battery', 'charger', 'strap', 'bag'],
                 'description' => $c['desc'],
+                'image' => $image,
                 'daily_price' => $c['daily'],
                 'weekly_price' => $c['daily'] * 6,
                 'monthly_price' => $c['daily'] * 25,
@@ -320,9 +337,10 @@ class ElectronicsSeeder extends Seeder
         ];
 
         foreach ($camping as $item) {
+            $image = SeedMediaHelper::resolve('tenda', $item['name'], $item['model'], $item['brand']);
             CampingEquipment::create([
                 'category_id' => $tendaCat->id,
-                'owner_id' => $owner->id,
+                'owner_id' => $ownerTenda->id,
                 'name' => $item['name'],
                 'slug' => \Illuminate\Support\Str::slug($item['name']) . '-' . \Illuminate\Support\Str::random(5),
                 'brand' => $item['brand'],
@@ -332,6 +350,7 @@ class ElectronicsSeeder extends Seeder
                 'weight' => $item['weight'],
                 'material' => $item['material'],
                 'description' => $item['desc'],
+                'image' => $image,
                 'daily_price' => $item['daily'],
                 'weekly_price' => $item['daily'] * 6,
                 'monthly_price' => $item['daily'] * 25,

@@ -16,8 +16,13 @@ class VehicleWebController extends Controller
         $query = Vehicle::whereHas('category', fn($q) => $q->where('slug', 'mobil'))
             ->with(['category', 'owner']);
 
-        if (Auth::user()->role === 'owner') {
-            $query->where('owner_id', Auth::id());
+        if (Auth::user()->isMerchantStaff()) {
+            $query->where('owner_id', Auth::user()->merchantId());
+        }
+
+        $categoryId = Auth::user()->merchantCategoryId();
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
         }
 
         if ($request->search) {
@@ -39,8 +44,13 @@ class VehicleWebController extends Controller
         $query = Vehicle::whereHas('category', fn($q) => $q->where('slug', 'motor'))
             ->with(['category', 'owner']);
 
-        if (Auth::user()->role === 'owner') {
-            $query->where('owner_id', Auth::id());
+        if (Auth::user()->isMerchantStaff()) {
+            $query->where('owner_id', Auth::user()->merchantId());
+        }
+
+        $categoryId = Auth::user()->merchantCategoryId();
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
         }
 
         if ($request->search) {

@@ -10,6 +10,16 @@ class Booking extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const CATALOG_MODELS = [
+        Vehicle::class,
+        Phone::class,
+        Camera::class,
+        CampingEquipment::class,
+        Playstation::class,
+        Drone::class,
+        MusicalInstrument::class,
+    ];
+
     protected $fillable = [
         'booking_code', 'user_id', 'vehicle_id', 'driver_id', 'category_id',
         'item_type', 'item_id',
@@ -20,6 +30,7 @@ class Booking extends Model
         'status', 'payment_status', 'notes', 'cancellation_reason', 'ktp_photo',
         'accessories', 'urgency', 'with_insurance',
         'payment_plan', 'payment_due_date', 'source', 'parent_booking_id',
+        'dp_amount',
     ];
 
     protected function casts(): array
@@ -32,6 +43,7 @@ class Booking extends Model
             'total_price' => 'decimal:2', 'discount' => 'decimal:2',
             'final_price' => 'decimal:2', 'with_driver' => 'boolean',
             'accessories' => 'array', 'with_insurance' => 'boolean',
+            'dp_amount' => 'decimal:2',
         ];
     }
 
@@ -61,6 +73,29 @@ class Booking extends Model
         return $this->start_date->diffInDays($this->end_date);
     }
 
+    public function getDpAmount(): ?float
+    {
+        if ($this->payment_plan !== 'dp50') {
+            return null;
+        }
+
+        if ($this->dp_amount !== null) {
+            return round((float) $this->dp_amount);
+        }
+
+        return round((float) $this->final_price * 0.5);
+    }
+
+    public function setDpAmountFromPlan(): void
+    {
+        if ($this->payment_plan === 'dp50') {
+            $dp = round((float) $this->final_price * 0.5);
+            $this->update(['dp_amount' => $dp]);
+        } else {
+            $this->update(['dp_amount' => null]);
+        }
+    }
+
     public function scopeUpcoming($query)
     {
         return $query->where('start_date', '>', now())->whereIn('status', ['pending', 'confirmed']);
@@ -74,5 +109,94 @@ class Booking extends Model
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');
+    }
+
+    public function scopeOwnedByMerchant($query, ?int $merchantId)
+    {
+        if (!$merchantId) {
+            return $query;
+        }
+
+        $idsByType = [];
+        foreach (self::CATALOG_MODELS as $model) {
+            $idsByType[$model] = $model::where('owner_id', $merchantId)->pluck('id');
+        }
+
+        return $query->where(function ($q) use ($merchantId, $idsByType) {
+            $q->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId));
+            foreach ($idsByType as $type => $ids) {
+                $q->orWhere(fn($tq) => $tq->where('item_type', $type)->whereIn('item_id', $ids));
+            }
+        });
+    }
+
+    /**
+     * Filter booking milik merchant, opsional dibatasi 1 kategori produk.
+     */
+    public function scopeForMerchantCategory($query, ?int $merchantId, ?int $categoryId = null)
+    {
+        $query->ownedByMerchant($merchantId);
+
+        if ($categoryId) {
+            $query->where(function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId)
+                  ->orWhereHas('childBookings', fn($cq) => $cq->where('category_id', $categoryId));
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * Kategori produk yang disentuh booking ini (termasuk anak multi-item).
+     */
+    public function merchantCategoryIds(): array
+    {
+        $ids = collect([$this->category_id]);
+
+        foreach ($this->childBookings as $child) {
+            $ids->push($child->category_id);
+        }
+
+        return $ids->filter()->map(fn($id) => (int) $id)->unique()->values()->all();
+    }
+
+    /**
+     * Apakah booking menyentuh kategori tertentu?
+     */
+    public function belongsToCategory(?int $categoryId): bool
+    {
+        if (!$categoryId) {
+            return true;
+        }
+
+        if (!$this->relationLoaded('childBookings')) {
+            $this->load('childBookings');
+        }
+
+        return in_array((int) $categoryId, $this->merchantCategoryIds(), true);
+    }
+
+    /**
+     * Id merchant (owner) yang memiliki unit pada booking ini.
+     */
+    public function merchantOwnerId(): ?int
+    {
+        if ($this->vehicle && $this->vehicle->owner_id) {
+            return (int) $this->vehicle->owner_id;
+        }
+
+        if ($this->item && $this->item->owner_id) {
+            return (int) $this->item->owner_id;
+        }
+
+        foreach ($this->childBookings as $child) {
+            $id = $child->merchantOwnerId();
+            if ($id) {
+                return $id;
+            }
+        }
+
+        return null;
     }
 }

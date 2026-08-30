@@ -11,9 +11,18 @@ class VehicleSeeder extends Seeder
 {
     public function run(): void
     {
-        $owner = User::where('role', 'owner')->first();
         $mobilCat = Category::where('slug', 'mobil')->first();
         $motorCat = Category::where('slug', 'motor')->first();
+
+        $ownerMobil = $mobilCat
+            ? User::where('role', 'owner')->where('category_id', $mobilCat->id)->first()
+            : null;
+        $ownerMotor = $motorCat
+            ? User::where('role', 'owner')->where('category_id', $motorCat->id)->first()
+            : null;
+
+        $ownerMobil ??= User::where('role', 'owner')->first();
+        $ownerMotor ??= $ownerMobil;
 
         // ── MOBIL (50) ────────────────────────────────────────────
         $mobil = [
@@ -97,9 +106,10 @@ class VehicleSeeder extends Seeder
         ];
 
         foreach ($mobil as $v) {
+            $image = SeedMediaHelper::resolve('Mobil/Mobil', $v['name'], $v['model'], $v['brand']);
             Vehicle::create([
                 'category_id' => $mobilCat->id,
-                'owner_id' => $owner->id,
+                'owner_id' => $ownerMobil->id,
                 'name' => $v['name'],
                 'slug' => \Illuminate\Support\Str::slug($v['name']) . '-' . \Illuminate\Support\Str::random(5),
                 'brand' => $v['brand'],
@@ -108,6 +118,7 @@ class VehicleSeeder extends Seeder
                 'color' => $v['color'],
                 'license_plate' => $v['plate'],
                 'description' => $v['name'] . ', kondisi prima dan terawat.',
+                'image' => $image,
                 'daily_price' => $v['daily'],
                 'weekly_price' => $v['daily'] * 6,
                 'monthly_price' => $v['daily'] * 25,
@@ -204,9 +215,10 @@ class VehicleSeeder extends Seeder
         ];
 
         foreach ($motor as $v) {
+            $image = SeedMediaHelper::resolve('Motor/Motor', $v['name'], $v['model'], $v['brand']);
             Vehicle::create([
                 'category_id' => $motorCat->id,
-                'owner_id' => $owner->id,
+                'owner_id' => $ownerMotor->id,
                 'name' => $v['name'],
                 'slug' => \Illuminate\Support\Str::slug($v['name']) . '-' . \Illuminate\Support\Str::random(5),
                 'brand' => $v['brand'],
@@ -215,6 +227,7 @@ class VehicleSeeder extends Seeder
                 'color' => $v['color'],
                 'license_plate' => $v['plate'],
                 'description' => $v['name'] . ', kondisi prima dan terawat.',
+                'image' => $image,
                 'daily_price' => $v['daily'],
                 'weekly_price' => $v['daily'] * 6,
                 'monthly_price' => $v['daily'] * 25,

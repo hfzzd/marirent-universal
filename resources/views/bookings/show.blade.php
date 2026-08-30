@@ -61,11 +61,31 @@
                     </div>
 
                     {{-- Tanggal --}}
-                    <div class="bg-gradient-to-br from-amber-50/60 to-amber-100/30 p-4 rounded-xl border border-amber-100/50">
+                    <div class="bg-gradient-to-br from-amber-50/60 to-amber-100/30 p-4 rounded-xl border border-amber-100/50" x-data="{ rescheduleOpen: false }">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Tanggal Sewa</p>
                         <p class="font-medium text-navy-800 text-[14px]">{{ $booking->start_date->format('d M Y H:i') }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">s/d {{ $booking->end_date->format('d M Y H:i') }}</p>
                         <p class="text-[11px] text-sky-600 font-medium mt-1">{{ $booking->start_date->diffInDays($booking->end_date) }} hari</p>
+
+                        @if($isMerchantStaff && in_array($booking->status, ['pending', 'confirmed', 'ongoing']))
+                        <button type="button" @click="rescheduleOpen = !rescheduleOpen" class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold transition">
+                            <i class="fas fa-calendar-plus text-[10px]"></i> Ubah Jadwal
+                        </button>
+                        <form method="POST" action="{{ route('bookings.reschedule', $booking) }}" x-show="rescheduleOpen" x-transition class="mt-3 space-y-2.5">
+                            @csrf
+                            <div>
+                                <label class="block text-[11px] font-semibold text-navy-700 mb-1">Mulai Baru</label>
+                                <input type="datetime-local" name="start_date" value="{{ $booking->start_date->format('Y-m-d\TH:i') }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-navy-700 mb-1">Selesai Baru</label>
+                                <input type="datetime-local" name="end_date" value="{{ $booking->end_date->format('Y-m-d\TH:i') }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[11px] font-bold transition">
+                                <i class="fas fa-refresh text-[10px] mr-1"></i> Simpan Ubah Jadwal & Hitung Ulang
+                            </button>
+                        </form>
+                        @endif
                     </div>
 
                     {{-- Driver --}}
@@ -320,6 +340,12 @@
                     <span class="text-[11px] font-bold text-navy-700">{{ $booking->payment_plan === 'dp50' ? 'DP 50%' : 'Bayar Penuh' }}</span>
                 </div>
                 @endif
+                @if($booking->payment_plan === 'dp50' && $booking->getDpAmount() > 0)
+                <div class="mt-3 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+                    <span class="text-[11px] font-bold text-amber-700"><i class="fas fa-hand-holding-dollar mr-1"></i> DP Minimal</span>
+                    <span class="text-[11px] font-bold text-amber-700">Rp {{ number_format($booking->getDpAmount(), 0, ',', '.') }}</span>
+                </div>
+                @endif
                 @if($booking->payment_due_date && $booking->payment_status != 'paid')
                 <div class="mt-3 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
                     <span class="text-[11px] font-bold text-amber-700"><i class="fas fa-calendar-day mr-1"></i> Jatuh Tempo</span>
@@ -336,7 +362,7 @@
             </div>
 
             {{-- Link Terkait (Admin/Owner only) --}}
-            @if(in_array(auth()->user()->role, ['superadmin','owner']))
+            @if(in_array(auth()->user()->role, ['superadmin','owner','admin']))
             <div class="glass-card rounded-2xl p-6">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-3"><i class="fas fa-link text-sky-500 mr-2"></i>Link Terkait</h3>
                 <div class="space-y-2">

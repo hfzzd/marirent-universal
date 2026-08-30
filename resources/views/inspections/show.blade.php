@@ -31,9 +31,29 @@
                     <p class="font-bold text-navy-800">{{ $inspection->getItemName() }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-navy-500">Inspektur</p>
-                    <p class="font-bold text-navy-800">{{ $inspection->inspector->name ?? '-' }}</p>
+                    <p class="text-xs text-navy-500">Status</p>
+                    <p class="font-bold text-navy-800">
+                        @if($inspection->status == 'reported')
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Laporan Driver</span>
+                        @elseif($inspection->status == 'processing')
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Dikerjakan Inspector</span>
+                        @elseif($inspection->status == 'completed')
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Selesai</span>
+                        @else
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ $inspection->getStatusLabel() }}</span>
+                        @endif
+                    </p>
                 </div>
+                <div>
+                    <p class="text-xs text-navy-500">Inspektur</p>
+                    <p class="font-bold text-navy-800">{{ $inspection->inspector?->name ?? ($inspection->assignedTo?->name ?? '-') }}</p>
+                </div>
+                @if($inspection->reported_by && $inspection->reportedBy)
+                <div>
+                    <p class="text-xs text-navy-500">Dilaporkan Driver</p>
+                    <p class="font-bold text-navy-800">{{ $inspection->reportedBy->name }}</p>
+                </div>
+                @endif
             </div>
             <div class="space-y-3">
                 @if($inspection->usage_duration_hours)
@@ -148,6 +168,44 @@
                 <p class="text-xs text-navy-500 mb-1"><i class="fas fa-lightbulb mr-1"></i>Rekomendasi</p>
                 <p class="text-sm text-navy-700">{{ $inspection->recommendations }}</p>
             </div>
+            @endif
+        </div>
+        @endif
+    {{-- Resolution --}}
+        @if($inspection->status == 'completed' && $inspection->resolution_notes)
+        <div class="mt-6 bg-green-50 rounded-xl p-4">
+            <p class="text-xs text-navy-500 mb-1"><i class="fas fa-check-circle mr-1"></i>Catatan Hasil Inspector</p>
+            <p class="text-sm text-navy-700">{{ $inspection->resolution_notes }}</p>
+        </div>
+        @endif
+
+        {{-- Inspector Actions --}}
+        @if(in_array($inspection->status, ['reported', 'processing']) && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector()))
+        <div class="mt-6 bg-gray-50 rounded-xl p-4">
+            @if($inspection->status == 'reported')
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p class="text-sm font-bold text-navy-800"><i class="fas fa-triangle-exclamation text-red-500 mr-1"></i> Laporan driver masuk</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Kerjakan laporan ini langsung tanpa perlu membuat inspeksi baru.</p>
+                </div>
+                <form method="POST" action="{{ route('inspections.start', $inspection) }}">
+                    @csrf
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                        <i class="fas fa-tasks mr-1"></i> Mulai Kerjakan
+                    </button>
+                </form>
+            </div>
+            @else
+            <form method="POST" action="{{ route('inspections.complete', $inspection) }}" class="space-y-3">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-navy-800 mb-1.5">Catatan Hasil Pengerjaan</label>
+                    <textarea name="resolution_notes" rows="3" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Tulis hasil perbaikan / rekomendasi lanjutan...">{{ $inspection->resolution_notes }}</textarea>
+                </div>
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                    <i class="fas fa-check mr-1"></i> Selesai Dikerjakan
+                </button>
+            </form>
             @endif
         </div>
         @endif

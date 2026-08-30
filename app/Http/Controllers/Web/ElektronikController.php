@@ -52,7 +52,7 @@ class ElektronikController extends Controller
 
     private function isOwner(): bool
     {
-        return Auth::user()->role === 'owner';
+        return Auth::user()->isOwner() || Auth::user()->isAdmin();
     }
 
     private function getRoutePrefix(): string
@@ -60,15 +60,67 @@ class ElektronikController extends Controller
         return $this->isOwner() ? 'owner' : 'superadmin';
     }
 
+    private function restrictedType(): ?string
+    {
+        $categoryId = Auth::user()->merchantCategoryId();
+
+        if (!$categoryId) {
+            return null;
+        }
+
+        $category = Category::find($categoryId);
+
+        if (!$category) {
+            return null;
+        }
+
+        $type = match ($category->slug) {
+            'sewa-hp' => 'hp',
+            'sewa-kamera' => 'kamera',
+            'sewa-tenda' => 'tenda',
+            'sewa-ps' => 'ps',
+            'sewa-drone' => 'drone',
+            'sewa-alat-musik' => 'musik',
+            default => null,
+        };
+
+        return $type;
+    }
+
+    private function assertTypeAccessible(string $type): void
+    {
+        $restricted = $this->restrictedType();
+
+        if ($restricted && $type !== $restricted) {
+            abort(403);
+        }
+    }
+
+    private function staffCategoryId(): ?int
+    {
+        return $this->isOwner() ? Auth::user()->merchantCategoryId() : null;
+    }
+
+    private function staffOwnerId(): int
+    {
+        return Auth::user()->merchantId() ?? Auth::id();
+    }
+
     public function index(Request $request, $type)
     {
         if (!$this->getType($type)) abort(404);
+
+        $this->assertTypeAccessible($type);
 
         $model = $this->getModel($type);
         $query = $model->with(['category', 'owner']);
 
         if ($this->isOwner()) {
-            $query->where('owner_id', Auth::id());
+            $query->where('owner_id', $this->staffOwnerId());
+        }
+
+        if ($categoryId = $this->staffCategoryId()) {
+            $query->where('category_id', $categoryId);
         }
 
         if ($request->search) {
@@ -82,15 +134,20 @@ class ElektronikController extends Controller
 
         $items = $query->latest()->paginate(15);
 
-        $ownerFilter = $this->isOwner() ? fn($q) => $q->where('owner_id', Auth::id()) : null;
-        $counts = [
-            'kamera' => $ownerFilter ? Camera::where('owner_id', Auth::id())->count() : Camera::count(),
-            'hp' => $ownerFilter ? Phone::where('owner_id', Auth::id())->count() : Phone::count(),
-            'tenda' => $ownerFilter ? CampingEquipment::where('owner_id', Auth::id())->count() : CampingEquipment::count(),
-            'ps' => $ownerFilter ? Playstation::where('owner_id', Auth::id())->count() : Playstation::count(),
-            'drone' => $ownerFilter ? Drone::where('owner_id', Auth::id())->count() : Drone::count(),
-            'musik' => $ownerFilter ? MusicalInstrument::where('owner_id', Auth::id())->count() : MusicalInstrument::count(),
-        ];
+        $ownerFilter = $this->isOwner() ? fn($q) => $q->where('owner_id', $this->staffOwnerId()) : null;
+        $categoryId = $this->staffCategoryId();
+        $counts = [];
+
+        foreach ($countTypes = ['kamera' => Camera::class, 'hp' => Phone::class, 'tenda' => CampingEquipment::class, 'ps' => Playstation::class, 'drone' => Drone::class, 'musik' => MusicalInstrument::class] as $key => $countModel) {
+            $countQuery = $countModel::query();
+            if ($ownerFilter) {
+                $countQuery->where('owner_id', $this->staffOwnerId());
+            }
+            if ($categoryId) {
+                $countQuery->where('category_id', $categoryId);
+            }
+            $counts[$key] = $countQuery->count();
+        }
 
         $prefix = $this->getRoutePrefix();
 
@@ -100,6 +157,7 @@ class ElektronikController extends Controller
     public function create($type)
     {
         if (!$this->getType($type)) abort(404);
+        $this->assertTypeAccessible($type);
         $categories = Category::where('is_active', true)->get();
         $prefix = $this->getRoutePrefix();
 
@@ -109,6 +167,7 @@ class ElektronikController extends Controller
     public function store(Request $request, $type)
     {
         if (!$this->getType($type)) abort(404);
+        $this->assertTypeAccessible($type);
 
         $baseRules = [
             'name' => 'required|string|max:255',
@@ -171,7 +230,7 @@ class ElektronikController extends Controller
 
         $validated = $request->validate(array_merge($baseRules, $extraRules));
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
-        $validated['owner_id'] = Auth::id();
+        $validated['owner_id'] = $this->staffOwnerId();
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('elektronik', 'public');
@@ -197,11 +256,12 @@ class ElektronikController extends Controller
     public function edit($type, $id)
     {
         if (!$this->getType($type)) abort(404);
+        $this->assertTypeAccessible($type);
 
         $model = $this->getModel($type);
         $item = $model->findOrFail($id);
 
-        if ($this->isOwner() && $item->owner_id !== Auth::id()) {
+        if ($this->isOwner() && $item->owner_id !== $this->staffOwnerId()) {
             abort(403);
         }
 
@@ -214,11 +274,12 @@ class ElektronikController extends Controller
     public function update(Request $request, $type, $id)
     {
         if (!$this->getType($type)) abort(404);
+        $this->assertTypeAccessible($type);
 
         $model = $this->getModel($type);
         $item = $model->findOrFail($id);
 
-        if ($this->isOwner() && $item->owner_id !== Auth::id()) {
+        if ($this->isOwner() && $item->owner_id !== $this->staffOwnerId()) {
             abort(403);
         }
 
@@ -307,11 +368,12 @@ class ElektronikController extends Controller
     public function destroy($type, $id)
     {
         if (!$this->getType($type)) abort(404);
+        $this->assertTypeAccessible($type);
 
         $model = $this->getModel($type);
         $item = $model->findOrFail($id);
 
-        if ($this->isOwner() && $item->owner_id !== Auth::id()) {
+        if ($this->isOwner() && $item->owner_id !== $this->staffOwnerId()) {
             abort(403);
         }
 

@@ -59,7 +59,8 @@ class PaymentController extends Controller
         ]);
 
         if ($payment->status === 'verified') {
-            $this->processPayment($invoice, $payment);
+            $invoice = $payment->invoice->refresh();
+            $this->finalizeInvoice($invoice, $payment);
         }
 
         return response()->json([
@@ -67,16 +68,20 @@ class PaymentController extends Controller
         ], 201);
     }
 
-    public function verify(Payment $payment)
+    public function verify(Payment $payment, Request $request)
     {
         if ($payment->status !== 'pending') {
             return response()->json(['success' => false, 'message' => 'Pembayaran sudah diproses'], 422);
         }
 
-        $payment->update(['status' => 'verified']);
+        $payment->update([
+            'status' => 'verified',
+            'verified_by' => $request->user()->id,
+            'verified_at' => now(),
+        ]);
 
-        $invoice = $payment->invoice;
-        $this->processPayment($invoice, $payment);
+        $invoice = $payment->invoice->refresh();
+        $this->finalizeInvoice($invoice, $payment);
 
         return response()->json([
             'success' => true, 'message' => 'Pembayaran diverifikasi', 'data' => $payment,
@@ -95,18 +100,22 @@ class PaymentController extends Controller
         ]);
     }
 
-    private function processPayment(Invoice $invoice, Payment $payment): void
+    private function finalizeInvoice(Invoice $invoice, Payment $payment): void
     {
-        $newPaidAmount = $invoice->paid_amount + $payment->amount;
-        $newDueAmount = $invoice->total_amount - $newPaidAmount;
-
         $invoice->update([
-            'paid_amount' => $newPaidAmount,
-            'due_amount' => max(0, $newDueAmount),
-            'status' => $newDueAmount <= 0 ? 'paid' : 'partial',
             'payment_method' => $payment->method,
             'payment_reference' => $payment->reference_number,
-            'paid_at' => $newDueAmount <= 0 ? now() : $invoice->paid_at,
+            'paid_at' => $invoice->paid_amount >= $invoice->total_amount ? now() : $invoice->paid_at,
         ]);
+
+        $bookings = collect();
+        if ($invoice->booking) {
+            $bookings->push($invoice->booking);
+        }
+        $invoice->bookings()->each(fn($b) => $bookings->push($b));
+
+        $statusMap = ['paid' => 'paid', 'partial' => 'partial'];
+        $bookingStatus = $statusMap[$invoice->status] ?? 'unpaid';
+        $bookings->unique('id')->each(fn($b) => $b->update(['payment_status' => $bookingStatus]));
     }
 }

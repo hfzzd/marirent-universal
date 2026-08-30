@@ -12,6 +12,7 @@ use App\Models\Playstation;
 use App\Models\Drone;
 use App\Models\MusicalInstrument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class BrandCatalogPhotoController extends Controller
@@ -19,22 +20,14 @@ class BrandCatalogPhotoController extends Controller
     public function index(Request $request)
     {
         $itemType = $request->item_type;
-
-        $typeMap = [
-            'mobil' => Vehicle::class,
-            'motor' => Vehicle::class,
-            'hp' => Phone::class,
-            'kamera' => Camera::class,
-            'camping' => CampingEquipment::class,
-            'ps' => Playstation::class,
-            'drone' => Drone::class,
-            'musik' => MusicalInstrument::class,
-        ];
-
-        $hiddenBrands = ['hp' => ['Nothing'], 'kamera' => ['RED'], 'camping' => ['CAMP']];
+        $allowedTypes = $this->allowedItemTypes();
 
         $existingBrands = collect();
-        foreach ($typeMap as $type => $model) {
+        foreach ($this->typeMap() as $type => $model) {
+            if (!in_array($type, $allowedTypes, true)) {
+                continue;
+            }
+
             $query = $model::where('is_active', true)
                 ->whereNotNull('brand')
                 ->where('brand', '!=', '');
@@ -47,7 +40,6 @@ class BrandCatalogPhotoController extends Controller
 
             $brands = $query->distinct()
                 ->pluck('brand')
-                ->reject(fn($b) => in_array(strtolower($b), array_map('strtolower', $hiddenBrands[$type] ?? [])))
                 ->map(fn($b) => ['brand' => $b, 'item_type' => $type]);
             $existingBrands = $existingBrands->concat($brands);
         }
@@ -60,6 +52,8 @@ class BrandCatalogPhotoController extends Controller
         }
         if ($itemType) {
             $query->where('item_type', $itemType);
+        } elseif ($allowedTypes !== array_keys($this->typeMap())) {
+            $query->whereIn('item_type', $allowedTypes);
         }
 
         $photos = $query->orderBy('item_type')->orderBy('brand_name')->orderBy('sort_order')->get();
@@ -79,9 +73,11 @@ class BrandCatalogPhotoController extends Controller
 
         if ($itemType) {
             $allBrands = $allBrands->where('item_type', $itemType);
+        } else {
+            $allBrands = $allBrands->whereIn('item_type', $allowedTypes);
         }
 
-        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
+        $typeLabels = $this->typeLabels();
 
         return view('admin.brand-catalog.index', [
             'allBrands' => $allBrands,
@@ -90,9 +86,57 @@ class BrandCatalogPhotoController extends Controller
         ]);
     }
 
+    private function typeLabels(): array
+    {
+        return ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
+    }
+
+    private function typeMap(): array
+    {
+        return [
+            'mobil' => Vehicle::class,
+            'motor' => Vehicle::class,
+            'hp' => Phone::class,
+            'kamera' => Camera::class,
+            'camping' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
+        ];
+    }
+
+    private function allowedItemTypes(): array
+    {
+        if (!Auth::check()) {
+            return array_keys($this->typeMap());
+        }
+
+        $user = Auth::user();
+        if (!$user->isMerchantStaff()) {
+            return array_keys($this->typeMap());
+        }
+
+        $categoryId = $user->merchantCategoryId();
+        if (!$categoryId) {
+            return array_keys($this->typeMap());
+        }
+
+        return match ($user->merchantCategory?->slug) {
+            'mobil' => ['mobil'],
+            'motor' => ['motor'],
+            'sewa-hp' => ['hp'],
+            'sewa-kamera' => ['kamera'],
+            'sewa-tenda' => ['camping'],
+            'sewa-ps' => ['ps'],
+            'sewa-drone' => ['drone'],
+            'sewa-alat-musik' => ['musik'],
+            default => array_keys($this->typeMap()),
+        };
+    }
+
     public function create(Request $request)
     {
-        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
+        $typeLabels = $this->typeLabels();
         $existingBrands = $this->getExistingBrands();
 
         return view('admin.brand-catalog.create', [
@@ -113,6 +157,10 @@ class BrandCatalogPhotoController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
+        if (!in_array($validated['item_type'], $this->allowedItemTypes(), true)) {
+            abort(403, 'Kategori tidak sesuai dengan hak akses Anda');
+        }
+
         $photoPath = $request->file('photo')->store('brand-catalog', 'public');
 
         BrandCatalogPhoto::create([
@@ -128,7 +176,7 @@ class BrandCatalogPhotoController extends Controller
 
     public function edit(BrandCatalogPhoto $brandCatalogPhoto)
     {
-        $typeLabels = ['mobil' => 'Mobil', 'motor' => 'Motor', 'hp' => 'HP', 'kamera' => 'Kamera', 'camping' => 'Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Musik'];
+        $typeLabels = $this->typeLabels();
         $existingBrands = $this->getExistingBrands();
 
         return view('admin.brand-catalog.edit', [
@@ -148,6 +196,10 @@ class BrandCatalogPhotoController extends Controller
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'nullable|boolean',
         ]);
+
+        if (!in_array($validated['item_type'], $this->allowedItemTypes(), true)) {
+            abort(403, 'Kategori tidak sesuai dengan hak akses Anda');
+        }
 
         $data = [
             'brand_name' => $validated['brand_name'],
@@ -194,6 +246,10 @@ class BrandCatalogPhotoController extends Controller
             'item_type' => 'required|in:mobil,motor,hp,kamera,camping,ps,drone,musik',
         ]);
 
+        if (!in_array($validated['item_type'], $this->allowedItemTypes(), true)) {
+            abort(403, 'Kategori tidak sesuai dengan hak akses Anda');
+        }
+
         $photos = BrandCatalogPhoto::where('brand_name', $validated['brand_name'])
             ->where('item_type', $validated['item_type'])
             ->get();
@@ -210,21 +266,15 @@ class BrandCatalogPhotoController extends Controller
 
     protected function getExistingBrands(): array
     {
-        $typeMap = [
-            'mobil' => Vehicle::class,
-            'motor' => Vehicle::class,
-            'hp' => Phone::class,
-            'kamera' => Camera::class,
-            'camping' => CampingEquipment::class,
-            'ps' => Playstation::class,
-            'drone' => Drone::class,
-            'musik' => MusicalInstrument::class,
-        ];
-
-        $hiddenBrands = ['hp' => ['Nothing'], 'kamera' => ['RED'], 'camping' => ['CAMP']];
+        $allowedTypes = $this->allowedItemTypes();
 
         $result = [];
-        foreach ($typeMap as $type => $model) {
+        foreach ($this->typeMap() as $type => $model) {
+            if (!in_array($type, $allowedTypes, true)) {
+                $result[$type] = [];
+                continue;
+            }
+
             $query = $model::where('is_active', true)
                 ->whereNotNull('brand')
                 ->where('brand', '!=', '');
@@ -237,7 +287,6 @@ class BrandCatalogPhotoController extends Controller
 
             $result[$type] = $query->distinct()
                 ->pluck('brand')
-                ->reject(fn($b) => in_array(strtolower($b), array_map('strtolower', $hiddenBrands[$type] ?? [])))
                 ->sort()
                 ->values()
                 ->toArray();

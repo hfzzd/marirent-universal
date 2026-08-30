@@ -233,6 +233,29 @@
                         <span class="font-bold text-navy-800">Total</span>
                         <span class="font-bold text-sky-600 text-lg" x-text="formatRupiah(totalPrice())">Rp 0</span>
                     </div>
+                    <div class="border-t border-gray-100 pt-3 space-y-2.5">
+                        <p class="font-bold text-navy-800 text-[12px] uppercase tracking-wider text-gray-500">Metode Pembayaran</p>
+                        <label class="flex items-start gap-2.5 cursor-pointer border rounded-xl p-3 transition {{ old('payment_plan', 'full') === 'full' ? 'border-sky-300 bg-sky-50/60' : 'border-gray-200' }}">
+                            <input type="radio" name="payment_plan" value="full" x-model="paymentPlan" class="mt-0.5 accent-sky-600">
+                            <span class="flex-1">
+                                <span class="block text-[13px] font-bold text-navy-800">Bayar Penuh</span>
+                                <span class="block text-[11px] text-gray-400">Lunasi seluruh biaya di awal penyewaan.</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-2.5 cursor-pointer border rounded-xl p-3 transition {{ old('payment_plan') === 'dp50' ? 'border-amber-300 bg-amber-50/60' : 'border-gray-200' }}">
+                            <input type="radio" name="payment_plan" value="dp50" x-model="paymentPlan" class="mt-0.5 accent-amber-500">
+                            <span class="flex-1">
+                                <span class="block text-[13px] font-bold text-navy-800"><i class="fas fa-hand-holding-dollar text-amber-500 mr-1 text-[11px]"></i> DP 50%</span>
+                                <span class="block text-[11px] text-gray-400">Bayar 50% di awal, sisanya saat penyewaan selesai.</span>
+                            </span>
+                        </label>
+                        <template x-if="paymentPlan === 'dp50'">
+                            <div class="flex justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+                                <span class="text-[12px] font-semibold text-amber-700">DP yang harus dibayar</span>
+                                <span class="text-[13px] font-bold text-amber-700" x-text="formatRupiah(dpAmount())">Rp 0</span>
+                            </div>
+                        </template>
+                    </div>
                 </div>
 
                 <div class="mt-5 space-y-2">
@@ -279,6 +302,7 @@ function bookingSummary() {
     const driverDaily = {{ $vehicle->with_driver_daily_price ?? 0 }};
 
     return {
+        paymentPlan: '{{ old('payment_plan', 'full') }}',
         get rentalType() {
             const el = document.querySelector('input[name="rental_type"]:checked');
             return el ? el.value : 'daily';
@@ -325,6 +349,9 @@ function bookingSummary() {
         },
         totalPrice() {
             return this.subtotal() + (this.withDriver() ? this.driverCost() : 0);
+        },
+        dpAmount() {
+            return this.paymentPlan === 'dp50' ? Math.round(this.totalPrice() * 0.5) : this.totalPrice();
         },
         formatRupiah(n) {
             return 'Rp ' + n.toLocaleString('id-ID');

@@ -147,6 +147,26 @@
                     <input type="number" name="discount" value="{{ old('discount', 0) }}" min="0" step="1000" placeholder="0" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
                 </div>
                 <div class="sm:col-span-3">
+                    <label class="block text-[12px] font-semibold text-navy-700 mb-1">Metode Pembayaran</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex items-start gap-2.5 cursor-pointer border rounded-xl p-3 transition {{ old('payment_plan', 'full') !== 'dp50' ? 'border-sky-300 bg-sky-50/60' : 'border-gray-200' }}">
+                            <input type="radio" name="payment_plan" value="full" {{ old('payment_plan') !== 'dp50' ? 'checked' : '' }} class="mt-0.5 accent-sky-600">
+                            <span class="flex-1">
+                                <span class="block text-[13px] font-bold text-navy-800">Bayar Penuh</span>
+                                <span class="block text-[11px] text-gray-400">Lunasi seluruh biaya.</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-2.5 cursor-pointer border rounded-xl p-3 transition {{ old('payment_plan') === 'dp50' ? 'border-amber-300 bg-amber-50/60' : 'border-gray-200' }}">
+                            <input type="radio" name="payment_plan" value="dp50" {{ old('payment_plan') === 'dp50' ? 'checked' : '' }} class="mt-0.5 accent-amber-500">
+                            <span class="flex-1">
+                                <span class="block text-[13px] font-bold text-navy-800"><i class="fas fa-hand-holding-dollar text-amber-500 mr-1 text-[11px]"></i> DP 50%</span>
+                                <span class="block text-[11px] text-gray-400">DP 50% dihitung otomatis dari total tagihan.</span>
+                            </span>
+                        </label>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-2">Jika memilih DP 50%, payment pertama minimal 50% dari total tagihan.</p>
+                </div>
+                <div class="sm:col-span-3">
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Catatan</label>
                     <textarea name="notes" rows="2" placeholder="Catatan tambahan transaksi..." class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">{{ old('notes') }}</textarea>
                 </div>

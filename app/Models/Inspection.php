@@ -10,14 +10,15 @@ class Inspection extends Model
     use HasFactory;
 
     protected $fillable = [
-        'booking_id', 'vehicle_id', 'inspector_id', 'type', 'scope',
+        'booking_id', 'vehicle_id', 'inspector_id', 'reported_by', 'assigned_to',
+        'type', 'scope', 'status',
         'item_type', 'item_id',
         'exterior_condition', 'interior_condition', 'engine_condition',
         'tire_condition', 'brake_condition', 'electrical_condition',
         'overall_condition', 'fuel_level', 'odometer_reading',
         'usage_duration_hours',
         'damages', 'damage_items', 'completeness', 'photos',
-        'notes', 'recommendations',
+        'notes', 'recommendations', 'resolution_notes',
     ];
 
     protected function casts(): array
@@ -36,6 +37,43 @@ class Inspection extends Model
     public function booking() { return $this->belongsTo(Booking::class); }
     public function vehicle() { return $this->belongsTo(Vehicle::class); }
     public function inspector() { return $this->belongsTo(User::class, 'inspector_id'); }
+    public function reportedBy() { return $this->belongsTo(User::class, 'reported_by'); }
+    public function assignedTo() { return $this->belongsTo(User::class, 'assigned_to'); }
+
+    public function canBeProcessedBy(User $user): bool
+    {
+        if ($user->isSuperAdmin()) return true;
+        if ($user->isMerchantStaff() || $user->isInspector()) {
+            return $this->isOwnedByMerchant($user);
+        }
+        return false;
+    }
+
+    public function isOwnedByMerchant(User $user): bool
+    {
+        $merchantId = $user->merchantId();
+
+        if ($this->vehicle && $this->vehicle->owner_id) {
+            return $this->vehicle->owner_id == $merchantId;
+        }
+
+        if ($this->booking?->user_id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function getStatusLabel(): string
+    {
+        return match($this->status) {
+            'open' => 'Menunggu Laporan',
+            'reported' => 'Laporan Driver',
+            'processing' => 'Dikerjakan Inspector',
+            'completed' => 'Selesai',
+            default => ucfirst($this->status ?? 'open'),
+        };
+    }
 
     public function hasDamages(): bool
     {

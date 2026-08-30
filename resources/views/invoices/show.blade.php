@@ -78,6 +78,13 @@
                 <div class="border-t pt-2 flex justify-between"><span class="font-bold text-navy-800">Total</span><span class="font-bold text-lg text-sky-600">Rp {{ number_format($invoice->total_amount,0,',','.') }}</span></div>
                 <div class="flex justify-between"><span class="text-navy-500">Dibayar</span><span class="text-green-600 font-medium">Rp {{ number_format($invoice->paid_amount,0,',','.') }}</span></div>
                 <div class="flex justify-between"><span class="font-bold text-navy-800">Sisa Tagihan</span><span class="font-bold {{ $invoice->due_amount > 0 ? 'text-red-600' : 'text-green-600' }}">Rp {{ number_format($invoice->due_amount,0,',','.') }}</span></div>
+                @php $dpBooking = $invoice->primaryBooking(); @endphp
+                @if($dpBooking && $dpBooking->payment_plan === 'dp50' && $dpBooking->getDpAmount() > 0)
+                <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                    <p class="text-[11px] font-bold text-amber-700"><i class="fas fa-hand-holding-dollar mr-1"></i> Skema DP 50%</p>
+                    <p class="text-[11px] text-amber-700 mt-0.5">DP minimal <strong>Rp {{ number_format($dpBooking->getDpAmount(),0,',','.') }}</strong> dibayarkan sebagai pembayaran pertama.</p>
+                </div>
+                @endif
             </div>
         </div>
 

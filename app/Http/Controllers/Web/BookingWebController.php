@@ -23,19 +23,17 @@ class BookingWebController extends Controller
     public function index(Request $request)
     {
         $query = Booking::with(['vehicle', 'driver.user', 'category', 'user', 'bookingItems']);
+        $user = Auth::user();
 
-        if (Auth::user()->role === 'user') {
+        if ($user->role === 'user') {
             $query->where('user_id', Auth::id());
-        } elseif (Auth::user()->role === 'driver') {
+        } elseif ($user->role === 'driver') {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             if ($driver) {
                 $query->where('driver_id', $driver->id);
             }
-        } elseif (Auth::user()->role === 'owner') {
-            $query->where(function ($q) {
-                $q->whereHas('vehicle', fn($vq) => $vq->where('owner_id', Auth::id()))
-                  ->orWhere('item_id', '!=', null);
-            });
+        } elseif ($user->isMerchantStaff()) {
+            $query->forMerchantCategory($user->merchantId(), $user->merchantCategoryId());
         }
 
         if ($request->status) {
@@ -45,6 +43,67 @@ class BookingWebController extends Controller
         $bookings = $query->latest()->paginate(15);
 
         return view('bookings.index', compact('bookings'));
+    }
+
+    private function bookingBelongsToMerchant(Booking $booking, int $merchantId): bool
+    {
+        if ($booking->vehicle) {
+            return (int) $booking->vehicle->owner_id === $merchantId;
+        }
+        if ($booking->item_id && $booking->item_type) {
+            $item = $booking->item;
+            return $item && (int) $item->owner_id === $merchantId;
+        }
+
+        foreach ($booking->childBookings as $child) {
+            if ($this->bookingBelongsToMerchant($child, $merchantId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function bookingAccessibleByStaff(Booking $booking, User $user): bool
+    {
+        if (!$user->isMerchantStaff()) {
+            return false;
+        }
+
+        return $this->bookingBelongsToMerchant($booking, $user->merchantId())
+            && $booking->belongsToCategory($user->merchantCategoryId());
+    }
+
+    private function notifyBookingCreated(Booking $booking): void
+    {
+        $recipients = collect();
+
+        $recipients->push(User::where('role', 'superadmin')->where('is_active', true)->get());
+
+        $staff = User::whereIn('role', ['admin', 'owner'])->where('is_active', true)->get();
+        foreach ($staff as $staffUser) {
+            if ($staffUser->merchantId() !== $booking->merchantOwnerId()) {
+                continue;
+            }
+            if (!$booking->belongsToCategory($staffUser->merchantCategoryId())) {
+                continue;
+            }
+            $recipients->push($staffUser);
+        }
+
+        $recipients->flatten()->each(
+            fn($user) => $user->notify(new \App\Notifications\BookingCreated($booking))
+        );
+    }
+
+    private function staffProductScope(): array
+    {
+        $user = Auth::user();
+        if (!$user->isMerchantStaff()) {
+            return [null, null];
+        }
+
+        return [$user->merchantId(), $user->merchantCategoryId()];
     }
 
     public function create(Request $request)
@@ -70,6 +129,7 @@ class BookingWebController extends Controller
             'pickup_location' => 'nullable|string|max:255',
             'dropoff_location' => 'nullable|string|max:255',
             'with_driver' => 'nullable',
+            'payment_plan' => 'nullable|in:full,dp50',
             'notes' => 'nullable|string|max:1000',
             'ktp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
@@ -127,20 +187,19 @@ class BookingWebController extends Controller
             'final_price' => $finalPrice,
             'status' => 'pending',
             'payment_status' => 'unpaid',
-            'payment_plan' => 'full',
+            'payment_plan' => $validated['payment_plan'] ?? 'full',
             'notes' => $validated['notes'] ?? null,
             'ktp_photo' => $ktpPath,
         ]);
+
+        $booking->setDpAmountFromPlan();
 
         $vehicle->update(['status' => 'reserved']);
 
         $this->createBookingInvoice($booking);
 
-        // Notify superadmin and owner about new booking
-        $admins = User::whereIn('role', ['superadmin', 'owner'])->get();
-        foreach ($admins as $admin) {
-            $admin->notify(new \App\Notifications\BookingCreated($booking));
-        }
+        // Notify superadmin dan staf merchant (sesuai kategori) atas booking baru
+        $this->notifyBookingCreated($booking);
 
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
     }
@@ -251,15 +310,14 @@ class BookingWebController extends Controller
             'ktp_photo' => $ktpPath,
         ]);
 
+        $booking->setDpAmountFromPlan();
+
         $item->update(['status' => 'reserved']);
 
         $this->createBookingInvoice($booking);
 
-        // Notify superadmin and owner about new item booking
-        $admins = User::whereIn('role', ['superadmin', 'owner'])->get();
-        foreach ($admins as $admin) {
-            $admin->notify(new \App\Notifications\BookingCreated($booking));
-        }
+        // Notify superadmin dan staf merchant (sesuai kategori) atas booking item baru
+        $this->notifyBookingCreated($booking);
 
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
     }
@@ -376,11 +434,33 @@ class BookingWebController extends Controller
             $owner = User::find($booking->vehicle->owner_id);
         }
         if (!$owner) {
+            foreach ($related as $b) {
+                if ($b->item_id && $b->item_type) {
+                    $item = $b->item;
+                    if ($item && $item->owner_id) {
+                        $owner = User::find($item->owner_id);
+                        break;
+                    }
+                }
+            }
+        }
+        if (!$owner) {
             $owner = User::where('role', 'superadmin')->orderBy('id')->first();
         }
 
         $paidAmount = $booking->payment_status === 'paid' ? $subtotal : 0;
         $status = $booking->payment_status === 'paid' ? 'paid' : 'sent';
+
+        $isDp50 = collect($related)->contains(fn($b) => $b->payment_plan === 'dp50');
+        $totalDp = collect($related)->sum(fn($b) => (float) ($b->getDpAmount() ?? 0));
+
+        $invoiceNotes = [];
+        if ($booking->notes) {
+            $invoiceNotes[] = $booking->notes;
+        }
+        if ($isDp50) {
+            $invoiceNotes[] = 'Sistem pembayaran DP 50%: DP minimal Rp ' . number_format($totalDp, 0, ',', '.') . ', pelunasan sisanya sebelum/ sesuai jadwal sewa.';
+        }
 
         $invoice = Invoice::create([
             'invoice_number' => Invoice::generateInvoiceNumber('rental'),
@@ -399,6 +479,7 @@ class BookingWebController extends Controller
             'paid_at' => $booking->payment_status === 'paid' ? now() : null,
             'due_date' => $booking->payment_due_date
                 ?? ($booking->start_date ? \Carbon\Carbon::parse($booking->start_date) : now()->addDays(7)),
+            'notes' => $invoiceNotes ? implode(' | ', $invoiceNotes) : null,
         ]);
 
         foreach ($related as $b) {
@@ -422,12 +503,32 @@ class BookingWebController extends Controller
 
     public function createMulti()
     {
-        $phones = Phone::where('status', 'available')->where('is_active', true)->with('category')->get();
-        $cameras = Camera::where('status', 'available')->where('is_active', true)->with('category')->get();
-        $equipments = CampingEquipment::where('status', 'available')->where('is_active', true)->with('category')->get();
-        $playstations = Playstation::where('status', 'available')->where('is_active', true)->with('category')->get();
-        $drones = Drone::where('status', 'available')->where('is_active', true)->with('category')->get();
-        $instruments = MusicalInstrument::where('status', 'available')->where('is_active', true)->with('category')->get();
+        [$merchantId, $categoryId] = $this->staffProductScope();
+
+        $phones = Phone::where('status', 'available')->where('is_active', true)
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with('category')->get();
+        $cameras = Camera::where('status', 'available')->where('is_active', true)
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with('category')->get();
+        $equipments = CampingEquipment::where('status', 'available')->where('is_active', true)
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with('category')->get();
+        $playstations = Playstation::where('status', 'available')->where('is_active', true)
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with('category')->get();
+        $drones = Drone::where('status', 'available')->where('is_active', true)
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with('category')->get();
+        $instruments = MusicalInstrument::where('status', 'available')->where('is_active', true)
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with('category')->get();
 
         return view('bookings.create-multi', compact('phones', 'cameras', 'equipments', 'playstations', 'drones', 'instruments'));
     }
@@ -455,6 +556,17 @@ class BookingWebController extends Controller
         $duration = $validated['rental_type'] === 'hourly'
             ? max(1, $startDate->diffInHours($endDate))
             : max(1, $startDate->diffInDays($endDate));
+
+        [$merchantId, $categoryId] = $this->staffProductScope();
+        foreach ($validated['items'] as $itemData) {
+            $item = $this->getItemModel($itemData['type'])::findOrFail($itemData['id']);
+            if ($merchantId !== null && (int) $item->owner_id !== $merchantId) {
+                return back()->with('error', 'Salah satu item tidak termasuk merchant Anda')->withInput();
+            }
+            if ($categoryId !== null && (int) $item->category_id !== $categoryId) {
+                return back()->with('error', 'Salah satu item tidak sesuai kategori Anda')->withInput();
+            }
+        }
 
         $ktpPath = $request->file('ktp_photo')->store('ktp', 'public');
 
@@ -550,6 +662,7 @@ class BookingWebController extends Controller
             ]);
 
             $item->update(['status' => 'reserved']);
+            $child->setDpAmountFromPlan();
             $childBookings[] = $child;
         }
 
@@ -558,22 +671,51 @@ class BookingWebController extends Controller
             'final_price' => $totalBookingPrice,
         ]);
 
+        $booking->setDpAmountFromPlan();
+
         $this->createBookingInvoice($booking, $childBookings);
+
+        $this->notifyBookingCreated($booking);
 
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking multi-item berhasil dibuat! Kode: ' . $booking->booking_code);
     }
 
     public function manualCreate()
     {
+        [$merchantId, $categoryId] = $this->staffProductScope();
+
         $customers = \App\Models\User::where('role', 'user')->orderBy('name')->get();
-        $vehicles = Vehicle::with('category')->where('status', 'available')->get();
-        $drivers = Driver::with('user')->get();
-        $cameras = Camera::where('status', 'available')->get();
-        $phones = Phone::where('status', 'available')->get();
-        $campings = CampingEquipment::where('status', 'available')->get();
-        $playstations = Playstation::where('status', 'available')->get();
-        $drones = Drone::where('status', 'available')->get();
-        $instruments = MusicalInstrument::where('status', 'available')->get();
+        $vehicles = Vehicle::with('category')->where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
+        $drivers = Driver::with('user')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->get();
+        $cameras = Camera::where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
+        $phones = Phone::where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
+        $campings = CampingEquipment::where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
+        $playstations = Playstation::where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
+        $drones = Drone::where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
+        $instruments = MusicalInstrument::where('status', 'available')
+            ->when($merchantId, fn($q) => $q->where('owner_id', $merchantId))
+            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->get();
 
         return view('bookings.manual-create', compact('customers', 'vehicles', 'drivers', 'cameras', 'phones', 'campings', 'playstations', 'drones', 'instruments'));
     }
@@ -594,6 +736,7 @@ class BookingWebController extends Controller
             'pickup_location' => 'nullable|string|max:255',
             'dropoff_location' => 'nullable|string|max:255',
             'payment_status' => 'required|in:unpaid,partial,paid',
+            'payment_plan' => 'nullable|in:full,dp50',
             'payment_due_date' => 'nullable|date',
             'discount' => 'nullable|integer|min:0',
             'notes' => 'nullable|string|max:1000',
@@ -602,13 +745,14 @@ class BookingWebController extends Controller
         $userId = Auth::id();
 
         if ($validated['customer_mode'] === 'new') {
-            $guestEmail = 'walkin_' . strtolower(uniqid()) . '@marirent临时';
+            $guestEmail = 'walkin_' . strtolower(uniqid()) . '@marirent.local';
             $guestUser = \App\Models\User::create([
                 'name' => $validated['guest_name'],
                 'email' => $guestEmail,
                 'phone' => $validated['guest_phone'],
                 'password' => bcrypt('password123'),
                 'role' => 'user',
+                'email_verified_at' => now(),
             ]);
             $userId = $guestUser->id;
         } else {
@@ -651,12 +795,20 @@ class BookingWebController extends Controller
             $itemType = MusicalInstrument::class;
         }
 
+        [$merchantId, $categoryId] = $this->staffProductScope();
+        if ($merchantId !== null && (int) $item->owner_id !== $merchantId) {
+            return back()->with('error', 'Item tidak termasuk merchant Anda')->withInput();
+        }
+        if ($categoryId !== null && (int) $item->category_id !== $categoryId) {
+            return back()->with('error', 'Item tidak sesuai kategori Anda')->withInput();
+        }
+
         $basePrice = $item->getPriceForType($validated['rental_type']);
         $totalPrice = $basePrice * $duration;
 
         $driverPrice = 0;
         $driverId = null;
-        if ($validated['driver_id'] && in_array($itemKind, ['mobil', 'motor'])) {
+        if (($validated['driver_id'] ?? null) && in_array($itemKind, ['mobil', 'motor'])) {
             $driverId = $validated['driver_id'];
             if ($item->with_driver) {
                 $driverDays = max(1, $startDate->diffInDays($endDate));
@@ -690,10 +842,19 @@ class BookingWebController extends Controller
             'final_price' => $finalPrice,
             'status' => 'confirmed',
             'payment_status' => $validated['payment_status'],
-            'payment_plan' => 'full',
+            'payment_plan' => $validated['payment_plan'] ?? 'full',
             'payment_due_date' => $validated['payment_due_date'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
+
+        if ($validated['payment_status'] === 'paid' && ($validated['payment_plan'] ?? 'full') === 'dp50') {
+            $booking->update([
+                'payment_plan' => 'full',
+                'dp_amount' => null,
+            ]);
+        }
+
+        $booking->setDpAmountFromPlan();
 
         $item->update(['status' => 'reserved']);
 
@@ -710,17 +871,32 @@ class BookingWebController extends Controller
             $booking->user->notify(new \App\Notifications\BookingCreated($booking));
         }
 
+        // Notify superadmin dan staf merchant (sesuai kategori)
+        $this->notifyBookingCreated($booking);
+
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking manual berhasil dibuat! Kode: ' . $booking->booking_code);
     }
 
     public function show(Booking $booking)
     {
-        $booking->load(['vehicle.category', 'driver.user', 'category', 'user', 'invoice', 'tripReport', 'inspection', 'payments', 'bookingItems']);
+        $user = Auth::user();
+
+        if ($user->role === 'user' && (int) $booking->user_id !== (int) $user->id) {
+            abort(403);
+        }
+
+        if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
+            abort(403);
+        }
+
+        $booking->load(['vehicle.category', 'driver.user', 'category', 'user', 'invoice', 'tripReport', 'inspection', 'payments', 'bookingItems', 'childBookings']);
 
         $replacements = $booking->replacements()->with(['originalVehicle', 'replacementVehicle', 'requestedBy'])->get();
 
+        $isMerchantStaff = Auth::user()->isSuperAdmin() || Auth::user()->isMerchantStaff();
+
         $swappableVehicles = collect();
-        if ($booking->vehicle && in_array($booking->status, ['confirmed', 'ongoing']) && in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if ($booking->vehicle && in_array($booking->status, ['confirmed', 'ongoing']) && $isMerchantStaff) {
             $swappableVehicles = Vehicle::where('status', 'available')
                 ->where('is_active', true)
                 ->where('category_id', $booking->vehicle->category_id)
@@ -728,12 +904,190 @@ class BookingWebController extends Controller
                 ->get();
         }
 
-        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles'));
+        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles', 'isMerchantStaff'));
+    }
+
+    public function reschedule(Request $request, Booking $booking)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff()) {
+            abort(403);
+        }
+
+        if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
+            abort(403);
+        }
+
+        if (!in_array($booking->status, ['pending', 'confirmed', 'ongoing'])) {
+            return back()->with('error', 'Booking tidak bisa diubah jadwalnya pada status saat ini');
+        }
+
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $oldStart = $booking->start_date;
+        $oldEnd = $booking->end_date;
+
+        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+
+        if ($booking->status === 'ongoing') {
+            $startDate = $booking->actual_start_date ?? $booking->start_date;
+        }
+
+        $prices = $this->recalculateBookingPrices($booking, $startDate, $endDate);
+        if ($prices === null) {
+            return back()->with('error', 'Unit sewa tidak ditemukan untuk booking ini');
+        }
+
+        $booking->update([
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'base_price' => $prices['base'],
+            'driver_price' => $prices['driver'],
+            'insurance_fee' => $prices['insurance'],
+            'total_price' => $prices['total'],
+            'final_price' => $prices['final'],
+        ]);
+
+        $booking->setDpAmountFromPlan();
+
+        // Sinkronkan invoice yang terhubung
+        $invoice = $booking->invoice;
+        if (!$invoice && $booking->invoices()->exists()) {
+            $invoice = $booking->invoices()->first();
+        }
+
+        if ($invoice) {
+            $days = max(1, $startDate->diffInDays($endDate));
+            $newTotal = (float) $booking->final_price;
+
+            $oldTotal = (float) $invoice->total_amount;
+            $paidSoFar = (float) $invoice->paid_amount;
+
+            $invoice->update([
+                'subtotal' => $newTotal,
+                'total_amount' => $newTotal,
+                'discount_amount' => $oldTotal - $newTotal > 0 ? ($oldTotal - $newTotal) + (float) $invoice->discount_amount : $invoice->discount_amount,
+                'due_amount' => max(0, $newTotal - $paidSoFar),
+                'status' => $paidSoFar >= $newTotal && $newTotal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
+                'notes' => trim(($invoice->notes ?? '') . ' | Jadwal diubah: ' . $oldStart->format('d M Y H:i') . ' -> ' . ($booking->status === 'ongoing' ? $booking->actual_start_date?->format('d M Y H:i') : $startDate->format('d M Y H:i')) . ' s/d ' . $endDate->format('d M Y H:i')),
+            ]);
+
+            foreach ($invoice->items as $item) {
+                $item->update([
+                    'unit_price' => (float) $booking->final_price,
+                    'total_price' => (float) $booking->final_price,
+                ]);
+            }
+
+            $bookingPaymentStatus = match($invoice->status) {
+                'paid' => 'paid',
+                'partial' => 'partial',
+                default => 'unpaid',
+            };
+            $booking->update(['payment_status' => $bookingPaymentStatus]);
+        }
+
+        $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
+
+        return back()->with('success', 'Jadwal booking berhasil diubah dari ' . $oldEnd->format('d M Y') . ' menjadi ' . $endDate->format('d M Y') . '. Total tagihan diperbarui.');
+    }
+
+    private function recalculateBookingPrices(Booking $booking, \Carbon\Carbon $start, \Carbon\Carbon $end): ?array
+    {
+        $rentalType = $booking->rental_type;
+        $duration = $rentalType === 'hourly'
+            ? max(1, $start->diffInHours($end))
+            : max(1, $start->diffInDays($end));
+
+        $unit = $booking->item_id && $booking->item_type ? $booking->item : ($booking->vehicle ?? null);
+        if (!$unit) {
+            return null;
+        }
+
+        $basePrice = $unit->getPriceForType($rentalType);
+        $rentalRate = $rentalType === 'hourly' ? ($unit->hourly_price ?? 0) : $basePrice;
+        $subtotal = round($rentalRate * $duration);
+
+        $driverPrice = 0;
+        if ($booking->with_driver && $booking->vehicle && $booking->vehicle->with_driver) {
+            $driverDays = max(1, $start->diffInDays($end));
+            $driverPrice = round(($booking->vehicle->with_driver_daily_price ?? 0) * $driverDays);
+        } else {
+            $driverPrice = (float) ($booking->driver_price ?? 0);
+        }
+
+        $insuranceFee = 0;
+        if ($booking->with_insurance && $unit->daily_price) {
+            $insuranceRate = round($unit->daily_price * 0.05);
+            $insuranceFee = round($insuranceRate * $duration);
+        }
+
+        $accessoriesCost = 0;
+        $typeKey = $this->getTypeKey($booking->item_type);
+        $config = $this->getItemConfig($typeKey);
+        if ($booking->item_id && $booking->accessories) {
+            foreach ($booking->accessories as $accName) {
+                foreach ($config['accessories'] ?? [] as $acc) {
+                    if ($acc['name'] === $accName) {
+                        $accessoriesCost += round($acc['price'] * $duration);
+                        break;
+                    }
+                }
+            }
+        }
+
+        $urgencyMultiplier = match($booking->urgency) {
+            'urgent' => 0.10,
+            'very_urgent' => 0.20,
+            default => 0,
+        };
+        $urgencyFee = round($subtotal * $urgencyMultiplier);
+
+        $depositAmount = (float) ($booking->deposit_amount ?? 0);
+        $discount = (float) ($booking->discount ?? 0);
+
+        if ($booking->item_id) {
+            $total = $subtotal + $insuranceFee + $accessoriesCost + $urgencyFee + $depositAmount;
+        } else {
+            $total = $subtotal + $driverPrice;
+        }
+
+        $final = max(0, $total - $discount);
+
+        return [
+            'base' => $subtotal,
+            'driver' => $driverPrice,
+            'insurance' => $insuranceFee,
+            'total' => $total,
+            'final' => $final,
+        ];
+    }
+
+    private function getTypeKey(?string $class): string
+    {
+        return match($class) {
+            Phone::class => 'hp',
+            Camera::class => 'kamera',
+            CampingEquipment::class => 'tenda',
+            Playstation::class => 'ps',
+            Drone::class => 'drone',
+            MusicalInstrument::class => 'musik',
+            default => 'hp',
+        };
     }
 
     public function replaceVehicle(Request $request, Booking $booking)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, Auth::user())) {
             abort(403);
         }
 

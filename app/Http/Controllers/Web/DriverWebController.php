@@ -13,8 +13,8 @@ class DriverWebController extends Controller
     {
         $query = Driver::with(['user', 'owner']);
 
-        if (Auth::user()->role === 'owner') {
-            $query->where('owner_id', Auth::id());
+        if (Auth::user()->isMerchantStaff()) {
+            $query->where('owner_id', Auth::user()->merchantId());
         }
 
         if ($request->search) {
@@ -43,7 +43,7 @@ class DriverWebController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $validated['owner_id'] = Auth::id();
+        $validated['owner_id'] = Auth::user()->merchantId() ?? Auth::id();
 
         $driver = Driver::create($validated);
         $driver->user->update(['role' => 'driver']);

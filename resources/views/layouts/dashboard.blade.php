@@ -157,6 +157,47 @@
                     <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
                 </a>
 
+                @elseif($role === 'admin')
+                <div class="sidebar-group-title mt-4">Inventaris & Tim</div>
+                <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
+                    <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Mobil
+                </a>
+                <a href="{{ route('motors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('motors.*') ? 'active' : '' }}">
+                    <i class="fas fa-motorcycle w-5 mr-2.5 text-sm"></i> Motor
+                </a>
+                <a href="{{ route('owner.elektronik.type', 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*') ? 'active' : '' }}">
+                    <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> HP, Kamera & Alat
+                </a>
+                <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
+                    <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
+                </a>
+                <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
+                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
+                </a>
+                <a href="{{ route('salaries.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('salaries.*') ? 'active' : '' }}">
+                    <i class="fas fa-money-bill-wave w-5 mr-2.5 text-sm"></i> Penggajian
+                </a>
+                <div class="sidebar-group-title mt-4">Keuangan</div>
+                <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice
+                </a>
+                <div class="sidebar-group-title mt-4">Operasional</div>
+                <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Booking
+                </a>
+                <a href="{{ route('inspections.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.*') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-check w-5 mr-2.5 text-sm"></i> Inspeksi
+                </a>
+                <a href="{{ route('maintenances.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('maintenances.*') ? 'active' : '' }}">
+                    <i class="fas fa-wrench w-5 mr-2.5 text-sm"></i> Maintenance
+                </a>
+                <a href="{{ route('reports.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
+                </a>
+                <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
+                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
+                </a>
+
                 @elseif($role === 'driver')
                 <div class="sidebar-group-title mt-4">Absensi</div>
                 <a href="{{ route('attendance.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
@@ -186,6 +227,13 @@
                 </a>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Booking
+                </a>
+                <div class="sidebar-group-title mt-4">Operasional</div>
+                <a href="{{ route('maintenances.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('maintenances.*') ? 'active' : '' }}">
+                    <i class="fas fa-wrench w-5 mr-2.5 text-sm"></i> Maintenance
+                </a>
+                <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice
                 </a>
 
                 @else

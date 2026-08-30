@@ -57,4 +57,9 @@ class Invoice extends Model
     {
         return $this->total_amount - $this->paid_amount;
     }
+
+    public function primaryBooking(): ?Booking
+    {
+        return $this->booking ?? $this->bookings()->first();
+    }
 }

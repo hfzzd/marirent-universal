@@ -25,7 +25,12 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $owner = User::where('role', 'owner')->first();
+        $fleetOwner = User::where('email', 'owner-mobil@marirent.com')->first()
+            ?? User::where('role', 'owner')->first();
+        $ownerMotor = User::where('email', 'owner-motor@marirent.com')->first() ?? $fleetOwner;
+        $ownerHp = User::where('email', 'owner-sewa-hp@marirent.com')->first() ?? $fleetOwner;
+        $ownerKamera = User::where('email', 'owner-sewa-kamera@marirent.com')->first() ?? $fleetOwner;
+        $ownerTenda = User::where('email', 'owner-sewa-tenda@marirent.com')->first() ?? $fleetOwner;
         $customer = User::where('role', 'user')->first();
         $admin = User::where('role', 'superadmin')->first();
 
@@ -44,7 +49,7 @@ class DemoSeeder extends Seeder
         ];
         foreach ($driverUsers as $i => $du) {
             $drivers[] = Driver::create([
-                'user_id' => $du->id, 'owner_id' => $owner->id,
+                'user_id' => $du->id, 'owner_id' => $fleetOwner->id,
                 'license_number' => $driverData[$i]['license_number'],
                 'license_type' => $driverData[$i]['license_type'],
                 'daily_salary' => $driverData[$i]['daily_salary'],
@@ -65,7 +70,7 @@ class DemoSeeder extends Seeder
 
         // ── Extra Vehicles (more variety) ──────────────────────────
         Vehicle::create([
-            'category_id' => $motor->id, 'owner_id' => $owner->id,
+            'category_id' => $motor->id, 'owner_id' => $ownerMotor->id,
             'name' => 'Honda PCX 160', 'slug' => 'honda-pcx-160-2024',
             'brand' => 'Honda', 'model' => 'PCX 160', 'year' => 2024, 'color' => 'Putih',
             'license_plate' => 'B 3333 CCC', 'description' => 'Honda PCX 160, skutik premium kelas atas.',
@@ -74,7 +79,7 @@ class DemoSeeder extends Seeder
             'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'is_active' => true,
         ]);
         Vehicle::create([
-            'category_id' => $mobil->id, 'owner_id' => $owner->id,
+            'category_id' => $mobil->id, 'owner_id' => $fleetOwner->id,
             'name' => 'Toyota Avanza Veloz', 'slug' => 'toyota-avanza-veloz-2023',
             'brand' => 'Toyota', 'model' => 'Avanza Veloz', 'year' => 2023, 'color' => 'Putih',
             'license_plate' => 'B 2222 BBB', 'description' => 'Toyota Avanza Veloz, MPV nyaman untuk keluarga.',
@@ -83,7 +88,7 @@ class DemoSeeder extends Seeder
             'transmission' => 'automatic', 'fuel_type' => 'gasoline', 'is_active' => true,
         ]);
         Vehicle::create([
-            'category_id' => $mobil->id, 'owner_id' => $owner->id,
+            'category_id' => $mobil->id, 'owner_id' => $fleetOwner->id,
             'name' => 'Toyota Fortuner VRZ', 'slug' => 'toyota-fortuner-vrz-2023',
             'brand' => 'Toyota', 'model' => 'Fortuner VRZ', 'year' => 2023, 'color' => 'Hitam',
             'license_plate' => 'B 4444 DDD', 'description' => 'Toyota Fortuner VRZ, SUV premium untuk perjalanan mewah.',
@@ -192,7 +197,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => null,
                 'driver_id' => null,
                 'category_id' => $hpCat->id,
-                'item_type' => 'phone',
+                'item_type' => Phone::class,
                 'item_id' => $phone->id,
                 'rental_type' => 'daily',
                 'start_date' => $start, 'end_date' => $end,
@@ -222,7 +227,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => null,
                 'driver_id' => null,
                 'category_id' => $kameraCat->id,
-                'item_type' => 'camera',
+                'item_type' => Camera::class,
                 'item_id' => $cam->id,
                 'rental_type' => 'daily',
                 'start_date' => $start, 'end_date' => $end,
@@ -252,7 +257,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => null,
                 'driver_id' => null,
                 'category_id' => $tendaCat->id,
-                'item_type' => 'camping',
+                'item_type' => CampingEquipment::class,
                 'item_id' => $cp->id,
                 'rental_type' => 'daily',
                 'start_date' => $start, 'end_date' => $end,
@@ -339,7 +344,7 @@ class DemoSeeder extends Seeder
                 'invoice_number' => 'INV-' . now()->format('Ymd') . '-' . str_pad($b->id, 4, '0', STR_PAD_LEFT),
                 'booking_id' => $b->id,
                 'user_id' => $b->user_id,
-                'owner_id' => $owner->id,
+                'owner_id' => $b->merchantOwnerId() ?? $fleetOwner->id,
                 'type' => 'rental',
                 'subtotal' => $subtotal,
                 'tax_amount' => $tax,
@@ -400,7 +405,7 @@ class DemoSeeder extends Seeder
 
             DriverSalary::create([
                 'driver_id' => $d->id,
-                'owner_id' => $owner->id,
+                'owner_id' => $d->owner_id ?? $fleetOwner->id,
                 'period_month' => now()->format('Y-m'),
                 'base_salary' => $base,
                 'trip_bonus' => $bonus,
@@ -443,7 +448,7 @@ class DemoSeeder extends Seeder
                 'original_vehicle_id' => $ogVehicles[0]->id,
                 'replacement_vehicle_id' => $ogVehicles[1]->id,
                 'requested_by' => $customer->id,
-                'approved_by' => $owner->id,
+                'approved_by' => $bookings[3]->merchantOwnerId() ?? $fleetOwner->id,
                 'status' => 'approved',
                 'reason' => 'Kendaraan awal mengalami masalah mesin ringan saat perjalanan',
                 'admin_notes' => 'Disetujui, unit pengganti sudah disiapkan',
@@ -457,7 +462,7 @@ class DemoSeeder extends Seeder
                     'original_vehicle_id' => $ogVehicles->skip(2)->first()?->id ?? $ogVehicles[0]->id,
                     'replacement_vehicle_id' => $ogVehicles->first()->id,
                     'requested_by' => $firstDriver->user_id,
-                    'approved_by' => $owner->id,
+                    'approved_by' => $bookings[0]->merchantOwnerId() ?? $fleetOwner->id,
                     'status' => 'approved',
                     'reason' => 'AC kendaraan tidak berfungsi dengan baik di tengah perjalanan',
                     'admin_notes' => 'Disetujui, unit diganti untuk kenyamanan pelanggan',
@@ -496,7 +501,7 @@ class DemoSeeder extends Seeder
                     'original_vehicle_id' => $ogVehicles[0]->id,
                     'replacement_vehicle_id' => $ogVehicles[2]->id,
                     'requested_by' => $driverUsers[0]->id,
-                    'approved_by' => $owner->id,
+                    'approved_by' => $bookings[2]->merchantOwnerId() ?? $fleetOwner->id,
                     'status' => 'rejected',
                     'reason' => 'Ban kendaraan aus dan perlu diganti',
                     'admin_notes' => 'Ditolak, kendaraan masih dalam kondisi layak jalan',

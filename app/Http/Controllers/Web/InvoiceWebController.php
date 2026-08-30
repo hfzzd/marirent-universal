@@ -19,8 +19,16 @@ class InvoiceWebController extends Controller
 
         if (Auth::user()->role === 'user') {
             $query->where('user_id', Auth::id());
-        } elseif (Auth::user()->role === 'owner') {
-            $query->where('owner_id', Auth::id());
+        } elseif (Auth::user()->isMerchantStaff()) {
+            $query->where('owner_id', Auth::user()->merchantId());
+            $categoryId = Auth::user()->merchantCategoryId();
+            if ($categoryId) {
+                $query->where(function ($q) use ($categoryId) {
+                    $q->where('category_id', $categoryId)
+                      ->orWhereHas('booking', fn($bq) => $bq->where('category_id', $categoryId)->orWhereHas('childBookings', fn($cq) => $cq->where('category_id', $categoryId)))
+                      ->orWhereHas('bookings', fn($bq) => $bq->where('category_id', $categoryId)->orWhereHas('childBookings', fn($cq) => $cq->where('category_id', $categoryId)));
+                });
+            }
         }
 
         if ($request->type) {
@@ -59,18 +67,23 @@ class InvoiceWebController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
             abort(403);
         }
 
         $customers = User::where('role', 'user')->get();
 
-        $bookings = Booking::whereIn('status', ['confirmed', 'ongoing', 'completed'])
+        $query = Booking::whereIn('status', ['confirmed', 'ongoing', 'completed'])
             ->where('payment_status', '!=', 'paid')
             ->whereDoesntHave('invoice')
             ->whereDoesntHave('invoices')
-            ->with(['vehicle', 'category', 'user'])
-            ->get();
+            ->with(['vehicle', 'category', 'user']);
+
+        if (Auth::user()->isMerchantStaff()) {
+            $query->ownedByMerchant(Auth::user()->merchantId());
+        }
+
+        $bookings = $query->get();
 
         $eligible = $bookings->map(function ($b) {
             return [
@@ -89,7 +102,7 @@ class InvoiceWebController extends Controller
 
     public function store(Request $request)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
             abort(403);
         }
 
@@ -104,7 +117,7 @@ class InvoiceWebController extends Controller
         ]);
 
         $bookings = Booking::whereIn('id', $validated['booking_ids'])->with(['vehicle', 'category'])->get();
-        $ownerId = Auth::id();
+        $ownerId = Auth::user()->merchantId() ?? Auth::id();
 
         $subtotal = $bookings->sum('final_price');
         $taxPercent = $validated['tax_percent'] ?? 0;
@@ -148,19 +161,29 @@ class InvoiceWebController extends Controller
 
     public function show(Invoice $invoice)
     {
+        $this->authorizeInvoiceAccess($invoice);
         $invoice->load(['booking', 'booking.vehicle', 'booking.bookingItems', 'booking.category', 'user', 'owner', 'items', 'payments']);
         return view('invoices.show', compact('invoice'));
     }
 
     public function print(Invoice $invoice)
     {
+        $this->authorizeInvoiceAccess($invoice);
         $invoice->load(['booking', 'booking.vehicle', 'booking.bookingItems', 'booking.category', 'user', 'owner', 'items', 'payments']);
         return view('invoices.print', compact('invoice'));
     }
 
     public function send(Invoice $invoice)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && (int) $invoice->owner_id !== Auth::user()->merchantId()) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && !$this->invoiceBelongsToStaffCategory($invoice)) {
             abort(403);
         }
 
@@ -170,6 +193,46 @@ class InvoiceWebController extends Controller
         }
 
         return back()->with('error', 'Invoice sudah dikirim sebelumnya.');
+    }
+
+    private function invoiceBelongsToStaffCategory(Invoice $invoice): bool
+    {
+        $user = Auth::user();
+        $categoryId = $user->merchantCategoryId();
+
+        if (!$categoryId) {
+            return true;
+        }
+
+        $booking = $invoice->primaryBooking();
+
+        if (!$booking) {
+            return (int) $invoice->category_id === $categoryId;
+        }
+
+        return $booking->belongsToCategory($categoryId);
+    }
+
+    private function authorizeInvoiceAccess(Invoice $invoice): void
+    {
+        $user = Auth::user();
+        if ($user->role === 'user') {
+            abort_unless($invoice->user_id === $user->id, 403);
+            return;
+        }
+        if ($user->role === 'driver') {
+            $driver = \App\Models\Driver::where('user_id', $user->id)->first();
+            if (!$driver || (int) $invoice->owner_id !== (int) $driver->owner_id) {
+                abort(403);
+            }
+            return;
+        }
+        if ($user->isMerchantStaff() && $invoice->owner_id && (int) $invoice->owner_id !== $user->merchantId()) {
+            abort(403);
+        }
+        if ($user->isMerchantStaff() && !$this->invoiceBelongsToStaffCategory($invoice)) {
+            abort(403);
+        }
     }
 
     public function pay(Request $request, Invoice $invoice)
@@ -184,6 +247,14 @@ class InvoiceWebController extends Controller
 
         if ($validated['amount'] > $invoice->getRemainingAmount()) {
             return back()->with('error', 'Jumlah pembayaran melebihi sisa tagihan (Rp ' . number_format($invoice->getRemainingAmount(), 0, ',', '.') . ')');
+        }
+
+        $booking = $invoice->primaryBooking();
+        if ($booking && $booking->payment_plan === 'dp50') {
+            $dp = (float) $booking->getDpAmount();
+            if ($dp > 0 && (float) $invoice->paid_amount == 0 && (float) $validated['amount'] < $dp) {
+                return back()->with('error', 'Booking ini memakai skema DP 50%. Pembayaran pertama minimal Rp ' . number_format($dp, 0, ',', '.'));
+            }
         }
 
         $proofPath = null;
@@ -209,7 +280,15 @@ class InvoiceWebController extends Controller
 
     public function verifyPayment(Payment $payment)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && $payment->invoice && (int) $payment->invoice->owner_id !== Auth::user()->merchantId()) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && $payment->invoice && !$this->invoiceBelongsToStaffCategory($payment->invoice)) {
             abort(403);
         }
 
@@ -238,7 +317,15 @@ class InvoiceWebController extends Controller
 
     public function rejectPayment(Request $request, Payment $payment)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && $payment->invoice && (int) $payment->invoice->owner_id !== Auth::user()->merchantId()) {
+            abort(403);
+        }
+
+        if (Auth::user()->isMerchantStaff() && $payment->invoice && !$this->invoiceBelongsToStaffCategory($payment->invoice)) {
             abort(403);
         }
 

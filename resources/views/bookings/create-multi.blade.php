@@ -42,7 +42,6 @@
                             <div class="bg-sky-50 rounded-lg px-4 py-2.5 text-sm w-full">
                                 <span class="text-navy-500">Durasi:</span>
                                 <span class="font-bold text-sky-700 ml-1" x-text="durationText">-</span>
-                                <input type="hidden" name="payment_plan" value="full">
                             </div>
                         </div>
                     </div>
@@ -346,6 +345,28 @@
                         </div>
                     </div>
 
+                    <div class="space-y-3 mb-6">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500">Metode Pembayaran</p>
+                        <label class="flex items-start gap-2.5 cursor-pointer border rounded-xl p-3 transition">
+                            <input type="radio" name="payment_plan" value="full" x-model="paymentPlan" class="mt-0.5 accent-sky-600">
+                            <span class="flex-1">
+                                <span class="block text-[13px] font-bold text-navy-800">Bayar Penuh</span>
+                                <span class="block text-[11px] text-gray-400">Lunasi seluruh biaya di awal.</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-2.5 cursor-pointer border rounded-xl p-3 transition">
+                            <input type="radio" name="payment_plan" value="dp50" x-model="paymentPlan" class="mt-0.5 accent-amber-500">
+                            <span class="flex-1">
+                                <span class="block text-[13px] font-bold text-navy-800"><i class="fas fa-hand-holding-dollar text-amber-500 mr-1 text-[11px]"></i> DP 50%</span>
+                                <span class="block text-[11px] text-gray-400">Bayar 50% di awal, sisanya saat selesai sewa.</span>
+                            </span>
+                        </label>
+                        <div class="flex justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5" x-show="paymentPlan === 'dp50'">
+                            <span class="text-[12px] font-semibold text-amber-700">DP yang harus dibayar</span>
+                            <span class="text-[13px] font-bold text-amber-700">Rp <span x-text="Number(dueNow).toLocaleString('id-ID')"></span></span>
+                        </div>
+                    </div>
+
                     <button type="submit" :disabled="items.length === 0"
                         class="w-full bg-gradient-to-r from-sky-500 to-sky-700 text-white py-3 rounded-xl font-bold text-sm hover:from-sky-600 hover:to-sky-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fas fa-check-circle mr-2"></i>Buat Booking
@@ -362,6 +383,7 @@ function multiItemForm() {
         items: [],
         showPicker: null,
         rentalType: 'daily',
+        paymentPlan: '{{ old('payment_plan', 'full') }}',
         startDate: '',
         endDate: '',
         accessoriesData: {
@@ -469,6 +491,10 @@ function multiItemForm() {
 
         get grandTotal() {
             return this.subtotal + this.totalInsurance + this.totalAccessories + this.totalUrgency + this.totalDeposit;
+        },
+
+        get dueNow() {
+            return this.paymentPlan === 'dp50' ? Math.round(this.grandTotal * 0.5) : this.grandTotal;
         },
 
         getAccessories(type) {

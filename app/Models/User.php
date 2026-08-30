@@ -14,7 +14,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'address',
-        'avatar', 'role', 'is_active',
+        'avatar', 'role', 'owner_id', 'category_id', 'is_active',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -29,10 +29,52 @@ class User extends Authenticatable
     }
 
     public function isSuperAdmin(): bool { return $this->role === 'superadmin'; }
+    public function isAdmin(): bool { return $this->role === 'admin'; }
     public function isOwner(): bool { return $this->role === 'owner'; }
     public function isUser(): bool { return $this->role === 'user'; }
     public function isDriver(): bool { return $this->role === 'driver'; }
     public function isInspector(): bool { return $this->role === 'inspector'; }
+    public function isMerchantStaff(): bool { return in_array($this->role, ['admin', 'owner']); }
+
+    public function merchant()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function merchantCategory()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function merchantOwner()
+    {
+        if ($this->role === 'owner') {
+            return $this;
+        }
+        if ($this->role === 'admin' && $this->owner_id) {
+            return $this->merchant;
+        }
+        return null;
+    }
+
+    public function merchantId(): ?int
+    {
+        $owner = $this->merchantOwner();
+        return $owner?->id;
+    }
+
+    /**
+     * Kategori produk yang dikelola admin/owner (null = seluruh merchant).
+     * Hanya berlaku untuk role admin & owner.
+     */
+    public function merchantCategoryId(): ?int
+    {
+        if (!$this->isMerchantStaff()) {
+            return null;
+        }
+
+        return $this->category_id ? (int) $this->category_id : null;
+    }
 
     public function vehicles()
     {

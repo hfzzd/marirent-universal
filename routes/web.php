@@ -104,8 +104,8 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::delete('/elektronik/{type}/{id}', [ElektronikController::class, 'destroy'])->name('superadmin.elektronik.destroy');
 });
 
-// Brand Catalog Routes (superadmin CRUD, owner can edit)
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('admin/brand-catalog')->group(function () {
+// Brand Catalog Routes (superadmin CRUD, merchant admin/owner can edit)
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('admin/brand-catalog')->group(function () {
     Route::get('/', [BrandCatalogPhotoController::class, 'index'])->name('admin.brand-catalog.index');
     Route::get('/create', [BrandCatalogPhotoController::class, 'create'])->name('admin.brand-catalog.create');
     Route::post('/', [BrandCatalogPhotoController::class, 'store'])->name('admin.brand-catalog.store');
@@ -116,8 +116,8 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('admin/brand-catalo
     Route::delete('/brand', [BrandCatalogPhotoController::class, 'destroyBrand'])->name('admin.brand-catalog.destroy-brand');
 });
 
-// Owner Elektronik Routes
-Route::middleware(['auth', 'role:owner'])->prefix('owner')->group(function () {
+// Merchant Owner/Admin Elektronik Routes
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('owner')->group(function () {
     Route::get('/revenue', [OwnerRevenueController::class, 'index'])->name('owner.revenue.index');
     Route::get('/revenue/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
     Route::post('/revenue', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');
@@ -132,7 +132,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('owner')->group(function () {
 });
 
 // Vehicles (Mobil) Routes
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('vehicles')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('vehicles')->group(function () {
     Route::get('/', [VehicleWebController::class, 'index'])->name('vehicles.index');
     Route::get('/create', [VehicleWebController::class, 'create'])->name('vehicles.create');
     Route::post('/', [VehicleWebController::class, 'store'])->name('vehicles.store');
@@ -142,7 +142,7 @@ Route::middleware(['auth', 'role:superadmin,owner'])->prefix('vehicles')->group(
 });
 
 // Motors Routes
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('motors')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('motors')->group(function () {
     Route::get('/', [VehicleWebController::class, 'motor'])->name('motors.index');
 });
 
@@ -157,6 +157,7 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
     Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
     Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');
+    Route::post('/{booking}/reschedule', [BookingWebController::class, 'reschedule'])->name('bookings.reschedule');
     Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
     Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm');
@@ -165,7 +166,7 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/{booking}/complete', [BookingWebController::class, 'complete'])->name('bookings.complete');
 });
 
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('drivers')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('drivers')->group(function () {
     Route::get('/', [DriverWebController::class, 'index'])->name('drivers.index');
     Route::get('/create', [DriverWebController::class, 'create'])->name('drivers.create');
     Route::post('/', [DriverWebController::class, 'store'])->name('drivers.store');
@@ -197,6 +198,8 @@ Route::middleware('auth')->prefix('inspections')->group(function () {
     Route::get('/', [InspectionWebController::class, 'index'])->name('inspections.index');
     Route::get('/create', [InspectionWebController::class, 'create'])->name('inspections.create');
     Route::post('/', [InspectionWebController::class, 'store'])->name('inspections.store');
+    Route::post('/{inspection}/start', [InspectionWebController::class, 'start'])->name('inspections.start');
+    Route::post('/{inspection}/complete', [InspectionWebController::class, 'complete'])->name('inspections.complete');
     Route::get('/{inspection}', [InspectionWebController::class, 'show'])->name('inspections.show');
 });
 
@@ -207,7 +210,7 @@ Route::middleware('auth')->prefix('trip-reports')->group(function () {
     Route::get('/{tripReport}', [TripReportWebController::class, 'show'])->name('reports.show');
 });
 
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('salaries')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('salaries')->group(function () {
     Route::get('/', [SalaryWebController::class, 'index'])->name('salaries.index');
     Route::get('/create', [SalaryWebController::class, 'create'])->name('salaries.create');
     Route::post('/', [SalaryWebController::class, 'store'])->name('salaries.store');
@@ -236,8 +239,8 @@ Route::middleware('auth')->prefix('item-replacements')->group(function () {
     Route::post('/{replacement}/return', [ItemReplacementWebController::class, 'returnItem'])->name('item-replacements.return');
 });
 
-// Maintenance Routes
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('maintenances')->group(function () {
+// Maintenance Routes (superadmin, merchant admin/owner, dan inspector merchant)
+Route::middleware(['auth', 'role:superadmin,admin,owner,inspector'])->prefix('maintenances')->group(function () {
     Route::get('/', [MaintenanceController::class, 'index'])->name('maintenances.index');
     Route::post('/', [MaintenanceController::class, 'store'])->name('maintenances.store');
     Route::put('/{maintenance}', [MaintenanceController::class, 'update'])->name('maintenances.update');

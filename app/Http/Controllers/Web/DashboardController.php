@@ -19,11 +19,83 @@ class DashboardController extends Controller
 
         return match($user->role) {
             'superadmin' => $this->superadminDashboard(),
-            'owner' => view('dashboard.owner'),
+            'owner' => $user->merchantCategoryId() ? $this->merchantDashboard() : view('dashboard.owner'),
+            'admin' => $this->merchantDashboard(),
             'driver' => view('dashboard.driver'),
             'inspector' => $this->inspectorDashboard(),
             default => redirect()->route('home'),
         };
+    }
+
+    private function merchantDashboard()
+    {
+        $user = Auth::user();
+        $merchant = $user->merchantOwner();
+        $merchantId = $user->merchantId();
+        $categoryId = $user->merchantCategoryId();
+
+        $vehicleQuery = \App\Models\Vehicle::where('owner_id', $merchantId);
+        if ($categoryId) {
+            $vehicleQuery->where('category_id', $categoryId);
+        }
+
+        $bookingCategory = $categoryId
+            ? fn($q) => $q->where('category_id', $categoryId)
+                ->orWhereHas('childBookings', fn($c) => $c->where('category_id', $categoryId))
+            : null;
+
+        $vehicleCount = (clone $vehicleQuery)->count();
+        $driverCount = \App\Models\Driver::where('owner_id', $merchantId)->count();
+
+        $revenueQuery = \App\Models\Invoice::where('owner_id', $merchantId)->where('status', 'paid');
+        if ($bookingCategory) {
+            $revenueQuery->whereHas('booking', $bookingCategory);
+        }
+        $revenue = $revenueQuery->sum('paid_amount');
+
+        $paymentQuery = \App\Models\Payment::where('status', 'pending')
+            ->whereHas('invoice', fn($q) => $q->where('owner_id', $merchantId));
+        if ($bookingCategory) {
+            $paymentQuery->whereHas('invoice', fn($q) => $q->whereHas('booking', $bookingCategory));
+        }
+        $pendingPayments = $paymentQuery
+            ->with(['invoice.booking', 'user'])
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        $maintenanceQuery = \App\Models\Maintenance::whereHas('vehicle', fn($q) => $q->where('owner_id', $merchantId))
+            ->where('status', '!=', 'completed');
+        if ($categoryId) {
+            $maintenanceQuery->whereHas('vehicle', fn($q) => $q->where('category_id', $categoryId));
+        }
+        $maintenances = $maintenanceQuery
+            ->with('vehicle')
+            ->latest('scheduled_date')
+            ->limit(8)
+            ->get();
+
+        $inspectionQuery = \App\Models\Inspection::where('status', 'reported')
+            ->whereHas('vehicle', fn($q) => $q->where('owner_id', $merchantId));
+        if ($categoryId) {
+            $inspectionQuery->whereHas('vehicle', fn($q) => $q->where('category_id', $categoryId));
+        }
+        $inspectorReports = $inspectionQuery
+            ->with(['vehicle', 'reportedBy'])
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        $recentBookings = \App\Models\Booking::forMerchantCategory($merchantId, $categoryId)
+            ->with(['user', 'vehicle', 'category'])
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        return view('dashboard.admin', compact(
+            'merchant', 'merchantId', 'vehicleCount', 'driverCount', 'revenue',
+            'pendingPayments', 'maintenances', 'inspectorReports', 'recentBookings'
+        ));
     }
 
     private function superadminDashboard()

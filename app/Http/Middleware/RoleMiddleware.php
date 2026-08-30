@@ -13,6 +13,11 @@ class RoleMiddleware
             return redirect()->route('login');
         }
 
+        // Superadmin adalah role tertinggi untuk semua merchant (bisa akses semua halaman)
+        if (auth()->user()->role === 'superadmin') {
+            return $next($request);
+        }
+
         if (!in_array(auth()->user()->role, $roles)) {
             abort(403, 'Unauthorized');
         }

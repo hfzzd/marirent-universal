@@ -20,6 +20,7 @@
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Scope</th>
                 <th class="text-center py-3 px-4 text-navy-500 font-medium">Kondisi</th>
                 <th class="text-center py-3 px-4 text-navy-500 font-medium">Kerusakan</th>
+                <th class="text-left py-3 px-4 text-navy-500 font-medium">Status</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Inspektur</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Tanggal</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Aksi</th>
@@ -49,10 +50,40 @@
                             <span class="badge badge-green text-[10px]">Aman</span>
                         @endif
                     </td>
-                    <td class="py-3 px-4 text-xs text-navy-600">{{ $i->inspector->name ?? '-' }}</td>
+                    <td class="py-3 px-4">
+                        @if($i->status == 'reported')
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Laporan Driver</span>
+                        @elseif($i->status == 'processing')
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Dikerjakan</span>
+                        @elseif($i->status == 'completed')
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Selesai</span>
+                        @else
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ $i->getStatusLabel() }}</span>
+                        @endif
+                        @if($i->reported_by && $i->reportedBy)
+                            <span class="text-[10px] text-gray-400 block mt-0.5">oleh {{ $i->reportedBy->name }}</span>
+                        @endif
+                    </td>
+                    <td class="py-3 px-4 text-xs text-navy-600">{{ $i->inspector?->name ?? ($i->assignedTo?->name ?? '-') }}</td>
                     <td class="py-3 px-4 text-xs text-navy-500">{{ $i->created_at->format('d M Y') }}</td>
                     <td class="py-3 px-4">
-                        <a href="{{ route('inspections.show', $i) }}" class="text-emerald-600 text-xs font-medium"><i class="fas fa-eye"></i></a>
+                        <div class="flex items-center gap-1.5">
+                            <a href="{{ route('inspections.show', $i) }}" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition" title="Detail">
+                                <i class="fas fa-eye text-xs"></i>
+                            </a>
+                            @if($i->status == 'reported' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector()))
+                            <form method="POST" action="{{ route('inspections.start', $i) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition" title="Kerjakan"><i class="fas fa-tasks text-xs"></i></button>
+                            </form>
+                            @endif
+                            @if($i->status == 'processing' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector()))
+                            <form method="POST" action="{{ route('inspections.complete', $i) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 transition" title="Tandai Selesai"><i class="fas fa-check text-xs"></i></button>
+                            </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty
