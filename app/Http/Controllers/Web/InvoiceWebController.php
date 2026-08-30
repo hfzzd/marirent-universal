@@ -67,6 +67,8 @@ class InvoiceWebController extends Controller
 
         $bookings = Booking::whereIn('status', ['confirmed', 'ongoing', 'completed'])
             ->where('payment_status', '!=', 'paid')
+            ->whereDoesntHave('invoice')
+            ->whereDoesntHave('invoices')
             ->with(['vehicle', 'category', 'user'])
             ->get();
 
@@ -139,6 +141,8 @@ class InvoiceWebController extends Controller
             ]);
         }
 
+        $invoice->bookings()->attach($bookings->pluck('id'));
+
         return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice gabungan berhasil dibuat dengan ' . $bookings->count() . ' booking.');
     }
 
@@ -178,6 +182,10 @@ class InvoiceWebController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        if ($validated['amount'] > $invoice->getRemainingAmount()) {
+            return back()->with('error', 'Jumlah pembayaran melebihi sisa tagihan (Rp ' . number_format($invoice->getRemainingAmount(), 0, ',', '.') . ')');
+        }
+
         $proofPath = null;
         if ($request->hasFile('proof_photo')) {
             $proofPath = $request->file('proof_photo')->store('payments/proof', 'public');
@@ -215,24 +223,15 @@ class InvoiceWebController extends Controller
             'verified_at' => now(),
         ]);
 
-        $invoice = $payment->invoice;
-        $newPaid = $invoice->paid_amount + $payment->amount;
-        $newStatus = $newPaid >= $invoice->total_amount ? 'paid' : 'partial';
+        $invoice = $payment->invoice->refresh();
 
         $invoice->update([
-            'paid_amount' => $newPaid,
-            'due_amount' => max(0, $invoice->total_amount - $newPaid),
-            'status' => $newStatus,
+            'payment_method' => $payment->method,
+            'payment_reference' => $payment->reference_number,
+            'paid_at' => $invoice->paid_amount >= $invoice->total_amount ? now() : $invoice->paid_at,
         ]);
 
-        if ($invoice->booking) {
-            $bookingPaymentStatus = match($newStatus) {
-                'paid' => 'paid',
-                'partial' => 'partial',
-                default => 'unpaid',
-            };
-            $invoice->booking->update(['payment_status' => $bookingPaymentStatus]);
-        }
+        $this->syncLinkedBookings($invoice);
 
         return back()->with('success', 'Pembayaran berhasil diverifikasi');
     }
@@ -258,6 +257,27 @@ class InvoiceWebController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
+        $this->syncLinkedBookings($payment->invoice);
+
         return back()->with('success', 'Pembayaran ditolak');
+    }
+
+    private function syncLinkedBookings(Invoice $invoice): void
+    {
+        if (!$invoice) return;
+
+        $bookingStatus = match($invoice->status) {
+            'paid' => 'paid',
+            'partial' => 'partial',
+            default => 'unpaid',
+        };
+
+        $bookings = collect();
+        if ($invoice->booking) {
+            $bookings->push($invoice->booking);
+        }
+        $invoice->bookings()->each(fn($b) => $bookings->push($b));
+
+        $bookings->unique('id')->each(fn($b) => $b->update(['payment_status' => $bookingStatus]));
     }
 }

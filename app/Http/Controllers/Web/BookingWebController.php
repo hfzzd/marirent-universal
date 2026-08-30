@@ -13,6 +13,8 @@ use App\Models\Playstation;
 use App\Models\Drone;
 use App\Models\MusicalInstrument;
 use App\Models\User;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -125,11 +127,14 @@ class BookingWebController extends Controller
             'final_price' => $finalPrice,
             'status' => 'pending',
             'payment_status' => 'unpaid',
+            'payment_plan' => 'full',
             'notes' => $validated['notes'] ?? null,
             'ktp_photo' => $ktpPath,
         ]);
 
         $vehicle->update(['status' => 'reserved']);
+
+        $this->createBookingInvoice($booking);
 
         // Notify superadmin and owner about new booking
         $admins = User::whereIn('role', ['superadmin', 'owner'])->get();
@@ -238,6 +243,7 @@ class BookingWebController extends Controller
             'final_price' => $totalPrice,
             'status' => 'pending',
             'payment_status' => 'unpaid',
+            'payment_plan' => $validated['payment_plan'],
             'accessories' => $selectedAccessories ?: null,
             'urgency' => $validated['urgency'],
             'with_insurance' => $validated['with_insurance'] === '1',
@@ -246,6 +252,8 @@ class BookingWebController extends Controller
         ]);
 
         $item->update(['status' => 'reserved']);
+
+        $this->createBookingInvoice($booking);
 
         // Notify superadmin and owner about new item booking
         $admins = User::whereIn('role', ['superadmin', 'owner'])->get();
@@ -358,6 +366,60 @@ class BookingWebController extends Controller
         };
     }
 
+    private function createBookingInvoice(Booking $booking, array $relatedBookings = []): void
+    {
+        $related = $relatedBookings !== [] ? $relatedBookings : [$booking];
+        $subtotal = collect($related)->sum(fn($b) => (float) $b->final_price);
+
+        $owner = null;
+        if ($booking->vehicle && $booking->vehicle->owner_id) {
+            $owner = User::find($booking->vehicle->owner_id);
+        }
+        if (!$owner) {
+            $owner = User::where('role', 'superadmin')->orderBy('id')->first();
+        }
+
+        $paidAmount = $booking->payment_status === 'paid' ? $subtotal : 0;
+        $status = $booking->payment_status === 'paid' ? 'paid' : 'sent';
+
+        $invoice = Invoice::create([
+            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
+            'booking_id' => $booking->id,
+            'user_id' => $booking->user_id,
+            'owner_id' => $owner?->id,
+            'category_id' => $booking->category_id,
+            'type' => 'rental',
+            'subtotal' => $subtotal,
+            'tax_amount' => 0,
+            'discount_amount' => 0,
+            'total_amount' => $subtotal,
+            'paid_amount' => $paidAmount,
+            'due_amount' => max(0, $subtotal - $paidAmount),
+            'status' => $status,
+            'paid_at' => $booking->payment_status === 'paid' ? now() : null,
+            'due_date' => $booking->payment_due_date
+                ?? ($booking->start_date ? \Carbon\Carbon::parse($booking->start_date) : now()->addDays(7)),
+        ]);
+
+        foreach ($related as $b) {
+            $unit = $b->vehicle?->name ?? $b->item?->name ?? ($b->category->name ?? '-');
+            $days = $b->start_date && $b->end_date ? max(1, $b->start_date->diffInDays($b->end_date)) : 1;
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'description' => "Sewa {$unit} ({$b->booking_code}) - {$days} hari",
+                'quantity' => 1,
+                'unit_price' => (float) $b->final_price,
+                'total_price' => (float) $b->final_price,
+            ]);
+        }
+
+        $ids = collect($related)->pluck('id');
+        if (!$ids->contains($booking->id)) {
+            $ids->push($booking->id);
+        }
+        $invoice->bookings()->attach($ids);
+    }
+
     public function createMulti()
     {
         $phones = Phone::where('status', 'available')->where('is_active', true)->with('category')->get();
@@ -415,11 +477,13 @@ class BookingWebController extends Controller
             'final_price' => 0,
             'status' => 'pending',
             'payment_status' => 'unpaid',
+            'payment_plan' => $validated['payment_plan'],
             'notes' => $validated['notes'] ?? null,
             'ktp_photo' => $ktpPath,
         ]);
 
         $totalBookingPrice = 0;
+        $childBookings = [];
 
         foreach ($validated['items'] as $itemData) {
             $model = $this->getItemModel($itemData['type']);
@@ -455,7 +519,7 @@ class BookingWebController extends Controller
             $itemTotal = $subtotal + $insuranceFee + $accessoriesCost + $urgencyFee + $depositAmount;
             $totalBookingPrice += $itemTotal;
 
-            Booking::create([
+            $child = Booking::create([
                 'booking_code' => Booking::generateBookingCode(),
                 'user_id' => Auth::id(),
                 'vehicle_id' => null,
@@ -476,6 +540,7 @@ class BookingWebController extends Controller
                 'final_price' => $itemTotal,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
+                'payment_plan' => $validated['payment_plan'],
                 'accessories' => $selectedAccessories ?: null,
                 'urgency' => $itemData['urgency'],
                 'with_insurance' => $itemData['with_insurance'] === '1',
@@ -485,12 +550,15 @@ class BookingWebController extends Controller
             ]);
 
             $item->update(['status' => 'reserved']);
+            $childBookings[] = $child;
         }
 
         $booking->update([
             'total_price' => $totalBookingPrice,
             'final_price' => $totalBookingPrice,
         ]);
+
+        $this->createBookingInvoice($booking, $childBookings);
 
         return redirect()->route('bookings.show', $booking)->with('success', 'Booking multi-item berhasil dibuat! Kode: ' . $booking->booking_code);
     }
@@ -622,11 +690,14 @@ class BookingWebController extends Controller
             'final_price' => $finalPrice,
             'status' => 'confirmed',
             'payment_status' => $validated['payment_status'],
+            'payment_plan' => 'full',
             'payment_due_date' => $validated['payment_due_date'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
 
         $item->update(['status' => 'reserved']);
+
+        $this->createBookingInvoice($booking);
 
         if ($driverId) {
             Driver::where('id', $driverId)->update(['status' => 'on_duty']);

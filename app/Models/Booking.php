@@ -19,7 +19,7 @@ class Booking extends Model
         'total_price', 'discount', 'final_price',
         'status', 'payment_status', 'notes', 'cancellation_reason', 'ktp_photo',
         'accessories', 'urgency', 'with_insurance',
-        'payment_due_date', 'source', 'parent_booking_id',
+        'payment_plan', 'payment_due_date', 'source', 'parent_booking_id',
     ];
 
     protected function casts(): array
@@ -48,6 +48,7 @@ class Booking extends Model
     public function inspection() { return $this->hasOne(Inspection::class); }
     public function tripReport() { return $this->hasOne(TripReport::class); }
     public function invoice() { return $this->hasOne(Invoice::class); }
+    public function invoices() { return $this->belongsToMany(Invoice::class, 'booking_invoice'); }
     public function replacements() { return $this->hasMany(VehicleReplacement::class); }
     public function review() { return $this->hasOne(Review::class); }
     public function payments() { return $this->hasManyThrough(Payment::class, Invoice::class); }

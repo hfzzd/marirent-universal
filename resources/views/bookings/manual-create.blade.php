@@ -49,7 +49,7 @@
         <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm" x-data="{ kind: '{{ old('item_kind', 'mobil') }}' }">
             <h3 class="text-[13px] font-extrabold text-navy-800 mb-4 flex items-center gap-2"><i class="fas fa-box-open text-sky-500"></i> Pilih Item Sewa *</h3>
             <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
-                @foreach(['mobil' => ['fa-car', 'Mobil'], 'motor' => ['fa-motorcycle', 'Motor'], 'kamera' => ['fa-camera', 'Kamera'], 'hp' => ['fa-mobile-alt', 'HP'], 'tenda' => ['fa-campground', 'Tenda'], 'ps' => ['fa-gamepad', 'PS'], 'drone' => ['fa-drone', 'Drone'], 'musik' => ['fa-guitar', 'Musik']] as $key => [$icon, $label])
+                @foreach(['mobil' => ['fa-car', 'Mobil'], 'motor' => ['fa-motorcycle', 'Motor'], 'kamera' => ['fa-camera', 'Kamera'], 'hp' => ['fa-mobile-alt', 'HP'], 'tenda' => ['fa-campground', 'Alat Camping'], 'ps' => ['fa-gamepad', 'PS'], 'drone' => ['fa-drone', 'Drone'], 'musik' => ['fa-guitar', 'Musik']] as $key => [$icon, $label])
                 <button type="button" @click="kind = '{{ $key }}'; if (window.__filterManualItems) window.__filterManualItems('{{ $key }}');" :class="kind === '{{ $key }}' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'bg-gray-50 text-navy-600 border border-gray-200 hover:border-sky-300'" class="flex flex-col items-center gap-1 px-2 py-3 rounded-xl text-[11px] font-bold transition">
                     <i class="fas {{ $icon }} text-base"></i> {{ $label }}
                 </button>

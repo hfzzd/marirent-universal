@@ -14,7 +14,7 @@
         </a>
         <a href="{{ route($prefix . '.elektronik.type', 'tenda') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'tenda' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
-            <i class="fas fa-campground mr-1"></i> Tenda ({{ $counts['tenda'] }})
+            <i class="fas fa-campground mr-1"></i> Alat Camping ({{ $counts['tenda'] }})
         </a>
         <a href="{{ route($prefix . '.elektronik.type', 'ps') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'ps' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">

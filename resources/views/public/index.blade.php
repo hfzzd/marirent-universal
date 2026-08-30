@@ -148,7 +148,7 @@
                     Sewa Kendaraan &<br>Gadget <span class="text-sky-300">Mudah & Cepat</span>
                 </h1>
                 <p class="text-sky-200/80 text-[15px] max-w-lg mb-8 leading-relaxed">
-                    Satu platform untuk sewa mobil, motor, kamera, dan tenda. Dengan driver atau tanpa driver, pilihan ada di tangan Anda.
+                    Satu platform untuk sewa mobil, motor, kamera, dan alat camping. Dengan driver atau tanpa driver, pilihan ada di tangan Anda.
                 </p>
                 <div class="flex flex-wrap gap-3 fade-in-up fade-in-up-delay-2">
                     <a href="{{ route('products') }}" class="bg-white text-sky-700 hover:bg-sky-50 px-7 py-3.5 rounded-xl font-bold text-[14px] shadow-xl shadow-black/10 transition-all duration-300 hover:scale-105 flex items-center gap-2">
@@ -192,7 +192,7 @@
                         <div class="bg-white/10 rounded-2xl p-5 text-center">
                             <i class="fas fa-campground text-emerald-300 text-3xl mb-3"></i>
                             <p class="text-2xl font-bold text-white">{{ $catCounts['sewa-tenda'] ?? 0 }}</p>
-                            <p class="text-sky-300 text-[11px] font-medium">Tenda</p>
+                            <p class="text-sky-300 text-[11px] font-medium">Alat Camping</p>
                         </div>
                     </div>
                 </div>

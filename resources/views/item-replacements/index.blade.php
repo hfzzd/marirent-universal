@@ -69,7 +69,7 @@
                         @elseif($r->item_type === 'camera')
                             <span class="bg-violet-100 text-violet-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-camera mr-1"></i>Kamera</span>
                         @elseif($r->item_type === 'tenda')
-                            <span class="bg-emerald-100 text-emerald-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-campground mr-1"></i>Tenda</span>
+                            <span class="bg-emerald-100 text-emerald-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-campground mr-1"></i>Alat Camping</span>
                         @elseif($r->item_type === 'ps')
                             <span class="bg-indigo-100 text-indigo-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-gamepad mr-1"></i>Playstation</span>
                         @elseif($r->item_type === 'drone')
@@ -77,7 +77,7 @@
                         @elseif($r->item_type === 'musik')
                             <span class="bg-rose-100 text-rose-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-guitar mr-1"></i>Alat Musik</span>
                         @else
-                            <span class="bg-emerald-100 text-emerald-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-campground mr-1"></i>Tenda</span>
+                            <span class="bg-emerald-100 text-emerald-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-campground mr-1"></i>Alat Camping</span>
                         @endif
                     </td>
                     <td class="py-3 px-5 text-navy-600">{{ $r->originalItem->name ?? '-' }}</td>

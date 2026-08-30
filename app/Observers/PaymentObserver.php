@@ -42,7 +42,7 @@ class PaymentObserver
         $newStatus = match(true) {
             $effectivePaid >= $invoice->total_amount && $invoice->total_amount > 0 => 'paid',
             $effectivePaid > 0 => 'partial',
-            default => 'unpaid',
+            default => 'sent',
         };
 
         $invoice->update([

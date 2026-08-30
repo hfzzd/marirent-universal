@@ -6,7 +6,7 @@
 @php
     $typeLabels = [
         'mobil' => 'Sewa Mobil', 'motor' => 'Sewa Motor',
-        'sewa-hp' => 'Sewa HP', 'sewa-kamera' => 'Sewa Kamera', 'sewa-tenda' => 'Sewa Tenda',
+        'sewa-hp' => 'Sewa HP', 'sewa-kamera' => 'Sewa Kamera', 'sewa-tenda' => 'Sewa Alat Camping',
         'sewa-ps' => 'Sewa Playstation', 'sewa-drone' => 'Sewa Drone', 'sewa-alat-musik' => 'Sewa Alat Musik',
     ];
 @endphp

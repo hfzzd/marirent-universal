@@ -27,7 +27,7 @@
                 MariRent hadir sebagai solusi atas kesulitan masyarakat dalam menemukan layanan rental yang mudah, transparan, dan terpercaya. Kami memulai perjalanan ini dengan visi sederhana: membuat semua orang bisa menyewa apa saja dengan mudah.
             </p>
             <p class="text-gray-500 text-[14px] leading-relaxed mb-6">
-                Dari mobil, motor, kamera, hingga tenda — semuanya tersedia dalam satu platform. Kami bekerja sama dengan ribuan mitra untuk memberikan pilihan terbaik dengan harga yang bersahabat.
+                Dari mobil, motor, kamera, hingga alat camping — semuanya tersedia dalam satu platform. Kami bekerja sama dengan ribuan mitra untuk memberikan pilihan terbaik dengan harga yang bersahabat.
             </p>
             <div class="grid grid-cols-3 gap-4">
                 <div class="text-center p-4 bg-gradient-to-br from-sky-50 to-sky-100 rounded-2xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
@@ -74,7 +74,7 @@
                         <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
                             <i class="fas fa-campground text-emerald-500 text-2xl"></i>
                         </div>
-                        <p class="text-[14px] font-bold text-navy-800">Tenda</p>
+                        <p class="text-[14px] font-bold text-navy-800">Alat Camping</p>
                         <p class="text-[11px] text-gray-400 mt-1">Camping gear</p>
                     </div>
                 </div>

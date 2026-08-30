@@ -53,7 +53,7 @@
             <div class="space-y-4 mt-4">
                 <div class="flex items-center gap-3 animate-slideIn" style="animation-delay:0.3s">
                     <div class="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center"><i class="fas fa-car text-sky-500 text-sm"></i></div>
-                    <div><p class="text-[13px] font-semibold text-navy-800">Ribuan Pilihan</p><p class="text-[11px] text-gray-400">Mobil, motor, kamera, tenda & HP</p></div>
+                    <div><p class="text-[13px] font-semibold text-navy-800">Ribuan Pilihan</p><p class="text-[11px] text-gray-400">Mobil, motor, kamera, alat camping & HP</p></div>
                 </div>
                 <div class="flex items-center gap-3 animate-slideIn" style="animation-delay:0.45s">
                     <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center"><i class="fas fa-tag text-emerald-500 text-sm"></i></div>

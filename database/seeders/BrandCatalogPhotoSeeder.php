@@ -77,6 +77,19 @@ class BrandCatalogPhotoSeeder extends Seeder
             ['brand_name' => 'Petzl', 'item_type' => 'camping', 'photo_path' => 'brand-catalog/camping/petzl.jpg', 'sort_order' => 1],
             ['brand_name' => 'Jetboil', 'item_type' => 'camping', 'photo_path' => 'brand-catalog/camping/Jetboil_logo.jpg', 'sort_order' => 1],
             ['brand_name' => 'Sea to Summit', 'item_type' => 'camping', 'photo_path' => 'brand-catalog/camping/seatosubmit.png', 'sort_order' => 1],
+
+            // Playstation
+            ['brand_name' => 'Sony', 'item_type' => 'ps', 'photo_path' => 'brand-catalog/ps/playstation.jpg', 'sort_order' => 1],
+
+            // Drone
+            ['brand_name' => 'DJI', 'item_type' => 'drone', 'photo_path' => 'brand-catalog/drone/dji.png', 'sort_order' => 1],
+
+            // Musik
+            ['brand_name' => 'Yamaha', 'item_type' => 'musik', 'photo_path' => 'brand-catalog/musik/yamaha.png', 'sort_order' => 1],
+            ['brand_name' => 'Fender', 'item_type' => 'musik', 'photo_path' => 'brand-catalog/musik/fender.jpg', 'sort_order' => 1],
+            ['brand_name' => 'Roland', 'item_type' => 'musik', 'photo_path' => 'brand-catalog/musik/roland.png', 'sort_order' => 1],
+            ['brand_name' => 'Casio', 'item_type' => 'musik', 'photo_path' => 'brand-catalog/musik/casio.png', 'sort_order' => 1],
+            ['brand_name' => 'Cort', 'item_type' => 'musik', 'photo_path' => 'brand-catalog/musik/cort.png', 'sort_order' => 1],
         ];
 
         foreach ($photos as $photo) {

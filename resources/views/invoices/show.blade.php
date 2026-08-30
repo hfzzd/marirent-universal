@@ -15,7 +15,7 @@
                     <i class="fas fa-print mr-1"></i> Cetak Invoice
                 </a>
                 @php
-                    $statusColors = ['unpaid' => 'bg-red-100 text-red-700', 'partial' => 'bg-yellow-100 text-yellow-700', 'paid' => 'bg-green-100 text-green-700', 'overdue' => 'bg-red-100 text-red-700'];
+                    $statusColors = ['sent' => 'bg-amber-100 text-amber-700', 'partial' => 'bg-yellow-100 text-yellow-700', 'paid' => 'bg-green-100 text-green-700', 'overdue' => 'bg-red-100 text-red-700'];
                 @endphp
                 <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $statusColors[$invoice->status] ?? 'bg-gray-100 text-gray-700' }} capitalize">{{ $invoice->status }}</span>
                 @if($invoice->isOverdue())
@@ -125,7 +125,7 @@
 
         {{-- Payment History --}}
         @if($invoice->payments->count())
-        <div class="border-t mt-6 pt-6">
+        <div class="border-t mt-6 pt-6" x-data="initRejectModals()">
             <h4 class="font-bold text-navy-800 mb-4"><i class="fas fa-history mr-2 text-sky-500"></i>Riwayat Pembayaran</h4>
             <div class="space-y-3">
                 @foreach($invoice->payments as $p)

@@ -314,6 +314,12 @@
                     @else <span class="badge badge-red">Belum Bayar</span>
                     @endif
                 </div>
+                @if($booking->payment_plan)
+                <div class="mt-3 flex items-center justify-between bg-sky-50 border border-sky-100 rounded-xl px-3.5 py-2.5">
+                    <span class="text-[11px] font-bold text-sky-700"><i class="fas fa-credit-card mr-1"></i> Rencana Pembayaran</span>
+                    <span class="text-[11px] font-bold text-navy-700">{{ $booking->payment_plan === 'dp50' ? 'DP 50%' : 'Bayar Penuh' }}</span>
+                </div>
+                @endif
                 @if($booking->payment_due_date && $booking->payment_status != 'paid')
                 <div class="mt-3 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
                     <span class="text-[11px] font-bold text-amber-700"><i class="fas fa-calendar-day mr-1"></i> Jatuh Tempo</span>

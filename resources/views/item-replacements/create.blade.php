@@ -29,7 +29,7 @@
                 <i class="fas fa-box text-sky-500"></i> Tipe Unit
             </h3>
             <div class="grid grid-cols-3 gap-2">
-                @foreach(['hp' => ['HP', 'fa-mobile-alt text-blue-500', 'text-blue-500'], 'camera' => ['Kamera', 'fa-camera text-violet-500', 'text-violet-500'], 'tenda' => ['Tenda', 'fa-campground text-emerald-500', 'text-emerald-500'], 'ps' => ['Playstation', 'fa-gamepad text-indigo-500', 'text-indigo-500'], 'drone' => ['Drone', 'fa-drone text-cyan-500', 'text-cyan-500'], 'musik' => ['Musik', 'fa-guitar text-rose-500', 'text-rose-500']] as $val => [$label, $icon, $iconColor])
+                @foreach(['hp' => ['HP', 'fa-mobile-alt text-blue-500', 'text-blue-500'], 'camera' => ['Kamera', 'fa-camera text-violet-500', 'text-violet-500'], 'tenda' => ['Alat Camping', 'fa-campground text-emerald-500', 'text-emerald-500'], 'ps' => ['Playstation', 'fa-gamepad text-indigo-500', 'text-indigo-500'], 'drone' => ['Drone', 'fa-drone text-cyan-500', 'text-cyan-500'], 'musik' => ['Musik', 'fa-guitar text-rose-500', 'text-rose-500']] as $val => [$label, $icon, $iconColor])
                 <a href="{{ route('item-replacements.create', ['type' => $val]) }}" class="block border-2 {{ $type === $val ? 'border-sky-500 bg-sky-50 shadow-sm' : 'border-gray-200' }} rounded-xl p-3 text-center transition-all hover:border-sky-300">
                     <i class="fas {{ $icon }} text-lg mb-1"></i>
                     <p class="text-xs font-semibold text-navy-700">{{ $label }}</p>
