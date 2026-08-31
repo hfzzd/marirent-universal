@@ -94,8 +94,10 @@ class User extends Authenticatable
         }
 
         if ($this->isDriver()) {
-            $driver = $this->driverProfile;
-            return $driver?->owner_id;
+            $ownerId = \App\Models\Driver::withoutGlobalScopes()
+                ->where('user_id', $this->id)
+                ->value('owner_id');
+            return $ownerId ? (int) $ownerId : null;
         }
 
         if ($this->isInspector()) {
