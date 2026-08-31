@@ -195,6 +195,29 @@
                     @endif
                 </div>
 
+                @if(!empty($merchant))
+                <div class="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">Disewakan oleh</p>
+                    <a href="{{ route('public.store', $merchant['slug']) }}" class="flex items-center gap-3 group">
+                        <div class="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center font-bold text-sky-700 flex-shrink-0 overflow-hidden">
+                            @if(!empty($merchant['logo']))
+                                <img src="{{ asset('storage/' . $merchant['logo']) }}" alt="" class="w-full h-full object-cover">
+                            @else
+                                {{ strtoupper(substr($merchant['name'], 0, 1)) }}
+                            @endif
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-navy-800 text-[13px] group-hover:text-sky-600 truncate">{{ $merchant['name'] }}</p>
+                            <p class="text-[11px] text-gray-500 flex items-center gap-1">
+                                @if($merchant['rating'] > 0)<i class="fas fa-star text-amber-400 text-[9px]"></i> {{ number_format($merchant['rating'], 1) }}@endif
+                                @if($merchant['city'])<span>{{ $merchant['city'] }}</span>@endif
+                            </p>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-300 text-[10px] ml-auto group-hover:text-sky-500"></i>
+                    </a>
+                </div>
+                @endif
+
                 @auth
                 <a href="{{ route('bookings.create', ['vehicle' => $vehicle->slug]) }}" class="btn-primary text-white w-full py-3 rounded-xl font-semibold text-center block">
                     <i class="fas fa-calendar-plus mr-2"></i> Booking Sekarang

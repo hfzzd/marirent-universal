@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantIsolatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DriverSalary extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, TenantIsolatable;
+
+    public const TENANT_COLUMN = 'owner_id';
 
     protected $fillable = [
         'driver_id', 'owner_id', 'period_month', 'base_salary',

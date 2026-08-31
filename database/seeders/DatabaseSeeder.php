@@ -230,6 +230,9 @@ class DatabaseSeeder extends Seeder
         // Run demo data
         $this->call(DemoSeeder::class);
 
+        // Profil toko (merchant) untuk setiap owner
+        $this->call(MerchantSeeder::class);
+
         // Run bulk vehicle seed data (50 mobil + 50 motor)
         $this->call(VehicleSeeder::class);
 

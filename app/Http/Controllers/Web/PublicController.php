@@ -17,6 +17,156 @@ use Illuminate\Support\Collection;
 
 class PublicController extends Controller
 {
+    /**
+     * Cache profil merchant (toko) per owner id untuk menghindari query berulang.
+     */
+    private array $merchantCache = [];
+
+    public function store(Request $request, string $slug)
+    {
+        $merchant = \App\Models\Merchant::where('slug', $slug)
+            ->where('is_active', true)
+            ->where('status', 'active')
+            ->with('owner')
+            ->firstOrFail();
+
+        $userId = $merchant->user_id;
+
+        $products = collect();
+        $models = [
+            Vehicle::class, Phone::class, Camera::class,
+            CampingEquipment::class, Playstation::class, Drone::class,
+            MusicalInstrument::class,
+        ];
+
+        foreach ($models as $modelClass) {
+            $type = $this->typeForModel($modelClass);
+            $query = $modelClass::with('category')
+                ->where('owner_id', $userId)
+                ->where('is_active', true)
+                ->where('status', 'available');
+
+            if ($request->category && str_starts_with(strtolower($request->category), 'mobil')) {
+                $query->whereHas('category', fn($q) => $q->where('slug', 'mobil'));
+            }
+            if ($request->category && str_starts_with(strtolower($request->category), 'motor')) {
+                $query->whereHas('category', fn($q) => $q->where('slug', 'motor'));
+            }
+
+            $products = $products->concat(
+                $query->get()->map(fn($item) => $this->normalizeCatalogItem($item, $type))
+            );
+        }
+
+        $products = $products->sortByDesc('id')->values();
+
+        $currentPage = (int) $request->input('page', 1);
+        $perPage = 12;
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $products->forPage($currentPage, $perPage),
+            $products->count(),
+            $perPage,
+            $currentPage,
+            ['path' => route('public.store', $merchant->slug), 'query' => $request->except('page')]
+        );
+
+        return view('public.store', [
+            'merchant' => $merchant,
+            'products' => $paginated,
+        ]);
+    }
+
+    private function typeForModel(string $modelClass): string
+    {
+        return match ($modelClass) {
+            Vehicle::class => 'vehicle',
+            Phone::class => 'phone',
+            Camera::class => 'camera',
+            CampingEquipment::class => 'camping',
+            Playstation::class => 'ps',
+            Drone::class => 'drone',
+            MusicalInstrument::class => 'musik',
+            default => 'item',
+        };
+    }
+
+    private function normalizeCatalogItem($item, string $type): array
+    {
+        if ($type === 'vehicle') {
+            return [
+                'type' => 'vehicle',
+                'id' => $item->id,
+                'name' => $item->name,
+                'slug' => $item->slug,
+                'brand' => $item->brand,
+                'subtitle' => $item->model . ' ' . $item->year,
+                'daily_price' => (float) $item->daily_price,
+                'image' => $item->image,
+                'category_slug' => $item->category->slug ?? '',
+                'icon' => ($item->category->slug ?? '') == 'motor' ? 'fa-motorcycle' : 'fa-car',
+                'tags' => array_filter([
+                    $item->seats ? $item->seats . ' Kursi' : null,
+                    ucfirst($item->transmission),
+                    $item->with_driver ? 'Driver' : null,
+                ]),
+                'merchant' => $this->merchantInfo($item->owner_id),
+                'link' => route('public.vehicle', $item->slug),
+            ];
+        }
+
+        $config = $this->getItemConfig($type === 'camping' ? 'tenda' : $type);
+        return [
+            'type' => $type,
+            'id' => $item->id,
+            'name' => $item->name,
+            'slug' => $item->slug,
+            'brand' => $item->brand,
+            'subtitle' => match ($type) {
+                'phone' => $item->phone_model,
+                'camera' => $item->camera_model,
+                'camping' => $item->equipment_model,
+                'ps' => $item->console_model,
+                'drone' => $item->drone_model,
+                'musik' => $item->instrument_model,
+                default => '-',
+            },
+            'daily_price' => (float) $item->daily_price,
+            'image' => $item->image,
+            'category_slug' => $item->category->slug ?? '',
+            'icon' => $config['icon'],
+            'tags' => array_filter([$item->color ?? null]),
+            'merchant' => $this->merchantInfo($item->owner_id),
+            'link' => route('public.item', [$this->itemRouteType($type), $item->slug]),
+        ];
+    }
+
+    private function itemRouteType(string $type): string
+    {
+        return match ($type) {
+            'camping' => 'tenda',
+            default => $type,
+        };
+    }
+
+    private function merchantInfo(?int $ownerId): ?array
+    {
+        if (!$ownerId) {
+            return null;
+        }
+        if (array_key_exists($ownerId, $this->merchantCache)) {
+            return $this->merchantCache[$ownerId];
+        }
+        $m = \App\Models\Merchant::where('user_id', $ownerId)->where('is_active', true)->first();
+        $this->merchantCache[$ownerId] = $m ? [
+            'name' => $m->name,
+            'slug' => $m->slug,
+            'logo' => $m->logo,
+            'city' => $m->city,
+            'rating' => ($m->getAverageRating() ?: 0),
+        ] : null;
+        return $this->merchantCache[$ownerId];
+    }
+
     public function index(Request $request)
     {
         $categories = Category::where('is_active', true)->get();
@@ -308,7 +458,9 @@ class PublicController extends Controller
             ->limit(4)
             ->get();
 
-        return view('public.show', compact('vehicle', 'relatedVehicles'));
+        $merchant = $this->merchantInfo($vehicle->owner_id);
+
+        return view('public.show', compact('vehicle', 'relatedVehicles', 'merchant'));
     }
 
     public function showItem(string $type, string $slug)
@@ -324,7 +476,9 @@ class PublicController extends Controller
             ->limit(4)
             ->get();
 
-        return view('public.show-item', compact('item', 'type', 'config', 'related'));
+        $merchant = $this->merchantInfo($item->owner_id);
+
+        return view('public.show-item', compact('item', 'type', 'config', 'related', 'merchant'));
     }
 
     private function getItemConfig(string $type): array
@@ -560,6 +714,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($v->getAverageRating()),
             'review_count' => $v->reviews->count(),
+            'merchant' => $this->merchantInfo($v->owner_id),
             'created_at' => $v->created_at,
         ];
     }
@@ -586,6 +741,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($p->getAverageRating()),
             'review_count' => $p->reviews->count(),
+            'merchant' => $this->merchantInfo($p->owner_id),
             'created_at' => $p->created_at,
         ];
     }
@@ -611,6 +767,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($c->getAverageRating()),
             'review_count' => $c->reviews->count(),
+            'merchant' => $this->merchantInfo($c->owner_id),
             'created_at' => $c->created_at,
         ];
     }
@@ -637,6 +794,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($c->getAverageRating()),
             'review_count' => $c->reviews->count(),
+            'merchant' => $this->merchantInfo($c->owner_id),
             'created_at' => $c->created_at,
         ];
     }
@@ -663,6 +821,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($p->getAverageRating()),
             'review_count' => $p->reviews->count(),
+            'merchant' => $this->merchantInfo($p->owner_id),
             'created_at' => $p->created_at,
         ];
     }
@@ -689,6 +848,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($d->getAverageRating()),
             'review_count' => $d->reviews->count(),
+            'merchant' => $this->merchantInfo($d->owner_id),
             'created_at' => $d->created_at,
         ];
     }
@@ -714,6 +874,7 @@ class PublicController extends Controller
             ]),
             'rating' => round($m->getAverageRating()),
             'review_count' => $m->reviews->count(),
+            'merchant' => $this->merchantInfo($m->owner_id),
             'created_at' => $m->created_at,
         ];
     }

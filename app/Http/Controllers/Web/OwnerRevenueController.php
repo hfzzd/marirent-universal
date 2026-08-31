@@ -51,7 +51,14 @@ class OwnerRevenueController extends Controller
         $totalRevenue = collect($revenuePerCategory)->sum('total');
         $totalPending = collect($revenuePerCategory)->sum('pending');
 
-        return view('owner.revenue.index', compact('invoices', 'categories', 'revenuePerCategory', 'totalRevenue', 'totalPending'));
+        $platformFee = Invoice::where('owner_id', $owner->id)
+            ->where('status', 'paid')
+            ->sum('platform_fee');
+        $netRevenue = Invoice::where('owner_id', $owner->id)
+            ->where('status', 'paid')
+            ->sum('merchant_revenue');
+
+        return view('owner.revenue.index', compact('invoices', 'categories', 'revenuePerCategory', 'totalRevenue', 'totalPending', 'platformFee', 'netRevenue'));
     }
 
     public function create()

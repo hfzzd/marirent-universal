@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantIsolatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CampingEquipment extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, TenantIsolatable;
+
+    public const TENANT_COLUMN = 'owner_id';
 
     protected $table = 'camping_equipments';
 

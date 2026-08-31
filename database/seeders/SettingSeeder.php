@@ -22,6 +22,7 @@ class SettingSeeder extends Seeder
             ['key' => 'rental_prefix', 'value' => 'RNT', 'group' => 'finance'],
             ['key' => 'payment_methods', 'value' => 'Transfer Bank,Cash,DANA,GoPay,OVO,ShopeePay', 'group' => 'finance'],
             ['key' => 'late_fee_per_day', 'value' => '50000', 'group' => 'finance'],
+            ['key' => 'commission_rate', 'value' => '10', 'group' => 'finance'],
             ['key' => 'cancellation_hours', 'value' => '24', 'group' => 'rental'],
             ['key' => 'max_rental_days', 'value' => '90', 'group' => 'rental'],
             ['key' => 'min_rental_days', 'value' => '1', 'group' => 'rental'],

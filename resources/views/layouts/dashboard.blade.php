@@ -114,7 +114,10 @@
                 </a>
 
                 @elseif($role === 'owner')
-                <div class="sidebar-group-title mt-4">Inventaris & Tim</div>
+                <div class="sidebar-group-title mt-4">Toko & Inventaris</div>
+                <a href="{{ route('merchant.profile') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('merchant.profile') ? 'active' : '' }}">
+                    <i class="fas fa-store w-5 mr-2.5 text-sm"></i> Toko Saya
+                </a>
                 <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
                     <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Mobil
                 </a>
@@ -210,6 +213,13 @@
                 <a href="{{ route('reports.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
                 </a>
+                <div class="sidebar-group-title mt-4">Inspeksi</div>
+                <a href="{{ route('inspections.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.index') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-list w-5 mr-2.5 text-sm"></i> Riwayat Inspeksi
+                </a>
+                <a href="{{ route('inspections.create') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.create') ? 'active' : '' }}">
+                    <i class="fas fa-plus-circle w-5 mr-2.5 text-sm"></i> Inspeksi Baru
+                </a>
                 <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
                 </a>
@@ -293,7 +303,7 @@
                             <i class="fas fa-bell text-navy-500 text-sm"></i>
                             <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak></span>
                         </a>
-                        <div x-show="notifOpen" @click.away="notifOpen = false" x-transition class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
+                        <div x-show="notifOpen" @click.away="notifOpen = false" x-transition class="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
                             <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
                                 <span class="text-[13px] font-bold text-navy-800">Notifikasi</span>
                                 <a href="{{ route('notifications.index') }}" class="text-[11px] text-sky-600 hover:text-sky-700 font-semibold">Lihat Semua</a>
@@ -338,7 +348,7 @@
             </div>
         </header>
 
-        <main class="p-5">
+        <main class="p-3 sm:p-5">
             @if(session('success'))
                 <div class="mb-4 bg-sky-50 border border-sky-200 text-sky-700 px-4 py-3 rounded-xl text-[13px] flex items-center animate-slide-up shadow-sm">
                     <i class="fas fa-check-circle mr-2 text-sky-500"></i> {{ session('success') }}

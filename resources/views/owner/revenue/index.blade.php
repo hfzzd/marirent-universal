@@ -48,6 +48,29 @@
     </div>
 </div>
 
+{{-- Komisi Platform (Marketplace) --}}
+<div class="glass-card rounded-2xl p-5 mb-6 border border-sky-100/50" style="border-left: 4px solid #0ea5e9;">
+    <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-store text-sky-500"></i>
+        <h3 class="text-[13px] font-bold text-navy-800">Revenue Marketplace & Komisi Platform</h3>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-sky-50 rounded-2xl p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Pendapatan Lunas</p>
+            <p class="text-lg font-black text-navy-800 mt-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-amber-50 rounded-2xl p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-600/70">Komisi Platform</p>
+            <p class="text-lg font-black text-amber-600 mt-1">Rp {{ number_format($platformFee, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-emerald-50 rounded-2xl p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600/70">Pendapatan Bersih Anda</p>
+            <p class="text-lg font-black text-emerald-600 mt-1">Rp {{ number_format($netRevenue, 0, ',', '.') }}</p>
+        </div>
+    </div>
+    <p class="text-[10px] text-gray-400 mt-2.5"><i class="fas fa-info-circle mr-1"></i> Komisi platform dipotong otomatis dari invoice lunas berdasarkan tarif toko Anda.</p>
+</div>
+
 {{-- Filters --}}
 <div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
     <form action="{{ route('owner.revenue.index') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">

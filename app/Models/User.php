@@ -36,6 +36,26 @@ class User extends Authenticatable
     public function isInspector(): bool { return $this->role === 'inspector'; }
     public function isMerchantStaff(): bool { return in_array($this->role, ['admin', 'owner']); }
 
+    /**
+     * Identitas platform / developer aplikasi (superadmin).
+     * Bisa mengakses seluruh data & mengelola marketplace.
+     */
+    public function isPlatformAdmin(): bool { return $this->role === 'superadmin'; }
+
+    /**
+     * Relasi ke profil merchant (toko/company) milik owner.
+     * Owner = merchant itu sendiri; admin/driver di bawah owner.
+     */
+    public function merchantProfile()
+    {
+        return $this->hasOne(Merchant::class, 'user_id');
+    }
+
+    public function merchants()
+    {
+        return $this->hasMany(Merchant::class, 'user_id');
+    }
+
     public function merchant()
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -61,6 +81,28 @@ class User extends Authenticatable
     {
         $owner = $this->merchantOwner();
         return $owner?->id;
+    }
+
+    /**
+     * Id merchant (user owner) yang berhak mengelola data.
+     * Untuk driver, merujuk ke owner pemilik driver.
+     */
+    public function merchantIdForIsolation(): ?int
+    {
+        if ($this->isMerchantStaff()) {
+            return $this->merchantId();
+        }
+
+        if ($this->isDriver()) {
+            $driver = $this->driverProfile;
+            return $driver?->owner_id;
+        }
+
+        if ($this->isInspector()) {
+            return $this->merchantId();
+        }
+
+        return null;
     }
 
     /**

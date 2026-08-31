@@ -226,6 +226,11 @@
                 <div class="mb-2">
                     <h3 class="font-bold text-navy-900 text-[14px] leading-tight truncate">{{ $p['name'] }}</h3>
                     <p class="text-[11px] text-gray-400 mt-0.5">{{ $p['brand'] }} {{ $p['subtitle'] }}</p>
+                    @if(!empty($p['merchant']))
+                    <a href="{{ route('public.store', $p['merchant']['slug']) }}" class="inline-flex items-center gap-1 mt-1.5 text-[10px] text-sky-600 hover:text-sky-700 font-semibold transition">
+                        <i class="fas fa-store text-[8px]"></i> {{ $p['merchant']['name'] }}
+                    </a>
+                    @endif
                 </div>
 
                 @if($p['rating'] > 0)

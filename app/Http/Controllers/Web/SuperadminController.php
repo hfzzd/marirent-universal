@@ -226,7 +226,41 @@ class SuperadminController extends Controller
 
     public function finance()
     {
-        return view('superadmin.finance');
+        $query = \App\Models\Invoice::where('status', 'paid')
+            ->where('owner_id', '!=', null)
+            ->where('type', '!=', 'driver_salary');
+
+        $totalRevenue = (float) $query->sum('total_amount');
+        $totalPlatformFee = (float) $query->sum('platform_fee');
+        $totalMerchantRevenue = (float) $query->sum('merchant_revenue');
+
+        $merchantBreakdown = \App\Models\Invoice::where('status', 'paid')
+            ->where('owner_id', '!=', null)
+            ->where('type', '!=', 'driver_salary')
+            ->selectRaw('owner_id, COUNT(*) as invoice_count, SUM(total_amount) as total_amount, SUM(platform_fee) as platform_fee, SUM(merchant_revenue) as merchant_revenue')
+            ->groupBy('owner_id')
+            ->get()
+            ->map(function ($row) {
+                $merchant = \App\Models\Merchant::where('user_id', $row->owner_id)->first();
+                return (object) [
+                    'owner_id' => $row->owner_id,
+                    'name' => $merchant?->name ?? (\App\Models\User::find($row->owner_id)?->name ?? 'Merchant #' . $row->owner_id),
+                    'slug' => $merchant?->slug,
+                    'invoice_count' => $row->invoice_count,
+                    'total_amount' => $row->total_amount,
+                    'platform_fee' => $row->platform_fee,
+                    'merchant_revenue' => $row->merchant_revenue,
+                ];
+            })
+            ->sortByDesc('platform_fee')
+            ->values();
+
+        return view('superadmin.finance', compact(
+            'totalRevenue',
+            'totalPlatformFee',
+            'totalMerchantRevenue',
+            'merchantBreakdown'
+        ));
     }
 
     public function absen()

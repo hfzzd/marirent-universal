@@ -21,6 +21,7 @@ use App\Http\Controllers\Web\ChatWebController;
 use App\Http\Controllers\Web\ContactDirectoryWebController;
 use App\Http\Controllers\Web\MaintenanceController;
 use App\Http\Controllers\Web\OwnerRevenueController;
+use App\Http\Controllers\Web\MerchantProfileController;
 
 use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\NotificationWebController;
@@ -35,6 +36,7 @@ Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.v
 Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('public.item');
 Route::get('/brands', [PublicController::class, 'brands'])->name('public.brands');
 Route::get('/brand/{type}/{brand}', [PublicController::class, 'brand'])->name('public.brand');
+Route::get('/store/{slug}', [PublicController::class, 'store'])->name('public.store');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -118,6 +120,8 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('admin/brand-
 
 // Merchant Owner/Admin Elektronik Routes
 Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('owner')->group(function () {
+    Route::get('/store', [MerchantProfileController::class, 'show'])->name('merchant.profile');
+    Route::put('/store', [MerchantProfileController::class, 'update'])->name('merchant.profile.update');
     Route::get('/revenue', [OwnerRevenueController::class, 'index'])->name('owner.revenue.index');
     Route::get('/revenue/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
     Route::post('/revenue', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');

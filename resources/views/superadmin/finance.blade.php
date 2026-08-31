@@ -87,6 +87,62 @@
     </div>
 </div>
 
+{{-- Komisi Platform --}}
+<div class="glass-card rounded-2xl overflow-hidden mb-6" style="border-left: 4px solid #0ea5e9;">
+    <div class="px-5 py-4 border-b border-sky-100/50">
+        <h3 class="text-[14px] font-bold text-navy-800">Komisi Platform (Revenue Marketplace)</h3>
+        <p class="text-[11px] text-gray-400 mt-0.5">Pemasukan komisi platform dari seluruh merchant atas invoice yang lunas.</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5">
+        <div class="bg-sky-50 rounded-2xl p-4">
+            <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Total Komisi Platform</p>
+            <p class="text-xl font-extrabold text-sky-600 mt-1">Rp {{ number_format($totalPlatformFee, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-emerald-50 rounded-2xl p-4">
+            <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Total Revenue Merchant</p>
+            <p class="text-xl font-extrabold text-emerald-600 mt-1">Rp {{ number_format($totalMerchantRevenue, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-navy-50 rounded-2xl p-4">
+            <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Total Transaksi Lunas</p>
+            <p class="text-xl font-extrabold text-navy-800 mt-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p>
+        </div>
+    </div>
+
+    {{-- Per Merchant --}}
+    <div class="overflow-x-auto px-5 pb-5">
+        <table class="w-full text-[13px]">
+            <thead>
+                <tr class="border-b border-sky-50">
+                    <th class="text-left py-2.5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Merchant</th>
+                    <th class="text-right py-2.5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Invoice</th>
+                    <th class="text-right py-2.5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Total Revenue</th>
+                    <th class="text-right py-2.5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Komisi Platform</th>
+                    <th class="text-right py-2.5 text-gray-400 font-semibold text-[10px] uppercase tracking-wider">Revenue Merchant</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($merchantBreakdown as $mb)
+                <tr class="border-b border-sky-50/50 last:border-0 hover:bg-sky-50/30 transition">
+                    <td class="py-3 font-semibold text-navy-800">
+                        @if($mb->slug)
+                            <a href="{{ route('public.store', $mb->slug) }}" class="text-sky-600 hover:text-sky-700">{{ $mb->name }} <i class="fas fa-external-link-alt text-[9px]"></i></a>
+                        @else
+                            {{ $mb->name }}
+                        @endif
+                    </td>
+                    <td class="py-3 text-right text-navy-600">{{ $mb->invoice_count }}</td>
+                    <td class="py-3 text-right font-semibold text-navy-800">Rp {{ number_format($mb->total_amount, 0, ',', '.') }}</td>
+                    <td class="py-3 text-right font-bold text-sky-600">Rp {{ number_format($mb->platform_fee, 0, ',', '.') }}</td>
+                    <td class="py-3 text-right font-semibold text-emerald-600">Rp {{ number_format($mb->merchant_revenue, 0, ',', '.') }}</td>
+                </tr>
+                @empty
+                <tr><td colspan="5" class="py-10 text-center text-gray-300">Belum ada komisi tercatat</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {{-- Charts Row --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
     {{-- Revenue vs Expense Chart --}}

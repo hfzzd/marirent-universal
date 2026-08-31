@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantIsolatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, TenantIsolatable;
+
+    public const TENANT_COLUMN = 'owner_id';
 
     protected $fillable = [
         'invoice_number', 'booking_id', 'user_id', 'owner_id', 'category_id', 'type',
         'subtotal', 'tax_amount', 'discount_amount', 'total_amount',
+        'commission_rate', 'platform_fee', 'merchant_revenue',
         'paid_amount', 'due_amount', 'status', 'payment_method',
         'payment_reference', 'paid_at', 'due_date', 'notes', 'terms',
     ];
@@ -22,9 +26,20 @@ class Invoice extends Model
         return [
             'subtotal' => 'decimal:2', 'tax_amount' => 'decimal:2',
             'discount_amount' => 'decimal:2', 'total_amount' => 'decimal:2',
+            'commission_rate' => 'decimal:2', 'platform_fee' => 'decimal:2',
+            'merchant_revenue' => 'decimal:2',
             'paid_amount' => 'decimal:2', 'due_amount' => 'decimal:2',
             'paid_at' => 'datetime', 'due_date' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Invoice $invoice) {
+            if ($invoice->status === 'paid') {
+                app(\App\Services\CommissionService::class)->apply($invoice);
+            }
+        });
     }
 
     public static function generateInvoiceNumber(string $type): string
