@@ -15,7 +15,7 @@
                 Selamat Datang, {{ auth()->user()->name }}!
             </h1>
             <p class="text-emerald-100/80 text-xs md:text-sm mt-1 max-w-xl">
-                Pantau tugas inspeksi awal & akhir unit kendaraan, elektronik, maupun alat camping.
+                Kelola tugas inspeksi awal & akhir rental lepas kunci (tanpa driver).
             </p>
             <div class="flex flex-wrap items-center gap-3 mt-4">
                 <div class="flex items-center gap-2 bg-black/20 backdrop-blur-md rounded-xl px-3.5 py-1.5 border border-white/10 text-white text-xs">

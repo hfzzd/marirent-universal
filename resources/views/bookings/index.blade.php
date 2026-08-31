@@ -46,7 +46,7 @@
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-[13px]">
             <thead>
                 <tr class="bg-sky-50/50 border-b border-sky-100/50">
@@ -146,6 +146,72 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Mobile card list --}}
+    <div class="md:hidden divide-y divide-gray-100">
+        @forelse($bookings as $b)
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="font-bold text-sky-600 text-[13px]">{{ $b->booking_code }}
+                    @if(($b->source ?? 'online') == 'manual')<span class="badge badge-teal text-[9px] ml-1">Manual</span>@endif
+                </div>
+                @if($b->status == 'pending') <span class="badge badge-blue">Menunggu</span>
+                @elseif($b->status == 'confirmed') <span class="badge badge-teal">Dikonfirmasi</span>
+                @elseif($b->status == 'ongoing') <span class="badge badge-yellow">Berlangsung</span>
+                @elseif($b->status == 'completed') <span class="badge badge-green">Selesai</span>
+                @elseif($b->status == 'cancelled') <span class="badge badge-red">Dibatalkan</span>
+                @else <span class="badge badge-gray">{{ ucfirst($b->status) }}</span>
+                @endif
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 {{ ($b->category->slug ?? '') == 'sewa-kamera' ? 'bg-violet-50' : (($b->category->slug ?? '') == 'sewa-tenda' ? 'bg-emerald-50' : (($b->category->slug ?? '') == 'sewa-ps' ? 'bg-indigo-50' : (($b->category->slug ?? '') == 'sewa-drone' ? 'bg-cyan-50' : (($b->category->slug ?? '') == 'sewa-alat-musik' ? 'bg-rose-50' : 'bg-sky-50')))) }} rounded-lg flex items-center justify-center flex-shrink-0">
+                    @if(($b->category->slug ?? '') == 'sewa-kamera') <i class="fas fa-camera text-violet-400 text-[10px]"></i>
+                    @elseif(($b->category->slug ?? '') == 'sewa-tenda') <i class="fas fa-campground text-emerald-400 text-[10px]"></i>
+                    @elseif(($b->category->slug ?? '') == 'sewa-hp') <i class="fas fa-mobile-alt text-blue-400 text-[10px]"></i>
+                    @elseif(($b->category->slug ?? '') == 'sewa-ps') <i class="fas fa-gamepad text-indigo-400 text-[10px]"></i>
+                    @elseif(($b->category->slug ?? '') == 'sewa-drone') <i class="fas fa-drone text-cyan-400 text-[10px]"></i>
+                    @elseif(($b->category->slug ?? '') == 'sewa-alat-musik') <i class="fas fa-guitar text-rose-400 text-[10px]"></i>
+                    @else <i class="fas fa-car text-sky-400 text-[10px]"></i>
+                    @endif
+                </div>
+                <div class="min-w-0">
+                    <p class="text-navy-700 font-medium text-[12px] truncate">{{ $b->vehicle?->name ?? ($b->category?->name ?? '-') }}</p>
+                    @if(!$isUser)
+                    <p class="text-[11px] text-gray-400 truncate">{{ $b->user->name }}</p>
+                    @endif
+                </div>
+            </div>
+            <div class="flex items-center justify-between gap-2 text-[11px] text-gray-500 mb-2">
+                <span>{{ $b->start_date->format('d M Y') }} &rarr; {{ $b->end_date->format('d M Y') }}</span>
+                @if(!$isUser)
+                @if($b->payment_status == 'paid') <span class="badge badge-green">Lunas</span>
+                @elseif($b->payment_status == 'partial') <span class="badge badge-yellow">Sebagian</span>
+                @else <span class="badge badge-red">Belum Bayar</span>
+                @endif
+                @endif
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="font-bold text-navy-700 text-[13px]">Rp {{ number_format($b->final_price,0,',','.') }}</span>
+                <a href="{{ route('bookings.show', $b) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
+                    <i class="fas fa-eye text-[10px]"></i> Detail
+                </a>
+            </div>
+        </div>
+        @empty
+        <div class="p-8 text-center">
+            <div class="flex flex-col items-center gap-3">
+                <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-calendar-times text-sky-300 text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-[13px] font-medium text-navy-700">{{ $isUser ? 'Belum ada pemesanan' : 'Belum ada booking' }}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Mulai sewa kendaraan atau barang sekarang!' : 'Tidak ada data booking ditemukan' }}</p>
+                </div>
+            </div>
+        </div>
+        @endforelse
+    </div>
+
     <div class="px-5 py-3 border-t border-gray-100">{{ $bookings->links() }}</div>
 </div>
 @endsection

@@ -16,6 +16,9 @@
                 @endphp
                 <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $scopeColors[$inspection->scope] ?? 'bg-gray-100 text-gray-700' }}">{{ $inspection->getScopeLabel() }}</span>
                 <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $inspection->type === 'pre_rental' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700' }}">{{ $inspection->getTypeLabel() }}</span>
+                @if($inspection->booking && $inspection->booking->with_driver !== null)
+                <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $inspection->booking->with_driver ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-700' }}">{{ $inspection->getRentalTypeLabel() }}</span>
+                @endif
             </div>
         </div>
 
@@ -45,7 +48,7 @@
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs text-navy-500">Inspektur</p>
+                    <p class="text-xs text-navy-500">Pemeriksa</p>
                     <p class="font-bold text-navy-800">{{ $inspection->inspector?->name ?? ($inspection->assignedTo?->name ?? '-') }}</p>
                 </div>
                 @if($inspection->reported_by && $inspection->reportedBy)
@@ -179,13 +182,13 @@
         </div>
         @endif
 
-        {{-- Inspector Actions --}}
-        @if(in_array($inspection->status, ['reported', 'processing']) && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector()))
+        {{-- Processing Actions --}}
+        @if(in_array($inspection->status, ['reported', 'processing']) && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector() || auth()->user()->isDriver()))
         <div class="mt-6 bg-gray-50 rounded-xl p-4">
             @if($inspection->status == 'reported')
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <p class="text-sm font-bold text-navy-800"><i class="fas fa-triangle-exclamation text-red-500 mr-1"></i> Laporan driver masuk</p>
+                    <p class="text-sm font-bold text-navy-800"><i class="fas fa-triangle-exclamation text-red-500 mr-1"></i> Laporan masuk</p>
                     <p class="text-xs text-gray-500 mt-0.5">Kerjakan laporan ini langsung tanpa perlu membuat inspeksi baru.</p>
                 </div>
                 <form method="POST" action="{{ route('inspections.start', $inspection) }}">

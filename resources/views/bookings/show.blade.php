@@ -20,7 +20,7 @@
         <div class="lg:col-span-2 space-y-6">
             {{-- Info Utama --}}
             <div class="glass-card rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
                     <div>
                         <h2 class="text-xl font-bold text-navy-900">{{ $booking->booking_code }}
                             @if(($booking->source ?? 'online') == 'manual')<span class="badge badge-teal text-[10px] align-middle ml-1">Booking Manual</span>@endif
@@ -38,7 +38,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     {{-- Item --}}
                     <div class="bg-gradient-to-br from-sky-50/80 to-sky-100/40 p-4 rounded-xl border border-sky-100/60">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Barang / Kendaraan</p>
@@ -148,6 +148,16 @@
                         <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md hover:shadow-red-500/20 active:scale-[0.97]"><i class="fas fa-times"></i> Batalkan</button>
                     </form>
                     @endif
+                </div>
+                @endif
+
+                {{-- Aksi Inspector --}}
+                @if(auth()->user()->role === 'inspector' && in_array($booking->status, ['confirmed','ongoing']) && !$booking->with_driver)
+                <div class="border-t border-gray-100 pt-4 mt-4">
+                    <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-3 rounded-xl text-[13px] font-bold transition-all duration-200 shadow-md shadow-emerald-500/20 active:scale-[0.97]">
+                        <i class="fas fa-clipboard-check"></i> Inspeksi Unit Booking Ini
+                    </a>
+                    <p class="text-[11px] text-gray-400 mt-2">Klik untuk langsung membuka form inspeksi dengan booking & unit ini sudah terpilih.</p>
                 </div>
                 @endif
 
@@ -361,15 +371,22 @@
                 @endif
             </div>
 
-            {{-- Link Terkait (Admin/Owner only) --}}
-            @if(in_array(auth()->user()->role, ['superadmin','owner','admin']))
+            {{-- Link Terkait (Admin/Owner/Inspector) --}}
+            @if(in_array(auth()->user()->role, ['superadmin','owner','admin','inspector']))
             <div class="glass-card rounded-2xl p-6">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-3"><i class="fas fa-link text-sky-500 mr-2"></i>Link Terkait</h3>
                 <div class="space-y-2">
-                    <a href="{{ route('inspections.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-clipboard-check text-sky-600 text-[11px]"></i></span>
-                        Inspeksi
+                    @if(in_array($booking->status, ['confirmed','ongoing']) && in_array(auth()->user()->role, ['superadmin','owner','admin','inspector']) && !(auth()->user()->role === 'inspector' && $booking->with_driver))
+                    <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-3 py-2.5 rounded-xl transition group">
+                        <span class="w-7 h-7 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition"><i class="fas fa-clipboard-check text-emerald-600 text-[11px]"></i></span>
+                        Mulai Inspeksi
                     </a>
+                    @endif
+                    <a href="{{ route('inspections.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
+                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-list-check text-sky-600 text-[11px]"></i></span>
+                        Riwayat Inspeksi
+                    </a>
+                    @if(in_array(auth()->user()->role, ['superadmin','owner','admin']))
                     <a href="{{ route('reports.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
                         <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-route text-sky-600 text-[11px]"></i></span>
                         Laporan Perjalanan
@@ -378,6 +395,7 @@
                         <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-file-invoice-dollar text-sky-600 text-[11px]"></i></span>
                         Invoice
                     </a>
+                    @endif
                 </div>
             </div>
             @endif

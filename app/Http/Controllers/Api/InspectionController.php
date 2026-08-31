@@ -12,6 +12,19 @@ class InspectionController extends Controller
     public function index(Request $request)
     {
         $query = Inspection::with(['booking', 'vehicle', 'inspector']);
+        $user = $request->user();
+
+        if ($user && $user->isInspector()) {
+            $query->where(fn($q) => $q->where('inspector_id', $user->id)->orWhere('assigned_to', $user->id));
+            $query->whereHas('booking', fn($bq) => $bq->where('with_driver', false));
+        } elseif ($user && $user->isDriver()) {
+            $driver = \App\Models\Driver::where('user_id', $user->id)->first();
+            if ($driver) {
+                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id)->where('with_driver', true));
+            } else {
+                return response()->json(['success' => true, 'data' => []]);
+            }
+        }
 
         if ($request->booking_id) {
             $query->where('booking_id', $request->booking_id);

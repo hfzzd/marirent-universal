@@ -16,6 +16,7 @@
             <thead><tr class="bg-emerald-50/50 border-b border-emerald-100/50">
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Item</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Booking</th>
+                <th class="text-left py-3 px-4 text-navy-500 font-medium">Tipe Sewa</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Tipe</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Scope</th>
                 <th class="text-center py-3 px-4 text-navy-500 font-medium">Kondisi</th>
@@ -30,6 +31,13 @@
                 <tr class="border-b hover:bg-emerald-50/30">
                     <td class="py-3 px-4 font-medium text-navy-800">{{ $i->getItemName() }}</td>
                     <td class="py-3 px-4 text-sky-600 font-medium text-xs">{{ $i->booking->booking_code ?? '-' }}</td>
+                    <td class="py-3 px-4">
+                        @if($i->booking && $i->booking->with_driver !== null)
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $i->booking->with_driver ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-700' }}">{{ $i->getRentalTypeLabel() }}</span>
+                        @else
+                            <span class="text-gray-400 text-xs">-</span>
+                        @endif
+                    </td>
                     <td class="py-3 px-4">
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $i->type == 'pre_rental' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700' }}">{{ $i->getTypeLabel() }}</span>
                     </td>
@@ -71,13 +79,13 @@
                             <a href="{{ route('inspections.show', $i) }}" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition" title="Detail">
                                 <i class="fas fa-eye text-xs"></i>
                             </a>
-                            @if($i->status == 'reported' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector()))
+                            @if($i->status == 'reported' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector() || auth()->user()->isDriver()))
                             <form method="POST" action="{{ route('inspections.start', $i) }}">
                                 @csrf
                                 <button type="submit" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition" title="Kerjakan"><i class="fas fa-tasks text-xs"></i></button>
                             </form>
                             @endif
-                            @if($i->status == 'processing' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector()))
+                            @if($i->status == 'processing' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || auth()->user()->isInspector() || auth()->user()->isDriver()))
                             <form method="POST" action="{{ route('inspections.complete', $i) }}">
                                 @csrf
                                 <button type="submit" class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 transition" title="Tandai Selesai"><i class="fas fa-check text-xs"></i></button>
@@ -87,7 +95,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="9" class="py-8 text-center text-navy-400">Belum ada data inspeksi</td></tr>
+                <tr><td colspan="10" class="py-8 text-center text-navy-400">Belum ada data inspeksi</td></tr>
                 @endforelse
             </tbody>
         </table>

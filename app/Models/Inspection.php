@@ -104,6 +104,17 @@ class Inspection extends Model
         return '-';
     }
 
+    public function getRentalTypeLabel(): string
+    {
+        $withDriver = $this->booking?->with_driver;
+
+        if ($withDriver === null) {
+            return '-';
+        }
+
+        return $withDriver ? 'Dengan Driver' : 'Lepas Kunci';
+    }
+
     public function getTypeLabel(): string
     {
         return match($this->type) {

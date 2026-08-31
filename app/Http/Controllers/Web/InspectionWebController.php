@@ -20,11 +20,12 @@ class InspectionWebController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Inspection::with(['booking', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
+        $query = Inspection::with(['booking', 'booking.vehicle', 'booking.user', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
         $user = Auth::user();
 
         if ($user->isInspector()) {
             $query->where(fn($q) => $q->where('inspector_id', $user->id)->orWhere('assigned_to', $user->id));
+            $query->whereHas('booking', fn($bq) => $bq->where('with_driver', false));
         } elseif ($user->isMerchantStaff()) {
             $merchantId = $user->merchantId();
             $categoryId = $user->merchantCategoryId();
@@ -33,7 +34,7 @@ class InspectionWebController extends Controller
         } elseif ($user->isDriver()) {
             $driver = Driver::where('user_id', $user->id)->first();
             if ($driver) {
-                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id));
+                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id)->where('with_driver', true));
             }
         }
 
@@ -67,9 +68,11 @@ class InspectionWebController extends Controller
             ->with(['user', 'vehicle', 'category', 'bookingItems'])
             ->get();
 
-        if ($user->isDriver()) {
+        if ($user->isInspector()) {
+            $bookings = $bookings->where('with_driver', false)->values();
+        } elseif ($user->isDriver()) {
             $driver = Driver::where('user_id', $user->id)->first();
-            $bookings = $bookings->where('driver_id', $driver?->id)->values();
+            $bookings = $bookings->where('driver_id', $driver?->id)->where('with_driver', true)->values();
         } elseif ($user->isMerchantStaff()) {
             $bookings = fn() => Booking::whereIn('status', ['confirmed', 'ongoing'])
                 ->forMerchantCategory($user->merchantId(), $user->merchantCategoryId())
@@ -79,8 +82,22 @@ class InspectionWebController extends Controller
         }
 
         $booking = $request->booking_id ? Booking::with(['vehicle', 'bookingItems'])->find($request->booking_id) : null;
-        if ($booking && $user->isMerchantStaff() && !$this->bookingForMerchant($booking, $user)) {
-            abort(403);
+        if ($booking) {
+            if ($user->isMerchantStaff() && !$this->bookingForMerchant($booking, $user)) {
+                abort(403);
+            }
+            if ($user->isInspector() && $booking->with_driver) {
+                abort(403);
+            }
+            if ($user->isDriver() && !$booking->with_driver) {
+                abort(403);
+            }
+            if ($user->isDriver()) {
+                $driver = Driver::where('user_id', $user->id)->first();
+                if (!$driver || (int) $booking->driver_id !== (int) $driver->id) {
+                    abort(403);
+                }
+            }
         }
 
         $vehicles = $this->vehiclesForUser($user);
@@ -127,6 +144,20 @@ class InspectionWebController extends Controller
             abort(403);
         }
 
+        if ($user->isInspector() && $booking->with_driver) {
+            abort(403, 'Inspector hanya dapat menginspeksi rental lepas kunci (tanpa driver).');
+        }
+
+        if ($user->isDriver()) {
+            $driver = Driver::where('user_id', $user->id)->first();
+            if (!$driver || (int) $booking->driver_id !== (int) $driver->id) {
+                abort(403, 'Driver hanya dapat menginspeksi rental yang ditugaskan kepadanya dengan tambahan driver.');
+            }
+            if (!$booking->with_driver) {
+                abort(403, 'Driver hanya dapat menginspeksi rental dengan tambahan driver.');
+            }
+        }
+
         $scope = $validated['scope'];
         $itemId = $validated['inspection_item_id'];
 
@@ -147,9 +178,9 @@ class InspectionWebController extends Controller
         $data = [
             'booking_id' => $booking->id,
             'vehicle_id' => $vehicleId,
-            'inspector_id' => $isDriver ? null : $user->id,
-            'reported_by' => $isDriver ? $user->id : null,
-            'status' => $isDriver ? 'reported' : 'open',
+            'inspector_id' => $user->id,
+            'reported_by' => null,
+            'status' => 'open',
             'type' => $validated['type'],
             'scope' => $scope,
             'item_type' => $itemType,
@@ -172,7 +203,7 @@ class InspectionWebController extends Controller
 
         $inspection = Inspection::create($data);
 
-        if ($isDriver && $vehicleId) {
+        if ($vehicleId) {
             $vehicle = Vehicle::find($vehicleId);
             if ($vehicle && $vehicle->condition === 'excellent' && !empty($validated['damage_items'])) {
                 $vehicle->update(['condition' => 'good']);
@@ -180,7 +211,7 @@ class InspectionWebController extends Controller
         }
 
         if ($isDriver) {
-            return redirect()->route('inspections.show', $inspection)->with('success', 'Laporan inspeksi driver berhasil dikirim ke inspector.');
+            return redirect()->route('inspections.show', $inspection)->with('success', 'Inspeksi berhasil dicatat.');
         }
 
         return redirect()->route('inspections.index')->with('success', 'Inspeksi berhasil dicatat');
@@ -189,7 +220,7 @@ class InspectionWebController extends Controller
     public function start(Inspection $inspection)
     {
         $user = Auth::user();
-        $this->authorizeInspector($inspection);
+        $this->authorizeProcessing($inspection);
 
         if ($inspection->status === 'completed') {
             return back()->with('error', 'Inspeksi sudah selesai');
@@ -201,13 +232,13 @@ class InspectionWebController extends Controller
             'inspector_id' => $inspection->inspector_id ?: $user->id,
         ]);
 
-        return back()->with('success', 'Inspeksi sedang dikerjakan inspector');
+        return back()->with('success', 'Inspeksi sedang dikerjakan');
     }
 
     public function complete(Request $request, Inspection $inspection)
     {
         $user = Auth::user();
-        $this->authorizeInspector($inspection);
+        $this->authorizeProcessing($inspection);
 
         if ($inspection->status === 'completed') {
             return back()->with('error', 'Inspeksi sudah selesai');
@@ -233,20 +264,53 @@ class InspectionWebController extends Controller
     public function show(Inspection $inspection)
     {
         $inspection->load(['booking', 'booking.user', 'booking.vehicle', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
+        $user = Auth::user();
 
-        if (Auth::user()->isMerchantStaff() && !$this->inspectionForMerchant($inspection, Auth::user())) {
+        if ($user->isMerchantStaff() && !$this->inspectionForMerchant($inspection, $user)) {
             abort(403);
+        }
+
+        if ($user->isInspector() && $inspection->booking && $inspection->booking->with_driver) {
+            abort(403, 'Inspector hanya dapat mengakses inspeksi rental lepas kunci (tanpa driver).');
+        }
+
+        if ($user->isDriver()) {
+            $driver = Driver::where('user_id', $user->id)->first();
+            $isAssigned = $inspection->booking && $driver && (int) $inspection->booking->driver_id === (int) $driver->id;
+            $isReportedBy = (int) $inspection->reported_by === (int) $user->id;
+            $isAssignedTo = (int) $inspection->assigned_to === (int) $user->id;
+            $isInspectorId = (int) $inspection->inspector_id === (int) $user->id;
+            if (!$isAssigned && !$isReportedBy && !$isAssignedTo && !$isInspectorId) {
+                abort(403);
+            }
         }
 
         return view('inspections.show', compact('inspection'));
     }
 
-    private function authorizeInspector(Inspection $inspection): void
+    private function authorizeProcessing(Inspection $inspection): void
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector()) {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector() && !$user->isDriver()) {
             abort(403);
         }
+
+        if ($user->isInspector()) {
+            if (!$inspection->booking || $inspection->booking->with_driver) {
+                abort(403, 'Inspector hanya dapat memproses inspeksi rental lepas kunci (tanpa driver).');
+            }
+        }
+
+        if ($user->isDriver()) {
+            if (!$inspection->booking || !$inspection->booking->with_driver) {
+                abort(403, 'Driver hanya dapat memproses inspeksi rental dengan tambahan driver.');
+            }
+            $driver = Driver::where('user_id', $user->id)->first();
+            if (!$driver || (int) $inspection->booking->driver_id !== (int) $driver->id) {
+                abort(403, 'Anda tidak ditugaskan ke booking ini.');
+            }
+        }
+
         if ($user->isMerchantStaff() && !$this->inspectionForMerchant($inspection, $user)) {
             abort(403);
         }

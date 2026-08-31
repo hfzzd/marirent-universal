@@ -50,6 +50,7 @@
                                 <option value="">Pilih Booking</option>
                                 @foreach($bookings as $b)
                                 <option value="{{ $b->id }}"
+                                    {{ isset($booking) && $booking && $booking->id == $b->id ? 'selected' : '' }}
                                     data-vehicle="{{ $b->vehicle_id }}"
                                     data-item-type="{{ $b->item_type }}"
                                     data-item-id="{{ $b->item_id }}"
@@ -93,7 +94,7 @@
                     {{-- Scope Selector - Card Style --}}
                     <div class="mb-5">
                         <label class="block text-xs font-medium text-navy-600 mb-2">Scope Inspeksi *</label>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             @foreach([
                                 ['val' => 'kendaraan', 'icon' => 'fa-car', 'color' => 'blue', 'label' => 'Kendaraan', 'desc' => 'Mobil & Motor'],
                                 ['val' => 'elektronik', 'icon' => 'fa-mobile-alt', 'color' => 'purple', 'label' => 'Elektronik', 'desc' => 'HP, Kamera, PS, Drone & Musik'],
@@ -341,7 +342,7 @@
 <script>
 function inspectionForm() {
     return {
-        selectedBookingId: '',
+        selectedBookingId: '{{ isset($booking) && $booking ? $booking->id : '' }}',
         scope: 'kendaraan',
         selectedItemId: '',
         overall_condition: 7,
@@ -354,6 +355,11 @@ function inspectionForm() {
         playstations: @json($playstations),
         drones: @json($drones),
         instruments: @json($instruments),
+        init() {
+            if (this.selectedBookingId) {
+                this.detectScope();
+            }
+        },
 
         detectScope() {
             const select = document.querySelector('select[name="booking_id"]');
@@ -363,6 +369,11 @@ function inspectionForm() {
                 const vehicleId = opt.getAttribute('data-vehicle');
                 if (vehicleId && vehicleId !== 'null') {
                     this.selectedItemId = vehicleId;
+                } else {
+                    const itemId = opt.getAttribute('data-item-id');
+                    if (itemId && itemId !== 'null') {
+                        this.selectedItemId = itemId;
+                    }
                 }
             }
         },
