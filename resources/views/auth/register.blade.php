@@ -174,7 +174,10 @@
                     </button>
                 </form>
 
-                <div class="mt-6 text-center">
+                <div class="mt-6 text-center space-y-1.5">
+                    <p class="text-[13px] text-gray-400">Punya usaha & ingin buka toko?
+                        <a href="{{ route('register.merchant') }}" class="text-sky-600 font-semibold hover:text-sky-700 hover:underline transition">Daftar sebagai Merchant</a>
+                    </p>
                     <p class="text-[13px] text-gray-400">Sudah punya akun?
                         <a href="{{ route('login') }}" class="text-sky-600 font-semibold hover:text-sky-700 hover:underline transition">Masuk</a>
                     </p>

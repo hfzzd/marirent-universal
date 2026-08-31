@@ -77,6 +77,14 @@
                     <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
                 </a>
 
+                <div class="sidebar-group-title mt-4">Marketplace</div>
+                <a href="{{ route('superadmin.merchants') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.merchants*') ? 'active' : '' }}">
+                    <i class="fas fa-store w-5 mr-2.5 text-sm"></i> Merchant / Toko
+                </a>
+                <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
+                    <i class="fas fa-hand-holding-usd w-5 mr-2.5 text-sm"></i> Komisi Platform
+                </a>
+
                 <div class="sidebar-group-title mt-4">Keuangan</div>
                 <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
                     <i class="fas fa-wallet w-5 mr-2.5 text-sm"></i> Finance
@@ -114,19 +122,35 @@
                 </a>
 
                 @elseif($role === 'owner')
-                <div class="sidebar-group-title mt-4">Toko & Inventaris</div>
+                @php
+                    $ownerMerchant = auth()->user()->merchantProfile;
+                    $ownerVerified = $ownerMerchant && $ownerMerchant->status === 'active' && $ownerMerchant->is_active;
+                    $ownerCatId = auth()->user()->merchantCategoryId();
+                    $showMobil = !$ownerCatId || $ownerCatId == 1;
+                    $showMotor = !$ownerCatId || $ownerCatId == 2;
+                    $showElektronik = !$ownerCatId || in_array($ownerCatId, [3, 4, 5, 6, 7, 8]);
+                @endphp
+                <div class="sidebar-group-title mt-4">Toko</div>
                 <a href="{{ route('merchant.profile') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('merchant.profile') ? 'active' : '' }}">
                     <i class="fas fa-store w-5 mr-2.5 text-sm"></i> Toko Saya
                 </a>
+                @if($ownerVerified)
+                <div class="sidebar-group-title mt-3">Inventaris & Tim</div>
+                @if($showMobil)
                 <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
                     <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Mobil
                 </a>
+                @endif
+                @if($showMotor)
                 <a href="{{ route('motors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('motors.*') ? 'active' : '' }}">
                     <i class="fas fa-motorcycle w-5 mr-2.5 text-sm"></i> Motor
                 </a>
+                @endif
+                @if($showElektronik)
                 <a href="{{ route('owner.elektronik.type', 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*') ? 'active' : '' }}">
                     <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> HP, Kamera & Alat
                 </a>
+                @endif
                 <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
                     <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
                 </a>
@@ -159,6 +183,7 @@
                 <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
                 </a>
+                @endif
 
                 @elseif($role === 'admin')
                 <div class="sidebar-group-title mt-4">Inventaris & Tim</div>
@@ -364,6 +389,16 @@
                     @foreach($errors->all() as $error)
                         <div>{{ $error }}</div>
                     @endforeach
+                </div>
+            @endif
+
+            @php
+                $pendingMerchant = auth()->user()?->isOwner() ? \App\Models\Merchant::where('user_id', auth()->id())->where('status', 'pending')->first() : null;
+            @endphp
+            @if($pendingMerchant)
+                <div class="mb-4 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-[13px] flex items-center gap-2 animate-slide-up shadow-sm">
+                    <i class="fas fa-clock text-amber-500"></i>
+                    Toko Anda sedang <strong>menunggu verifikasi admin</strong>. Anda belum bisa mengelola produk & transaksi hingga toko disetujui.
                 </div>
             @endif
 

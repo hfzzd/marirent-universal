@@ -6,7 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\Maintenance;
+use App\Models\Merchant;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class SuperadminController extends Controller
 {
@@ -281,5 +286,137 @@ class SuperadminController extends Controller
     public function elektronik()
     {
         return redirect()->route('superadmin.elektronik.type', 'kamera');
+    }
+
+    public function merchants(Request $request)
+    {
+        $status = $request->input('status', 'all');
+
+        $query = Merchant::with('owner')->withCount('vehicles');
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $merchants = $query->orderBy('created_at', 'desc')->get();
+
+        return view('superadmin.merchants.index', compact('merchants', 'status'));
+    }
+
+    public function merchantCreate()
+    {
+        $categories = \App\Models\Category::where('is_active', true)->get();
+        return view('superadmin.merchants.create', compact('categories'));
+    }
+
+    public function merchantStore(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'category_id' => 'nullable|exists:categories,id',
+            'store_name' => 'required|string|max:120',
+            'city' => 'nullable|string|max:80',
+            'address' => 'nullable|string|max:255',
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $merchant = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'phone' => $validated['phone'] ?? null,
+                'category_id' => $validated['category_id'] ?? null,
+                'role' => 'owner',
+            ]);
+
+            return Merchant::create([
+                'user_id' => $user->id,
+                'slug' => $this->uniqueMerchantSlug($validated['store_name']),
+                'name' => $validated['store_name'],
+                'city' => $validated['city'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'commission_rate' => $validated['commission_rate'] ?? 10,
+                'is_active' => false,
+                'status' => 'pending',
+            ]);
+        });
+
+        return redirect()->route('superadmin.merchants')
+            ->with('success', 'Toko "' . $merchant->name . '" berhasil dibuat (status pending).');
+    }
+
+    public function merchantVerify(int $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+        $merchant->update([
+            'status' => 'active',
+            'is_active' => true,
+            'verified_at' => now(),
+        ]);
+
+        return back()->with('success', 'Toko "' . $merchant->name . '" telah diverifikasi.');
+    }
+
+    public function merchantSuspend(int $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+        $merchant->update([
+            'status' => 'suspended',
+            'is_active' => false,
+        ]);
+
+        return back()->with('success', 'Toko "' . $merchant->name . '" ditangguhkan.');
+    }
+
+    public function merchantActivate(int $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+        if ($merchant->status === 'pending') {
+            return back()->with('error', 'Verifikasi toko terlebih dahulu.');
+        }
+        $merchant->update([
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+
+        return back()->with('success', 'Toko "' . $merchant->name . '" diaktifkan.');
+    }
+
+    public function merchantUpdate(Request $request, int $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'description' => 'nullable|string|max:1000',
+            'phone' => 'nullable|string|max:30',
+            'company_email' => 'nullable|email|max:120',
+            'website' => 'nullable|url|max:120',
+            'instagram' => 'nullable|string|max:120',
+            'city' => 'nullable|string|max:80',
+            'address' => 'nullable|string|max:255',
+            'pickup_address' => 'nullable|string|max:255',
+            'operational_hours' => 'nullable|string|max:80',
+            'commission_rate' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $merchant->update($validated);
+
+        return back()->with('success', 'Toko "' . $merchant->name . '" diperbarui.');
+    }
+
+    private function uniqueMerchantSlug(string $name): string
+    {
+        $slug = Str::slug($name) ?: Str::random(6);
+        $base = $slug;
+        $i = 1;
+        while (Merchant::where('slug', $slug)->exists()) {
+            $slug = $base . '-' . ($i++);
+        }
+        return $slug;
     }
 }

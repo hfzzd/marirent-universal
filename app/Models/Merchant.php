@@ -13,8 +13,10 @@ class Merchant extends Model
 
     protected $fillable = [
         'user_id', 'slug', 'name', 'description', 'logo', 'banner',
-        'phone', 'address', 'city', 'pickup_address', 'operational_hours',
+        'phone', 'company_email', 'website', 'instagram',
+        'address', 'city', 'pickup_address', 'operational_hours',
         'commission_rate', 'is_active', 'status',
+        'verified_at',
     ];
 
     protected function casts(): array
@@ -22,7 +24,13 @@ class Merchant extends Model
         return [
             'commission_rate' => 'decimal:2',
             'is_active' => 'boolean',
+            'verified_at' => 'datetime',
         ];
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->is_active && $this->status === 'active';
     }
 
     protected static function booted(): void

@@ -5,9 +5,9 @@
 @section('content')
 @php $owner = auth()->user(); @endphp
 
-@if(session('success'))
+@if(session('merchant_success'))
 <div class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[13px] flex items-center gap-2">
-    <i class="fas fa-check-circle"></i> {{ session('success') }}
+    <i class="fas fa-check-circle"></i> {{ session('merchant_success') }}
 </div>
 @endif
 

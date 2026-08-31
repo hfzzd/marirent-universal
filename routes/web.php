@@ -42,6 +42,8 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
+Route::get('/register-merchant', [AuthController::class, 'showRegisterMerchant'])->name('register.merchant');
+Route::post('/register-merchant', [AuthController::class, 'registerMerchant'])->name('register.merchant.store');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->prefix('dashboard')->group(function () {
@@ -93,6 +95,13 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::get('/scheduler', [SuperadminController::class, 'scheduler'])->name('superadmin.scheduler');
     Route::get('/scheduler/events', [SuperadminController::class, 'schedulerEvents'])->name('superadmin.scheduler.events');
     Route::get('/finance', [SuperadminController::class, 'finance'])->name('superadmin.finance');
+    Route::get('/merchants', [SuperadminController::class, 'merchants'])->name('superadmin.merchants');
+    Route::get('/merchants/create', [SuperadminController::class, 'merchantCreate'])->name('superadmin.merchants.create');
+    Route::post('/merchants', [SuperadminController::class, 'merchantStore'])->name('superadmin.merchants.store');
+    Route::post('/merchants/{id}/verify', [SuperadminController::class, 'merchantVerify'])->name('superadmin.merchants.verify');
+    Route::post('/merchants/{id}/suspend', [SuperadminController::class, 'merchantSuspend'])->name('superadmin.merchants.suspend');
+    Route::post('/merchants/{id}/activate', [SuperadminController::class, 'merchantActivate'])->name('superadmin.merchants.activate');
+    Route::put('/merchants/{id}', [SuperadminController::class, 'merchantUpdate'])->name('superadmin.merchants.update');
     Route::get('/absen', [SuperadminController::class, 'absen'])->name('superadmin.absen');
     Route::get('/monitoring-vehicle', [SuperadminController::class, 'monitoringVehicle'])->name('superadmin.monitoring-vehicle');
     Route::get('/motor', [SuperadminController::class, 'motor'])->name('superadmin.motor');

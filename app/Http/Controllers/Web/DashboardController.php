@@ -137,6 +137,22 @@ class DashboardController extends Controller
 
     public function profile()
     {
+        $user = Auth::user();
+
+        if ($user->isOwner()) {
+            $merchant = \App\Models\Merchant::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'slug' => $this->uniqueMerchantSlug($user->name),
+                    'name' => $user->name,
+                    'commission_rate' => 10,
+                    'is_active' => false,
+                    'status' => 'pending',
+                ]
+            );
+            return view('dashboard.profile', compact('merchant'));
+        }
+
         return view('dashboard.profile');
     }
 
@@ -180,6 +196,17 @@ class DashboardController extends Controller
         $user->update(['password' => Hash::make($request->password)]);
 
         return back()->with('success', 'Password berhasil diperbarui');
+    }
+
+    private function uniqueMerchantSlug(string $name): string
+    {
+        $slug = \Illuminate\Support\Str::slug($name) ?: \Illuminate\Support\Str::random(6);
+        $base = $slug;
+        $i = 1;
+        while (\App\Models\Merchant::where('slug', $slug)->exists()) {
+            $slug = $base . '-' . ($i++);
+        }
+        return $slug;
     }
 
     private function driverDashboard()

@@ -205,7 +205,91 @@
     </div>
 
     <div class="glass-card rounded-2xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-sky-100/50">
+
+    @if($user->role === 'owner' && isset($merchant))
+    {{-- Toko / Company --}}
+    <div class="px-6 py-4 border-b border-sky-100/50">
+        <h3 class="text-[14px] font-semibold text-navy-800">
+            <i class="fas fa-store text-sky-500 mr-2"></i>Profil Toko (Company)
+        </h3>
+        <p class="text-[11px] text-gray-400 mt-0.5">Informasi toko yang tampil di marketplace. Link publik: <a href="{{ route('public.store', $merchant->slug) }}" target="_blank" class="text-sky-600 hover:underline">/store/{{ $merchant->slug }}</a></p>
+    </div>
+
+    @if(session('merchant_success'))
+    <div class="mx-6 mt-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[13px] flex items-center gap-2">
+        <i class="fas fa-check-circle"></i> {{ session('merchant_success') }}
+    </div>
+    @endif
+
+    <form action="{{ route('merchant.profile.update') }}" method="POST" class="p-6 space-y-5">
+        @csrf
+        @method('PUT')
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+            @if($merchant->status === 'pending')
+            <span class="badge bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-full text-[10px] font-bold"><i class="fas fa-clock mr-1"></i>Menunggu Verifikasi Admin</span>
+            @elseif($merchant->status === 'active')
+            <span class="badge bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full text-[10px] font-bold"><i class="fas fa-check-circle mr-1"></i>Terverifikasi</span>
+            @else
+            <span class="badge bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-full text-[10px] font-bold"><i class="fas fa-ban mr-1"></i>Ditangguhkan</span>
+            @endif
+            <span class="badge bg-sky-50 text-sky-600 border border-sky-200 px-2.5 py-1 rounded-full text-[10px] font-bold"><i class="fas fa-percentage mr-1"></i>Komisi {{ number_format($merchant->commission_rate, 0) }}%</span>
+        </div>
+
+        <div>
+            <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Nama Toko</label>
+            <input type="text" name="name" value="{{ old('name', $merchant->name) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+        </div>
+        <div>
+            <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Deskripsi Toko</label>
+            <textarea name="description" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100 resize-none">{{ old('description', $merchant->description) }}</textarea>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Telepon Toko</label>
+                <input type="text" name="phone" value="{{ old('phone', $merchant->phone) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Kota</label>
+                <input type="text" name="city" value="{{ old('city', $merchant->city) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+        </div>
+        <div>
+            <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Alamat</label>
+            <input type="text" name="address" value="{{ old('address', $merchant->address) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Alamat Penjemputan</label>
+                <input type="text" name="pickup_address" value="{{ old('pickup_address', $merchant->pickup_address) }}" placeholder="Khusus pengambilan unit" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Jam Operasional</label>
+                <input type="text" name="operational_hours" value="{{ old('operational_hours', $merchant->operational_hours) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Email Toko</label>
+                <input type="email" name="company_email" value="{{ old('company_email', $merchant->company_email) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Website</label>
+                <input type="text" name="website" value="{{ old('website', $merchant->website) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Instagram</label>
+                <input type="text" name="instagram" value="{{ old('instagram', $merchant->instagram) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+            </div>
+        </div>
+        <div class="text-right">
+            <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-sky-500/25 inline-flex items-center gap-2">
+                <i class="fas fa-store text-xs"></i> Simpan Toko
+            </button>
+        </div>
+    </form>
+    @endif
+
+    <div class="px-6 py-4 border-b border-sky-100/50">
             <h3 class="text-[14px] font-semibold text-navy-800">
                 <i class="fas fa-lock text-sky-500 mr-2"></i>Ganti Password
             </h3>

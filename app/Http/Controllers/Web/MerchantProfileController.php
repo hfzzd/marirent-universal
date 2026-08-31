@@ -52,6 +52,9 @@ class MerchantProfileController extends Controller
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
             'phone' => 'nullable|string|max:30',
+            'company_email' => 'nullable|email|max:120',
+            'website' => 'nullable|url|max:120',
+            'instagram' => 'nullable|string|max:120',
             'city' => 'nullable|string|max:80',
             'address' => 'nullable|string|max:255',
             'pickup_address' => 'nullable|string|max:255',
@@ -72,7 +75,7 @@ class MerchantProfileController extends Controller
 
         $merchant->update($data);
 
-        return back()->with('success', 'Profil toko berhasil diperbarui.');
+        return back()->with('merchant_success', 'Profil toko berhasil diperbarui.');
     }
 
     private function uniqueSlug(string $name): string
