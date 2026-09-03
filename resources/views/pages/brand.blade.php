@@ -61,6 +61,11 @@
             <div class="p-3.5">
                 <h3 class="font-bold text-navy-900 text-[13px] leading-tight line-clamp-1">{{ $p['name'] }}</h3>
                 <p class="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{{ $p['subtitle'] }}</p>
+                @if(!empty($p['company']))
+                <p class="text-[10px] text-emerald-600 mt-1 flex items-center gap-1 line-clamp-1">
+                    <i class="fas fa-store text-[8px]"></i> dari {{ $p['company'] }}
+                </p>
+                @endif
                 @if(!empty($p['tags']))
                 <div class="flex flex-wrap gap-1.5 mt-2">
                     @foreach(array_slice($p['tags'], 0, 3) as $tag)

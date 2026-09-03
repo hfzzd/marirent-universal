@@ -270,17 +270,39 @@ class SuperadminController extends Controller
 
     public function absen()
     {
-        return view('superadmin.absen');
+        $drivers = \App\Models\Driver::with('user')->where('is_active', true)->get();
+        return view('superadmin.absen', compact('drivers'));
     }
 
-    public function monitoringVehicle()
+    public function monitoringVehicle(Request $request)
     {
-        return view('superadmin.monitoring-vehicle');
+        $vehicles = \App\Models\Vehicle::with('category', 'owner')->latest()->paginate(20);
+        $totalAvailable = \App\Models\Vehicle::where('status', 'available')->count();
+        $totalRented = \App\Models\Vehicle::where('status', 'rented')->count();
+        $totalMaintenance = \App\Models\Vehicle::where('status', 'maintenance')->count();
+        $totalReserved = \App\Models\Vehicle::where('status', 'reserved')->count();
+
+        return view('superadmin.monitoring-vehicle', compact(
+            'vehicles', 'totalAvailable', 'totalRented', 'totalMaintenance', 'totalReserved'
+        ));
     }
 
-    public function motor()
+    public function motor(Request $request)
     {
-        return redirect()->route('motors.index');
+        $query = \App\Models\Vehicle::whereHas('category', fn($q) => $q->where('slug', 'motor'))->with('category', 'owner');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('license_plate', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%");
+            });
+        }
+
+        $motorVehicles = $query->latest()->paginate(15);
+
+        return view('superadmin.motor', compact('motorVehicles'));
     }
 
     public function elektronik()

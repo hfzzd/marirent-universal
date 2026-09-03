@@ -62,8 +62,8 @@ class RentalController extends Controller
             ->with('category')
             ->get();
 
-        $drivers = Driver::where('is_available', true)
-            ->where('status', 'active')
+        $drivers = Driver::where('status', 'off_duty')
+            ->where('is_active', true)
             ->with('user')
             ->get();
 
@@ -134,7 +134,7 @@ class RentalController extends Controller
 
     public function show($id)
     {
-        $rental = Rental::with('user', 'vehicle', 'driver.user', 'invoice', 'inspection', 'tripReport')
+        $rental = Rental::with('user', 'vehicle', 'driver.user')
             ->findOrFail($id);
 
         $user = Auth::user();
@@ -163,8 +163,8 @@ class RentalController extends Controller
             ->with('category')
             ->get();
 
-        $drivers = Driver::where('is_available', true)
-            ->where('status', 'active')
+        $drivers = Driver::where('status', 'off_duty')
+            ->where('is_active', true)
             ->with('user')
             ->get();
 

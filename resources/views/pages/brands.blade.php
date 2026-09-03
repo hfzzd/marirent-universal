@@ -70,7 +70,7 @@
                     <img src="{{ $firstPhoto->photo_url }}" alt="{{ $b->brand }}" class="brand-logo-img max-h-20 max-w-full object-contain group-hover:scale-110 transition duration-300">
                     @else
                     <div class="flex items-center justify-center">
-                        <i class="fas {{ $section['config']['icon'] }} text-3xl" style="color: {{ $typeKey === 'mobil' ? '#0ea5e9' : ($typeKey === 'motor' ? '#f59e0b' : ($typeKey === 'hp' ? '#3b82f6' : ($typeKey === 'kamera' ? '#8b5cf6' : '#10b981'))) }};"></i>
+                        <i class="fas {{ $section['config']['icon'] }} text-3xl" style="color: {{ $typeKey === 'mobil' ? '#0ea5e9' : ($typeKey === 'motor' ? '#f59e0b' : ($typeKey === 'hp' ? '#3b82f6' : ($typeKey === 'kamera' ? '#8b5cf6' : ($typeKey === 'tenda' ? '#10b981' : ($typeKey === 'ps' ? '#6366f1' : ($typeKey === 'drone' ? '#06b6d4' : '#f43f5e')))))); }};"></i>
                     </div>
                     @endif
                 </div>

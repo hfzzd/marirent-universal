@@ -39,7 +39,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="bg-sky-50/50 p-4 rounded-xl">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Booking</p>
                         <a href="{{ $replacement->booking ? route('bookings.show', $replacement->booking) : '#' }}" class="font-bold text-sky-600 text-[15px] hover:text-sky-700 transition">{{ $replacement->booking?->booking_code ?? '-' }}</a>

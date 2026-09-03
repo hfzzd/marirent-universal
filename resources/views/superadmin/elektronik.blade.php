@@ -4,37 +4,49 @@
 @section('content')
 <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
     <div class="flex gap-2 flex-wrap">
+        @if(in_array('kamera', $allowedTypes))
         <a href="{{ route($prefix . '.elektronik.type', 'kamera') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'kamera' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-camera mr-1"></i> Kamera ({{ $counts['kamera'] }})
         </a>
+        @endif
+        @if(in_array('hp', $allowedTypes))
         <a href="{{ route($prefix . '.elektronik.type', 'hp') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'hp' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-mobile-alt mr-1"></i> HP ({{ $counts['hp'] }})
         </a>
+        @endif
+        @if(in_array('tenda', $allowedTypes))
         <a href="{{ route($prefix . '.elektronik.type', 'tenda') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'tenda' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-campground mr-1"></i> Alat Camping ({{ $counts['tenda'] }})
         </a>
+        @endif
+        @if(in_array('ps', $allowedTypes))
         <a href="{{ route($prefix . '.elektronik.type', 'ps') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'ps' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-gamepad mr-1"></i> Playstation ({{ $counts['ps'] }})
         </a>
+        @endif
+        @if(in_array('drone', $allowedTypes))
         <a href="{{ route($prefix . '.elektronik.type', 'drone') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'drone' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-drone mr-1"></i> Drone ({{ $counts['drone'] }})
         </a>
+        @endif
+        @if(in_array('musik', $allowedTypes))
         <a href="{{ route($prefix . '.elektronik.type', 'musik') }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $type == 'musik' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-guitar mr-1"></i> Musik ({{ $counts['musik'] }})
         </a>
+        @endif
     </div>
-    <div class="flex gap-2">
-        <form action="{{ route($prefix . '.elektronik.type', $type) }}" method="GET" class="flex gap-2">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari barang..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-52">
-            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition"><i class="fas fa-search text-gray-500"></i></button>
+    <div class="flex gap-2 flex-wrap w-full sm:w-auto">
+        <form action="{{ route($prefix . '.elektronik.type', $type) }}" method="GET" class="flex gap-2 w-full sm:w-auto">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari barang..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-full sm:w-52">
+            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
         </form>
-        <a href="{{ route($prefix . '.elektronik.create', $type) }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-semibold shadow-lg shadow-sky-500/25 transition flex items-center gap-1.5">
+        <a href="{{ route($prefix . '.elektronik.create', $type) }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-semibold shadow-lg shadow-sky-500/25 transition flex items-center gap-1.5 justify-center">
             <i class="fas fa-plus text-[11px]"></i> Tambah
         </a>
     </div>

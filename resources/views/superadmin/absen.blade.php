@@ -2,16 +2,11 @@
 @section('page-title', 'Absen Driver')
 
 @section('content')
-@php
-    $today = now()->format('Y-m-d');
-    $drivers = \App\Models\Driver::with('user')->where('is_active', true)->get();
-@endphp
-
-<div class="flex items-center justify-between mb-5">
+<div class="flex flex-wrap items-center justify-between mb-5 gap-3">
     <div>
         <p class="text-[13px] text-gray-400">{{ now()->format('l, d F Y') }}</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 flex-wrap">
         <span class="badge badge-green">{{ $drivers->where('status', 'active')->count() }} Hadir</span>
         <span class="badge badge-yellow">{{ $drivers->where('status', 'on_trip')->count() }} Bertugas</span>
         <span class="badge badge-gray">{{ $drivers->where('status', 'inactive')->count() }} Absen</span>

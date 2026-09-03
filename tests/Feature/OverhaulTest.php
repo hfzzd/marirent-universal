@@ -377,6 +377,7 @@ class OverhaulTest extends TestCase
         $owner = $this->makeOwner('insp_owner@example.test');
         $admin = $this->makeAdmin('insp_admin@example.test', $owner);
         $inspector = $this->makeRoleUser('insp_operator@example.test', 'inspector');
+        $inspector->update(['owner_id' => $owner->id]);
         $driverUser = $this->makeRoleUser('insp_driver@example.test', 'driver');
         $customer = $this->makeRoleUser('insp_customer@example.test', 'user');
         $driver = Driver::create([
@@ -404,6 +405,7 @@ class OverhaulTest extends TestCase
             'status' => 'confirmed',
             'payment_status' => 'unpaid',
             'payment_plan' => 'full',
+            'with_driver' => true,
         ]);
 
         $this->actingAs($driverUser)->post('/inspections', [

@@ -4,13 +4,13 @@
 <div class="max-w-4xl">
     <a href="{{ route('inspections.index') }}" class="text-sky-600 text-sm mb-4 inline-block"><i class="fas fa-arrow-left mr-1"></i> Kembali</a>
 
-    <div class="bg-white rounded-2xl shadow-sm p-8">
-        <div class="flex items-start justify-between mb-6">
-            <div>
+    <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-8">
+        <div class="flex flex-wrap items-start justify-between mb-6 gap-3">
+            <div class="min-w-0">
                 <h2 class="text-xl font-bold text-navy-900">Detail Inspeksi #{{ $inspection->id }}</h2>
                 <p class="text-sm text-navy-500 mt-1">{{ $inspection->created_at->format('d M Y H:i') }}</p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap">
                 @php
                     $scopeColors = ['kendaraan' => 'bg-blue-100 text-blue-700', 'elektronik' => 'bg-purple-100 text-purple-700', 'camping' => 'bg-green-100 text-green-700'];
                 @endphp

@@ -19,7 +19,7 @@
             </p>
         </div>
         <div class="flex items-center gap-2.5">
-            <a href="{{ route('bookings.create') }}" class="bg-white text-navy-900 hover:bg-sky-50 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+            <a href="{{ route('bookings.manual-create') }}" class="bg-white text-navy-900 hover:bg-sky-50 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
                 <i class="fas fa-plus text-sky-600"></i> Buat Booking
             </a>
             <a href="{{ route('maintenances.index') }}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">

@@ -2,7 +2,7 @@
 @section('page-title', 'Maintenance')
 
 @section('content')
-<div x-data="{ showForm: false }">
+<div x-data="{ showForm: false, completeId: null, completeCost: '', openComplete(id, cost) { this.completeId = id; this.completeCost = cost ?? ''; }, closeComplete() { this.completeId = null; this.completeCost = ''; } }">
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
     <div>
         <h2 class="text-lg font-extrabold text-navy-800 flex items-center gap-2">
@@ -119,12 +119,7 @@
                                 <button type="submit" class="text-amber-600 text-[11px] font-semibold hover:text-amber-700"><i class="fas fa-play mr-1"></i>Proses</button>
                             </form>
                             @elseif($m->status === 'in_progress')
-                            <form method="POST" action="{{ route('maintenances.update', $m) }}" class="inline" x-data>
-                                @csrf @method('PUT')
-                                <input type="hidden" name="status" value="completed">
-                                <input type="hidden" name="actual_cost" value="{{ $m->estimated_cost }}">
-                                <button type="submit" class="text-emerald-600 text-[11px] font-semibold hover:text-emerald-700"><i class="fas fa-check mr-1"></i>Selesai</button>
-                            </form>
+                            <button type="button" @click="openComplete({{ $m->id }}, {{ $m->estimated_cost ?? 0 }})" class="text-emerald-600 text-[11px] font-semibold hover:text-emerald-700"><i class="fas fa-check mr-1"></i>Selesai</button>
                             @endif
                             <form method="POST" action="{{ route('maintenances.update', $m) }}" class="inline" x-data>
                                 @csrf @method('PUT')
@@ -232,6 +227,39 @@
             <div class="flex gap-3 mt-6">
                 <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-sky-500/25"><i class="fas fa-save mr-1.5"></i> Simpan</button>
                 <button type="button" @click="showForm=false" class="bg-gray-100 hover:bg-gray-200 px-6 py-2.5 rounded-xl text-[13px] font-medium text-navy-700">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- COMPLETE FORM MODAL --}}
+<div x-show="completeId !== null" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none;" @click.self="completeId=null">
+    <div class="fixed inset-0 bg-navy-900/40 backdrop-blur-sm"></div>
+    <div class="relative glass-card rounded-2xl p-6 w-full max-w-md shadow-2xl border border-sky-100/50 animate-slide-up" @click.stop>
+        <button type="button" @click="completeId=null" class="absolute top-3 right-3 w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-100 flex items-center justify-center text-gray-400 hover:text-red-500 transition">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+        <h3 class="text-[15px] font-bold text-navy-800 mb-5 flex items-center gap-2">
+            <i class="fas fa-clipboard-check text-emerald-500"></i> Selesaikan Maintenance
+        </h3>
+        <form method="POST" :action="completeId ? '{{ url('maintenances') }}/' + completeId : '#'">
+            @csrf @method('PUT')
+            <input type="hidden" name="status" value="completed">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Biaya Aktual (Rp)</label>
+                    <input type="number" name="actual_cost" x-model.number="completeCost" min="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="0">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Catatan Penyelesaian</label>
+                    <textarea name="notes" rows="3" placeholder="Hasil pengerjaan, kondisi unit setelah maintenance..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-sky-500/25"><i class="fas fa-check mr-1.5"></i> Tandai Selesai</button>
+                <button type="button" @click="completeId=null" class="bg-gray-100 hover:bg-gray-200 px-6 py-2.5 rounded-xl text-[13px] font-medium text-navy-700">Batal</button>
             </div>
         </form>
     </div>

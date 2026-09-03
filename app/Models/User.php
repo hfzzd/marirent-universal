@@ -51,6 +51,15 @@ class User extends Authenticatable
         return $this->hasOne(Merchant::class, 'user_id');
     }
 
+    /**
+     * Alias "company" untuk profil merchant/toko pemilik.
+     * Mengembalikan model Company (tabel merchants).
+     */
+    public function company()
+    {
+        return $this->hasOne(Company::class, 'user_id');
+    }
+
     public function merchants()
     {
         return $this->hasMany(Merchant::class, 'user_id');

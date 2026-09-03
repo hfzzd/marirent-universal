@@ -233,6 +233,9 @@ class DatabaseSeeder extends Seeder
         // Profil toko (merchant) untuk setiap owner
         $this->call(MerchantSeeder::class);
 
+        // Seed perusahaan/merchant partner (16 company di berbagai kota & kategori)
+        $this->call(CompanySeeder::class);
+
         // Run bulk vehicle seed data (50 mobil + 50 motor)
         $this->call(VehicleSeeder::class);
 

@@ -173,7 +173,7 @@
             </div>
         </div>
 
-        <div class="flex gap-3 pb-2">
+        <div class="flex gap-3 pb-2 flex-wrap">
             <button type="submit" class="btn-primary text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-sky-500/25 transition"><i class="fas fa-save mr-2"></i> Simpan Booking Manual</button>
             <a href="{{ route('bookings.index') }}" class="bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl text-sm font-semibold text-navy-700 transition">Batal</a>
         </div>

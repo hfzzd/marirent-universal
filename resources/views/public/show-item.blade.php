@@ -125,6 +125,11 @@
                                 @if($merchant['rating'] > 0)<i class="fas fa-star text-amber-400 text-[9px]"></i> {{ number_format($merchant['rating'], 1) }}@endif
                                 @if($merchant['city'])<span>{{ $merchant['city'] }}</span>@endif
                             </p>
+                            @if($item->company)
+                            <p class="text-[10px] text-emerald-600 flex items-center gap-1 mt-0.5 truncate">
+                                <i class="fas fa-store text-[8px]"></i> {{ $item->company->name }}
+                            </p>
+                            @endif
                         </div>
                         <i class="fas fa-chevron-right text-gray-300 text-[10px] ml-auto group-hover:text-sky-500"></i>
                     </a>

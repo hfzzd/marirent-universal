@@ -2,14 +2,6 @@
 @section('page-title', 'Monitoring Vehicle')
 
 @section('content')
-@php
-    $vehicles = \App\Models\Vehicle::with('category', 'owner')->latest()->paginate(20);
-    $totalAvailable = \App\Models\Vehicle::where('status', 'available')->count();
-    $totalRented = \App\Models\Vehicle::where('status', 'rented')->count();
-    $totalMaintenance = \App\Models\Vehicle::where('status', 'maintenance')->count();
-    $totalReserved = \App\Models\Vehicle::where('status', 'reserved')->count();
-@endphp
-
 {{-- Summary --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
     <div class="stat-card glass-card rounded-2xl p-5 relative overflow-hidden animate-slide-up">

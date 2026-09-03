@@ -6,12 +6,12 @@
 
     {{-- Header --}}
     <div class="glass-card rounded-2xl p-6 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25 flex-shrink-0">
                     <i class="fas fa-route text-white text-lg"></i>
                 </div>
-                <div>
+                <div class="min-w-0">
                     <h2 class="text-lg font-bold text-navy-900">Laporan Perjalanan</h2>
                     <p class="text-[12px] text-gray-400 mt-0.5">Booking: <span class="font-semibold text-sky-600">{{ $tripReport->booking?->booking_code ?? '-' }}</span></p>
                 </div>

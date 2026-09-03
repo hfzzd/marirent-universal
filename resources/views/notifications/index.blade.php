@@ -4,7 +4,7 @@
 @section('content')
 <div class="max-w-3xl">
     {{-- Header --}}
-    <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div>
             <h2 class="text-lg font-bold text-navy-800 flex items-center gap-2">
                 <i class="fas fa-bell text-sky-500"></i> Notifikasi

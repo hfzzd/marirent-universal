@@ -26,6 +26,7 @@ use App\Http\Controllers\Web\MerchantProfileController;
 use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\NotificationWebController;
 use App\Http\Controllers\Web\BrandCatalogPhotoController;
+use App\Http\Controllers\Web\RentalController;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
@@ -131,6 +132,8 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('admin/brand-
 Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('owner')->group(function () {
     Route::get('/store', [MerchantProfileController::class, 'show'])->name('merchant.profile');
     Route::put('/store', [MerchantProfileController::class, 'update'])->name('merchant.profile.update');
+    Route::post('/store/admins', [MerchantProfileController::class, 'storeAdmin'])->name('merchant.admin.store');
+    Route::delete('/store/admins/{admin}', [MerchantProfileController::class, 'destroyAdmin'])->name('merchant.admin.destroy');
     Route::get('/revenue', [OwnerRevenueController::class, 'index'])->name('owner.revenue.index');
     Route::get('/revenue/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
     Route::post('/revenue', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');
@@ -165,8 +168,6 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
     Route::get('/create-item/{type}/{item}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
     Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
-    Route::get('/create-multi', [BookingWebController::class, 'createMulti'])->name('bookings.create-multi');
-    Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
     Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
     Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
     Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');
@@ -216,6 +217,11 @@ Route::middleware('auth')->prefix('inspections')->group(function () {
     Route::get('/{inspection}', [InspectionWebController::class, 'show'])->name('inspections.show');
 });
 
+Route::middleware(['auth', 'role:driver'])->prefix('driver-report')->group(function () {
+    Route::get('/', [InspectionWebController::class, 'reportForm'])->name('driver.report');
+    Route::post('/', [InspectionWebController::class, 'reportStore'])->name('driver.report.store');
+});
+
 Route::middleware('auth')->prefix('trip-reports')->group(function () {
     Route::get('/', [TripReportWebController::class, 'index'])->name('reports.index');
     Route::get('/create', [TripReportWebController::class, 'create'])->name('reports.create');
@@ -250,6 +256,19 @@ Route::middleware('auth')->prefix('item-replacements')->group(function () {
     Route::post('/{replacement}/approve', [ItemReplacementWebController::class, 'approve'])->name('item-replacements.approve');
     Route::post('/{replacement}/reject', [ItemReplacementWebController::class, 'reject'])->name('item-replacements.reject');
     Route::post('/{replacement}/return', [ItemReplacementWebController::class, 'returnItem'])->name('item-replacements.return');
+});
+
+// Rentals Routes
+Route::middleware('auth')->prefix('rentals')->group(function () {
+    Route::get('/', [RentalController::class, 'index'])->name('rentals.index');
+    Route::get('/create', [RentalController::class, 'create'])->name('rentals.create');
+    Route::post('/', [RentalController::class, 'store'])->name('rentals.store');
+    Route::get('/{rental}/edit', [RentalController::class, 'edit'])->name('rentals.edit');
+    Route::put('/{rental}', [RentalController::class, 'update'])->name('rentals.update');
+    Route::get('/{rental}', [RentalController::class, 'show'])->name('rentals.show');
+    Route::post('/{rental}/cancel', [RentalController::class, 'cancel'])->name('rentals.cancel');
+    Route::post('/{rental}/confirm', [RentalController::class, 'confirm'])->name('rentals.confirm');
+    Route::post('/{rental}/complete', [RentalController::class, 'complete'])->name('rentals.complete');
 });
 
 // Maintenance Routes (superadmin, merchant admin/owner, dan inspector merchant)

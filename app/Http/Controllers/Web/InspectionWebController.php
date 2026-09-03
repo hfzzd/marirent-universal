@@ -7,12 +7,7 @@ use App\Models\Inspection;
 use App\Models\Booking;
 use App\Models\Driver;
 use App\Models\Vehicle;
-use App\Models\Phone;
-use App\Models\Camera;
-use App\Models\CampingEquipment;
-use App\Models\Playstation;
-use App\Models\Drone;
-use App\Models\MusicalInstrument;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,7 +20,6 @@ class InspectionWebController extends Controller
 
         if ($user->isInspector()) {
             $query->where(fn($q) => $q->where('inspector_id', $user->id)->orWhere('assigned_to', $user->id));
-            $query->whereHas('booking', fn($bq) => $bq->where('with_driver', false));
         } elseif ($user->isMerchantStaff()) {
             $merchantId = $user->merchantId();
             $categoryId = $user->merchantCategoryId();
@@ -101,14 +95,8 @@ class InspectionWebController extends Controller
         }
 
         $vehicles = $this->vehiclesForUser($user);
-        $phones = Phone::where('status', '!=', 'maintenance')->get();
-        $cameras = Camera::where('status', '!=', 'maintenance')->get();
-        $equipments = CampingEquipment::where('status', '!=', 'maintenance')->get();
-        $playstations = Playstation::where('status', '!=', 'maintenance')->get();
-        $drones = Drone::where('status', '!=', 'maintenance')->get();
-        $instruments = MusicalInstrument::where('status', '!=', 'maintenance')->get();
 
-        return view('inspections.create', compact('bookings', 'booking', 'vehicles', 'phones', 'cameras', 'equipments', 'playstations', 'drones', 'instruments'));
+        return view('inspections.create', compact('bookings', 'booking', 'vehicles'));
     }
 
     public function store(Request $request)
@@ -118,8 +106,8 @@ class InspectionWebController extends Controller
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             'type' => 'required|in:pre_rental,post_rental',
-            'scope' => 'required|in:kendaraan,elektronik,camping',
-            'inspection_item_id' => 'required|integer',
+            'scope' => 'required|in:kendaraan',
+            'inspection_item_id' => 'required|exists:vehicles,id',
             'usage_duration_hours' => 'nullable|integer|min:0',
             'overall_condition' => 'nullable|integer|min:1|max:10',
             'exterior_condition' => 'nullable|integer|min:1|max:10',
@@ -161,26 +149,29 @@ class InspectionWebController extends Controller
         $scope = $validated['scope'];
         $itemId = $validated['inspection_item_id'];
 
-        $itemType = match($scope) {
-            'kendaraan' => Vehicle::class,
-            'elektronik' => $this->resolveElectronicsType($itemId),
-            'camping' => CampingEquipment::class,
-            default => Vehicle::class,
-        };
-
-        $vehicleId = null;
-        if ($scope === 'kendaraan') {
-            $vehicleId = $itemId;
-        }
+        $itemType = Vehicle::class;
+        $vehicleId = $itemId;
 
         $isDriver = $user->isDriver();
+
+        // Saat driver membuat laporan, inspeksi terhubung ke akun inspector,
+        // bukan diset sebagai inspektur oleh id driver.
+        $inspectorId = null;
+        $reportedBy = null;
+        $status = 'open';
+        if ($isDriver) {
+            $reportedBy = $user->id;
+            $status = 'reported';
+            $inspectorId = $this->assignInspectorForBooking($booking);
+        }
 
         $data = [
             'booking_id' => $booking->id,
             'vehicle_id' => $vehicleId,
-            'inspector_id' => $user->id,
-            'reported_by' => null,
-            'status' => 'open',
+            'inspector_id' => $inspectorId,
+            'assigned_to' => $inspectorId,
+            'reported_by' => $reportedBy,
+            'status' => $status,
             'type' => $validated['type'],
             'scope' => $scope,
             'item_type' => $itemType,
@@ -270,8 +261,12 @@ class InspectionWebController extends Controller
             abort(403);
         }
 
-        if ($user->isInspector() && $inspection->booking && $inspection->booking->with_driver) {
-            abort(403, 'Inspector hanya dapat mengakses inspeksi rental lepas kunci (tanpa driver).');
+        if ($user->isInspector()) {
+            $isAssignedInspector = (int) $inspection->assigned_to === (int) $user->id
+                || (int) $inspection->inspector_id === (int) $user->id;
+            if ($inspection->booking && $inspection->booking->with_driver && !$isAssignedInspector) {
+                abort(403, 'Inspeksi rental dengan driver hanya dapat diakses oleh inspector yang ditugaskan.');
+            }
         }
 
         if ($user->isDriver()) {
@@ -296,8 +291,12 @@ class InspectionWebController extends Controller
         }
 
         if ($user->isInspector()) {
-            if (!$inspection->booking || $inspection->booking->with_driver) {
-                abort(403, 'Inspector hanya dapat memproses inspeksi rental lepas kunci (tanpa driver).');
+            $isAssignedInspector = (int) $inspection->assigned_to === (int) $user->id
+                || (int) $inspection->inspector_id === (int) $user->id;
+            if ($inspection->booking && $inspection->booking->with_driver && !$isAssignedInspector) {
+                abort(403, 'Inspector hanya dapat memproses inspeksi rental dengan driver yang ditugaskan kepadanya.');
+            } else {
+                return;
             }
         }
 
@@ -376,6 +375,81 @@ class InspectionWebController extends Controller
         return true;
     }
 
+    private function assignInspectorForBooking(Booking $booking): ?int
+    {
+        $ownerId = $booking?->vehicle?->owner_id ?? null;
+
+        if ($ownerId) {
+            $ownerInspector = User::where('role', 'inspector')->where('owner_id', $ownerId)->first();
+            if ($ownerInspector) {
+                return (int) $ownerInspector->id;
+            }
+        }
+
+        $platformInspector = User::where('role', 'inspector')
+            ->whereNull('owner_id')
+            ->orderBy('id')
+            ->first();
+
+        return $platformInspector ? (int) $platformInspector->id : null;
+    }
+
+    public function reportForm()
+    {
+        $user = Auth::user();
+        $driver = Driver::where('user_id', $user->id)->first();
+
+        $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
+            ->where('with_driver', true)
+            ->where('driver_id', $driver?->id)
+            ->with(['vehicle', 'category'])
+            ->get();
+
+        return view('inspections.report', compact('bookings'));
+    }
+
+    public function reportStore(Request $request)
+    {
+        $user = Auth::user();
+        $driver = Driver::where('user_id', $user->id)->first();
+
+        $validated = $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+            'problem_description' => 'required|string|max:2000',
+            'urgency' => 'required|in:low,medium,high',
+        ]);
+
+        $booking = Booking::findOrFail($validated['booking_id']);
+
+        if (!$driver || (int) $booking->driver_id !== (int) $driver->id) {
+            abort(403);
+        }
+
+        $inspectorId = $this->assignInspectorForBooking($booking);
+
+        $inspection = Inspection::create([
+            'booking_id' => $booking->id,
+            'vehicle_id' => $booking->vehicle_id,
+            'inspector_id' => $inspectorId,
+            'assigned_to' => $inspectorId,
+            'reported_by' => $user->id,
+            'status' => 'reported',
+            'type' => 'post_rental',
+            'scope' => 'kendaraan',
+            'item_type' => Vehicle::class,
+            'item_id' => $booking->vehicle_id,
+            'damage_items' => [$validated['problem_description']],
+            'notes' => match($validated['urgency']) {
+                'high' => '[URGENT] ' . $validated['problem_description'],
+                'medium' => '[PENTING] ' . $validated['problem_description'],
+                default => $validated['problem_description'],
+            },
+        ]);
+
+        return redirect()->route('inspections.show', $inspection)
+            ->with('success', 'Laporan kendala kendaraan berhasil dikirim ke inspector.');
+    }
+
     private function vehiclesForUser($user)
     {
         $query = Vehicle::where('status', '!=', 'maintenance');
@@ -386,15 +460,5 @@ class InspectionWebController extends Controller
             $query->where('category_id', $categoryId);
         }
         return $query->get();
-    }
-
-    private function resolveElectronicsType(int $itemId): string
-    {
-        if (Phone::find($itemId)) return Phone::class;
-        if (Camera::find($itemId)) return Camera::class;
-        if (Playstation::find($itemId)) return Playstation::class;
-        if (Drone::find($itemId)) return Drone::class;
-        if (MusicalInstrument::find($itemId)) return MusicalInstrument::class;
-        return Phone::class;
     }
 }

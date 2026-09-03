@@ -2,12 +2,12 @@
 @section('page-title', 'Driver')
 
 @section('content')
-<div class="flex items-center justify-between mb-5">
-    <form action="{{ route('drivers.index') }}" method="GET" class="flex gap-2">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari driver..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-60">
-        <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition"><i class="fas fa-search text-gray-500"></i></button>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
+    <form action="{{ route('drivers.index') }}" method="GET" class="flex gap-2 w-full sm:w-auto">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari driver..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-full sm:w-60">
+        <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
     </form>
-    <a href="{{ route('drivers.create') }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium"><i class="fas fa-plus mr-1.5"></i> Tambah</a>
+    <a href="{{ route('drivers.create') }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium text-center"><i class="fas fa-plus mr-1.5"></i> Tambah</a>
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">

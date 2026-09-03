@@ -17,7 +17,7 @@
     <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-5 text-[13px]">
         <ul class="list-disc list-inside">
             @foreach($errors->all() as $error)
-            <li>{{ $item }}</li>
+            <li>{{ $error }}</li>
             @endforeach
         </ul>
     </div>
@@ -128,7 +128,6 @@
                                     </div>
                                 </label>
                             </div>
-                            <input type="hidden" name="urgency" :value="urgency">
                         </div>
 
                         {{-- Aksesoris --}}

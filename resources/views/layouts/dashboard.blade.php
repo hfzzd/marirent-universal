@@ -19,7 +19,7 @@
 <body class="bg-sky-50/50 flex">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {{-- SIDEBAR --}}
-    <aside id="sidebar" class="sidebar w-60 h-screen sticky top-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
+    <aside id="sidebar" class="sidebar w-60 h-screen fixed md:sticky top-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
         <div class="p-4">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5 mb-5 pb-4 border-b border-white/5">
                 <div class="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -31,7 +31,32 @@
                 </div>
             </a>
 
-            @php $role = auth()->user()->role; @endphp
+            @php
+                $role = auth()->user()->role;
+                $catId = auth()->user()->merchantCategoryId();
+                $catSlug = auth()->user()->merchantCategory?->slug;
+                $showMobil = !$catId || $catId == 1;
+                $showMotor = !$catId || $catId == 2;
+                $elektronikType = match ($catSlug) {
+                    'sewa-hp' => 'hp',
+                    'sewa-kamera' => 'kamera',
+                    'sewa-tenda' => 'tenda',
+                    'sewa-ps' => 'ps',
+                    'sewa-drone' => 'drone',
+                    'sewa-alat-musik' => 'musik',
+                    default => null,
+                };
+                $showElektronik = !$catId || $elektronikType !== null;
+                $elektronikLabel = match ($catSlug) {
+                    'sewa-hp' => 'HP',
+                    'sewa-kamera' => 'Kamera',
+                    'sewa-tenda' => 'Alat Camping',
+                    'sewa-ps' => 'Playstation',
+                    'sewa-drone' => 'Drone',
+                    'sewa-alat-musik' => 'Alat Musik',
+                    default => 'HP, Kamera & Alat',
+                };
+            @endphp
 
             <nav class="space-y-0.5">
                 @if($role !== 'user')
@@ -125,10 +150,6 @@
                 @php
                     $ownerMerchant = auth()->user()->merchantProfile;
                     $ownerVerified = $ownerMerchant && $ownerMerchant->status === 'active' && $ownerMerchant->is_active;
-                    $ownerCatId = auth()->user()->merchantCategoryId();
-                    $showMobil = !$ownerCatId || $ownerCatId == 1;
-                    $showMotor = !$ownerCatId || $ownerCatId == 2;
-                    $showElektronik = !$ownerCatId || in_array($ownerCatId, [3, 4, 5, 6, 7, 8]);
                 @endphp
                 <div class="sidebar-group-title mt-4">Toko</div>
                 <a href="{{ route('merchant.profile') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('merchant.profile') ? 'active' : '' }}">
@@ -147,8 +168,8 @@
                 </a>
                 @endif
                 @if($showElektronik)
-                <a href="{{ route('owner.elektronik.type', 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*') ? 'active' : '' }}">
-                    <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> HP, Kamera & Alat
+                <a href="{{ route('owner.elektronik.type', $elektronikType ?? 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*', 'superadmin.elektronik*') ? 'active' : '' }}">
+                    <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> {{ $elektronikLabel }}
                 </a>
                 @endif
                 <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
@@ -187,15 +208,21 @@
 
                 @elseif($role === 'admin')
                 <div class="sidebar-group-title mt-4">Inventaris & Tim</div>
+                @if($showMobil)
                 <a href="{{ route('vehicles.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('vehicles.*') ? 'active' : '' }}">
                     <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Mobil
                 </a>
+                @endif
+                @if($showMotor)
                 <a href="{{ route('motors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('motors.*') ? 'active' : '' }}">
                     <i class="fas fa-motorcycle w-5 mr-2.5 text-sm"></i> Motor
                 </a>
-                <a href="{{ route('owner.elektronik.type', 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*') ? 'active' : '' }}">
-                    <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> HP, Kamera & Alat
+                @endif
+                @if($showElektronik)
+                <a href="{{ route('owner.elektronik.type', $elektronikType ?? 'hp') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.elektronik*', 'superadmin.elektronik*') ? 'active' : '' }}">
+                    <i class="fas fa-mobile-alt w-5 mr-2.5 text-sm"></i> {{ $elektronikLabel }}
                 </a>
+                @endif
                 <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
                     <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
                 </a>
@@ -239,6 +266,9 @@
                     <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
                 </a>
                 <div class="sidebar-group-title mt-4">Inspeksi</div>
+                <a href="{{ route('driver.report') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('driver.report*') ? 'active' : '' }}">
+                    <i class="fas fa-exclamation-triangle w-5 mr-2.5 text-sm"></i> Lapor Kendala
+                </a>
                 <a href="{{ route('inspections.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.index') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list w-5 mr-2.5 text-sm"></i> Riwayat Inspeksi
                 </a>
@@ -302,6 +332,9 @@
             </div>
         </div>
     </aside>
+
+    {{-- Backdrop untuk sidebar mobile (off-canvas) --}}
+    <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-navy-900/50 z-30 md:hidden" onclick="toggleSidebar()" aria-hidden="true"></div>
 
     {{-- MAIN CONTENT --}}
     <div class="flex-1 min-h-screen">
@@ -408,7 +441,12 @@
 
     <script>
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (backdrop) {
+                backdrop.classList.toggle('hidden');
+            }
         }
         // Close sidebar on outside click (mobile)
         document.addEventListener('click', function(e) {
@@ -416,6 +454,7 @@
             const btn = e.target.closest('button[onclick="toggleSidebar()"]');
             if (window.innerWidth < 768 && !sidebar.contains(e.target) && !btn) {
                 sidebar.classList.add('-translate-x-full');
+                document.getElementById('sidebar-backdrop')?.classList.add('hidden');
             }
         });
         // Close dropdowns on outside click

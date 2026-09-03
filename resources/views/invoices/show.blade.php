@@ -40,7 +40,8 @@
         </div>
 
         {{-- Invoice Items / Line Items --}}
-        <div class="border rounded-xl overflow-hidden mb-6">
+        <div class="border rounded-xl mb-6 overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead><tr class="bg-gray-50 border-b">
                     <th class="text-left py-3 px-4 text-navy-500 font-medium">Deskripsi</th>
@@ -63,11 +64,12 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
         {{-- Summary --}}
         <div class="flex justify-end">
-            <div class="w-72 space-y-2 text-sm">
+            <div class="w-full sm:w-72 space-y-2 text-sm">
                 <div class="flex justify-between"><span class="text-navy-500">Subtotal</span><span>Rp {{ number_format($invoice->subtotal,0,',','.') }}</span></div>
                 @if($invoice->tax_amount > 0)
                 <div class="flex justify-between"><span class="text-navy-500">Pajak (11%)</span><span>Rp {{ number_format($invoice->tax_amount,0,',','.') }}</span></div>

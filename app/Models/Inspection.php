@@ -93,12 +93,41 @@ class Inspection extends Model
 
     public function getItemName(): string
     {
-        if ($this->vehicle) return $this->vehicle->name;
+        if ($this->vehicle) {
+            return $this->vehicle->name;
+        }
 
         if ($this->item_type && $this->item_id) {
-            $model = $this->item_type;
-            $item = $model::find($this->item_id);
-            if ($item) return $item->name ?? '-';
+            try {
+                $item = $this->item_type::find($this->item_id);
+                if ($item) return $item->name ?? '-';
+            } catch (\Throwable $e) {
+                // abaikan, lanjut ke fallback
+            }
+        }
+
+        // Fallback: kendaraan dari relasi vehicle yang belum dimuat
+        if ($this->scope === 'kendaraan' && $this->vehicle_id) {
+            $vehicle = \App\Models\Vehicle::find($this->vehicle_id);
+            if ($vehicle) return $vehicle->name;
+        }
+
+        // Fallback: item lain dari item_id tanpa item_type (resolve via booking scope)
+        if ($this->item_id) {
+            $scopeModel = [
+                'elektronik' => null,
+                'camping' => \App\Models\CampingEquipment::class,
+                'kendaraan' => \App\Models\Vehicle::class,
+            ][$this->scope] ?? null;
+            if ($scopeModel) {
+                $item = $scopeModel::find($this->item_id);
+                if ($item) return $item->name ?? '-';
+            }
+        }
+
+        // Fallback terakhir: dari booking
+        if ($this->booking?->vehicle) {
+            return $this->booking->vehicle->name;
         }
 
         return '-';

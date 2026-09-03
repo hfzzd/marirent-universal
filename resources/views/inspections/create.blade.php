@@ -12,23 +12,23 @@
             <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full"></div>
             <div class="absolute -right-2 -bottom-4 w-16 h-16 bg-white/5 rounded-full"></div>
             <h2 class="text-xl font-bold relative z-10"><i class="fas fa-clipboard-check mr-2"></i>Inspeksi Unit</h2>
-            <p class="text-emerald-100 text-sm mt-1 relative z-10">Isi form inspeksi untuk kendaraan, elektronik, atau alat camping</p>
+            <p class="text-emerald-100 text-sm mt-1 relative z-10">Isi form inspeksi kendaraan sebelum atau sesudah masa sewa</p>
         </div>
 
         {{-- Step Indicators --}}
-        <div class="flex items-center gap-2 text-xs font-medium">
+        <div class="flex items-center gap-2 text-xs font-medium flex-wrap">
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
                 <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold">1</span> Booking
             </div>
-            <div class="w-8 h-px bg-gray-200"></div>
+            <div class="w-8 h-px bg-gray-200 hidden sm:block"></div>
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="selectedBookingId ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'">
                 <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="selectedBookingId ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'">2</span> Target
             </div>
-            <div class="w-8 h-px bg-gray-200"></div>
+            <div class="w-8 h-px bg-gray-200 hidden sm:block"></div>
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="selectedItemId ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'">
                 <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="selectedItemId ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'">3</span> Kondisi
             </div>
-            <div class="w-8 h-px bg-gray-200"></div>
+            <div class="w-8 h-px bg-gray-200 hidden sm:block"></div>
             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="damageItems.filter(d=>d).length || completenessItems.filter(c=>c).length ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'">
                 <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="damageItems.filter(d=>d).length || completenessItems.filter(c=>c).length ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'">4</span> Temuan
             </div>
@@ -91,48 +91,15 @@
                         Target Inspeksi
                     </h3>
 
-                    {{-- Scope Selector - Card Style --}}
-                    <div class="mb-5">
-                        <label class="block text-xs font-medium text-navy-600 mb-2">Scope Inspeksi *</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            @foreach([
-                                ['val' => 'kendaraan', 'icon' => 'fa-car', 'color' => 'blue', 'label' => 'Kendaraan', 'desc' => 'Mobil & Motor'],
-                                ['val' => 'elektronik', 'icon' => 'fa-mobile-alt', 'color' => 'purple', 'label' => 'Elektronik', 'desc' => 'HP, Kamera, PS, Drone & Musik'],
-                                ['val' => 'camping', 'icon' => 'fa-campground', 'color' => 'emerald', 'label' => 'Alat Camping', 'desc' => 'Tenda & Alat'],
-                            ] as $opt)
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="scope" value="{{ $opt['val'] }}" x-model="scope" @change="updateItemList()" class="peer sr-only">
-                                <div class="border-2 border-gray-200 rounded-xl p-4 text-center transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:border-gray-300 cursor-pointer group">
-                                    <div class="w-12 h-12 mx-auto mb-2 bg-{{ $opt['color'] }}-100 text-{{ $opt['color'] }}-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition">
-                                        <i class="fas {{ $opt['icon'] }} text-lg"></i>
-                                    </div>
-                                    <p class="text-xs font-semibold text-navy-700">{{ $opt['label'] }}</p>
-                                    <p class="text-[10px] text-gray-400">{{ $opt['desc'] }}</p>
-                                </div>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
+                    <input type="hidden" name="scope" value="kendaraan" x-model="scope">
 
                     {{-- Item Selector --}}
                     <div>
-                        <label class="block text-xs font-medium text-navy-600 mb-1.5">Item yang Diinspeksi *</label>
+                        <label class="block text-xs font-medium text-navy-600 mb-1.5">Kendaraan *</label>
                         <select name="inspection_item_id" x-model="selectedItemId" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition bg-gray-50/50">
-                            <option value="">Pilih Item</option>
-                            <template x-if="scope === 'kendaraan'">
-                                <template x-for="v in vehicles" :key="v.id">
-                                    <option :value="v.id" x-text="v.name + ' (' + (v.category?.name || '-') + ')'"></option>
-                                </template>
-                            </template>
-                            <template x-if="scope === 'elektronik'">
-                                <template x-for="e in [...phones, ...cameras, ...playstations, ...drones, ...instruments]" :key="e.id">
-                                    <option :value="e.id" x-text="e.name + ' (' + e.brand + ')'"></option>
-                                </template>
-                            </template>
-                            <template x-if="scope === 'camping'">
-                                <template x-for="c in equipments" :key="c.id">
-                                    <option :value="c.id" x-text="c.name + ' (' + c.brand + ')'"></option>
-                                </template>
+                            <option value="">Pilih Kendaraan</option>
+                            <template x-for="v in vehicles" :key="v.id">
+                                <option :value="v.id" x-text="v.name + ' (' + (v.category?.name || '-') + ')'"></option>
                             </template>
                         </select>
                     </div>
@@ -143,8 +110,8 @@
                     </div>
                 </div>
 
-                {{-- Condition Assessment - Vehicle Only --}}
-                <div class="bg-white rounded-2xl shadow-sm p-6" x-show="scope === 'kendaraan'" x-transition>
+                {{-- Condition Assessment - Vehicle --}}
+                <div class="bg-white rounded-2xl shadow-sm p-6" x-transition>
                     <h3 class="text-sm font-bold text-navy-800 mb-4 flex items-center gap-2">
                         <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-gauge-high text-emerald-500 text-sm"></i></div>
                         Kondisi Kendaraan
@@ -310,7 +277,7 @@
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-500">Scope</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="scopeBadge()" x-text="scope || '-'"></span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700">Kendaraan</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-500">Item</span>
@@ -349,12 +316,6 @@ function inspectionForm() {
         damageItems: [''],
         completenessItems: [''],
         vehicles: @json($vehicles),
-        phones: @json($phones),
-        cameras: @json($cameras),
-        equipments: @json($equipments),
-        playstations: @json($playstations),
-        drones: @json($drones),
-        instruments: @json($instruments),
         init() {
             if (this.selectedBookingId) {
                 this.detectScope();
@@ -365,20 +326,13 @@ function inspectionForm() {
             const select = document.querySelector('select[name="booking_id"]');
             const opt = select.options[select.selectedIndex];
             if (opt) {
-                this.scope = opt.getAttribute('data-scope') || 'kendaraan';
+                this.scope = 'kendaraan';
                 const vehicleId = opt.getAttribute('data-vehicle');
                 if (vehicleId && vehicleId !== 'null') {
                     this.selectedItemId = vehicleId;
-                } else {
-                    const itemId = opt.getAttribute('data-item-id');
-                    if (itemId && itemId !== 'null') {
-                        this.selectedItemId = itemId;
-                    }
                 }
             }
         },
-
-        updateItemList() { this.selectedItemId = ''; },
 
         getBookingCode() {
             const select = document.querySelector('select[name="booking_id"]');
@@ -389,8 +343,7 @@ function inspectionForm() {
 
         getSelectedItemName() {
             if (!this.selectedItemId) return '';
-            const all = [...this.vehicles, ...this.phones, ...this.cameras, ...this.equipments, ...this.playstations, ...this.drones, ...this.instruments];
-            const found = all.find(i => i.id == this.selectedItemId);
+            const found = this.vehicles.find(i => i.id == this.selectedItemId);
             return found ? found.name : '';
         },
 
@@ -429,11 +382,6 @@ function inspectionForm() {
             if (v >= 5) return 'Cukup';
             if (v >= 3) return 'Kurang';
             return 'Sangat Kurang';
-        },
-
-        scopeBadge() {
-            const map = { kendaraan: 'bg-blue-100 text-blue-700', elektronik: 'bg-purple-100 text-purple-700', camping: 'bg-emerald-100 text-emerald-700' };
-            return map[this.scope] || 'bg-gray-100 text-gray-700';
         }
     }
 }

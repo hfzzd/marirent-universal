@@ -8,7 +8,7 @@
     </div>
     @endif
 
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-wrap items-center justify-between mb-6 gap-3">
         <div>
             <h2 class="text-lg font-bold text-navy-800">Katalog Foto Brand</h2>
             <p class="text-[12px] text-gray-400 mt-0.5">Kelola foto katalog untuk brand yang ada di produk</p>
@@ -19,7 +19,7 @@
     </div>
 
     {{-- Filters --}}
-    <div class="flex gap-2 mb-6">
+    <div class="flex gap-2 mb-6 flex-wrap">
         <a href="{{ route('admin.brand-catalog.index') }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !$activeType ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">Semua</a>
         @foreach($typeLabels as $key => $label)
         <a href="{{ route('admin.brand-catalog.index', ['item_type' => $key]) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $activeType == $key ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">{{ $label }}</a>

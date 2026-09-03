@@ -11,6 +11,12 @@
 </div>
 @endif
 
+@if(session('admin_success'))
+<div class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[13px] flex items-center gap-2">
+    <i class="fas fa-check-circle"></i> {{ session('admin_success') }}
+</div>
+@endif
+
 {{-- Store Overview --}}
 <div class="relative overflow-hidden rounded-2xl mb-6" style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%);">
     <div class="absolute inset-0 opacity-10">
@@ -118,5 +124,74 @@
             </button>
         </div>
     </form>
+</div>
+
+{{-- Kelola Admin --}}
+<div class="glass-card rounded-2xl p-6 mt-6">
+    <h3 class="text-[14px] font-bold text-navy-800 flex items-center gap-2">
+        <i class="fas fa-user-shield text-sky-500"></i> Pendaftaran Admin Toko
+    </h3>
+    <p class="text-[11px] text-gray-400 mb-1">Daftarkan staf admin untuk membantu mengelola toko <strong class="text-navy-700">{{ $merchant->name }}</strong>.</p>
+
+    <form action="{{ route('merchant.admin.store') }}" method="POST" class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        @csrf
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Nama Lengkap</label>
+            <input type="text" name="name" value="{{ old('name') }}" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+            @error('name')<p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Email</label>
+            <input type="email" name="email" value="{{ old('email') }}" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+            @error('email')<p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Password</label>
+            <input type="password" name="password" required minlength="8" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+            @error('password')<p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Konfirmasi Password</label>
+            <input type="password" name="password_confirmation" required minlength="8" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">No. Telepon (opsional)</label>
+            <input type="text" name="phone" value="{{ old('phone') }}" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+            @error('phone')<p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div class="flex items-end justify-end md:col-span-2">
+            <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
+                <i class="fas fa-user-plus text-[11px]"></i> Daftarkan Admin
+            </button>
+        </div>
+    </form>
+
+    @if($admins->isNotEmpty())
+    <div class="mt-6">
+        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Admin Terdaftar ({{ $admins->count() }})</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            @foreach($admins as $ad)
+            <div class="flex items-center justify-between gap-3 bg-sky-50/50 border border-sky-100 rounded-xl px-4 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 text-sm flex-shrink-0">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-bold text-navy-800 text-[13px] truncate">{{ $ad->name }}</p>
+                        <p class="text-[11px] text-gray-400 font-mono truncate">{{ $ad->email }}</p>
+                    </div>
+                </div>
+                <form action="{{ route('merchant.admin.destroy', $ad) }}" method="POST" onsubmit="return confirm('Hapus akun admin {{ $ad->name }}?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition" title="Hapus admin">
+                        <i class="fas fa-trash-alt text-[11px]"></i>
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 </div>
 @endsection

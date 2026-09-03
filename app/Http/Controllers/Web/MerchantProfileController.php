@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Merchant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class MerchantProfileController extends Controller
 {
@@ -40,7 +43,51 @@ class MerchantProfileController extends Controller
             'platform_fee' => \App\Models\Invoice::where('owner_id', $owner->id)->where('status', 'paid')->sum('platform_fee'),
         ];
 
-        return view('merchant.profile', compact('merchant', 'stats'));
+        $admins = $merchant->admins()->orderBy('name')->get();
+
+        return view('merchant.profile', compact('merchant', 'stats', 'admins'));
+    }
+
+    public function storeAdmin(Request $request)
+    {
+        $owner = Auth::user();
+        abort_unless($owner->isOwner(), 403);
+
+        $merchant = Merchant::firstOrCreate(
+            ['user_id' => $owner->id],
+            ['slug' => $this->uniqueSlug($owner->name), 'name' => $owner->name]
+        );
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $admin = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'phone' => $validated['phone'] ?? null,
+            'role' => 'admin',
+            'owner_id' => $owner->id,
+            'is_active' => true,
+        ]);
+
+        return back()->with('admin_success', 'Akun admin ' . $admin->name . ' berhasil didaftarkan untuk toko ' . $merchant->name . '.');
+    }
+
+    public function destroyAdmin(Request $request, User $admin)
+    {
+        $owner = Auth::user();
+        abort_unless($owner->isOwner(), 403);
+        abort_unless((int) $admin->owner_id === (int) $owner->id, 403);
+
+        $name = $admin->name;
+        $admin->delete();
+
+        return back()->with('admin_success', 'Akun admin ' . $name . ' berhasil dihapus dari toko Anda.');
     }
 
     public function update(Request $request)

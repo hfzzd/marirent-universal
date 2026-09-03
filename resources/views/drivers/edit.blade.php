@@ -7,7 +7,7 @@
         <form method="POST" action="{{ route('drivers.update', $driver) }}">
             @csrf @method('PUT')
             <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-navy-700 mb-1">Nomor SIM</label>
                         <input type="text" name="license_number" value="{{ old('license_number', $driver->license_number) }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">

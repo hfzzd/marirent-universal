@@ -314,7 +314,7 @@ class PublicController extends Controller
 
         $model = $config['model'];
 
-        $query = $model::with('category')
+        $query = $model::with(['category', 'company'])
             ->where('brand', $brandDecoded)
             ->where('is_active', true)
             ->where('status', 'available');
@@ -356,6 +356,7 @@ class PublicController extends Controller
                 'name' => $item->name,
                 'slug' => $item->slug,
                 'brand' => $item->brand,
+                'company' => $item->company?->name,
                 'subtitle' => $item->model . ' ' . $item->year,
                 'daily_price' => (float) $item->daily_price,
                 'image' => $item->image,
@@ -377,6 +378,7 @@ class PublicController extends Controller
             'name' => $item->name,
             'slug' => $item->slug,
             'brand' => $item->brand,
+            'company' => $item->company?->name,
             'subtitle' => match ($type) {
                 'hp' => $item->phone_model,
                 'kamera' => $item->camera_model,
@@ -446,7 +448,7 @@ class PublicController extends Controller
 
     public function show(string $slug)
     {
-        $vehicle = Vehicle::with(['category', 'owner', 'reviews.user'])
+        $vehicle = Vehicle::with(['category', 'owner', 'company', 'reviews.user'])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
@@ -467,7 +469,7 @@ class PublicController extends Controller
     {
         $config = $this->getItemConfig($type);
         $model = $config['model'];
-        $item = $model::with('category')->where('slug', $slug)->where('is_active', true)->firstOrFail();
+        $item = $model::with(['category', 'company'])->where('slug', $slug)->where('is_active', true)->firstOrFail();
 
         $related = $model::where('category_id', $item->category_id)
             ->where('id', '!=', $item->id)

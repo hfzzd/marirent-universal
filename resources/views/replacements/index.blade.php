@@ -164,15 +164,15 @@
 </div>
 
 {{-- FILTER & ACTION --}}
-<div class="flex items-center justify-between mb-5">
-    <div class="flex gap-2">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
+    <div class="flex gap-2 flex-wrap">
         <a href="{{ route('replacements.index') }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !request('status') ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Semua</a>
         <a href="{{ route('replacements.index', ['status' => 'pending']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'pending' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-blue-300 hover:text-blue-600' }}">Pending</a>
         <a href="{{ route('replacements.index', ['status' => 'approved']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'approved' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600' }}">Disetujui</a>
         <a href="{{ route('replacements.index', ['status' => 'rejected']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'rejected' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300 hover:text-red-600' }}">Ditolak</a>
     </div>
     @if(in_array($role, ['driver', 'user']) && isset($modalBookings) && count($modalBookings) > 0)
-    <button @click="open = true" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
+    <button @click="open = true" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5 justify-center">
         <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
     </button>
     @endif

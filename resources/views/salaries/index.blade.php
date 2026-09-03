@@ -2,8 +2,8 @@
 @section('page-title', 'Penggajian Driver')
 
 @section('content')
-<div class="flex items-center justify-between mb-5">
-    <div class="flex gap-2">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
+    <div class="flex gap-2 flex-wrap">
         @foreach(['','draft','approved','paid'] as $s)
         <a href="{{ route('salaries.index', array_merge(request()->query(), ['status' => $s ?: null])) }}"
            class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status', '') == $s ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">
@@ -11,7 +11,7 @@
         </a>
         @endforeach
     </div>
-    <a href="{{ route('salaries.create') }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium"><i class="fas fa-plus mr-1.5"></i> Input Gaji</a>
+    <a href="{{ route('salaries.create') }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium text-center"><i class="fas fa-plus mr-1.5"></i> Input Gaji</a>
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">

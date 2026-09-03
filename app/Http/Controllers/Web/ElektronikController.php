@@ -87,6 +87,40 @@ class ElektronikController extends Controller
         return $type;
     }
 
+    /**
+     * Tipe elektronik yang boleh dimiliki akun owner/admin saat ini.
+     * Superadmin & owner multi-kategori boleh akses semua tipe.
+     */
+    private function allowedTypes(): array
+    {
+        if (!$this->isOwner()) {
+            return ['kamera', 'hp', 'tenda', 'ps', 'drone', 'musik'];
+        }
+
+        $restricted = $this->restrictedType();
+
+        return $restricted ? [$restricted] : ['kamera', 'hp', 'tenda', 'ps', 'drone', 'musik'];
+    }
+
+    /**
+     * Untuk halaman GET (browse/create/edit): arahkan owner yang kategori-nya
+     * tidak sesuai ke tipe miliknya sendiri, agar tidak muncul error 403.
+     */
+    private function redirectIfNotAccessible(string $type)
+    {
+        $restricted = $this->restrictedType();
+
+        if ($restricted && $type !== $restricted) {
+            return redirect()->route($this->getRoutePrefix() . '.elektronik.type', $restricted);
+        }
+
+        return null;
+    }
+
+    /**
+     * Untuk operasi tulis (create/update/delete): tetap tolak akses
+     * jika tipe tidak sesuai dengan kategori akun owner/admin.
+     */
     private function assertTypeAccessible(string $type): void
     {
         $restricted = $this->restrictedType();
@@ -110,7 +144,9 @@ class ElektronikController extends Controller
     {
         if (!$this->getType($type)) abort(404);
 
-        $this->assertTypeAccessible($type);
+        if ($redirect = $this->redirectIfNotAccessible($type)) {
+            return $redirect;
+        }
 
         $model = $this->getModel($type);
         $query = $model->with(['category', 'owner']);
@@ -151,13 +187,17 @@ class ElektronikController extends Controller
 
         $prefix = $this->getRoutePrefix();
 
-        return view('superadmin.elektronik', compact('items', 'type', 'counts', 'prefix'));
+        return view('superadmin.elektronik', compact('items', 'type', 'counts', 'prefix') + ['allowedTypes' => $this->allowedTypes()]);
     }
 
     public function create($type)
     {
         if (!$this->getType($type)) abort(404);
-        $this->assertTypeAccessible($type);
+
+        if ($redirect = $this->redirectIfNotAccessible($type)) {
+            return $redirect;
+        }
+
         $categories = Category::where('is_active', true)->get();
         $prefix = $this->getRoutePrefix();
 
@@ -256,7 +296,10 @@ class ElektronikController extends Controller
     public function edit($type, $id)
     {
         if (!$this->getType($type)) abort(404);
-        $this->assertTypeAccessible($type);
+
+        if ($redirect = $this->redirectIfNotAccessible($type)) {
+            return $redirect;
+        }
 
         $model = $this->getModel($type);
         $item = $model->findOrFail($id);

@@ -40,6 +40,11 @@ class Playstation extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
+    }
+
     public function getPriceForType(string $type): float
     {
         return match($type) {

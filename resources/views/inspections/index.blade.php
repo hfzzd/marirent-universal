@@ -1,13 +1,13 @@
 ﻿@extends('layouts.dashboard')
 @section('page-title', 'Riwayat Inspeksi')
 @section('content')
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
     <div class="flex gap-2 flex-wrap">
         <a href="{{ route('inspections.index') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ !request('type') ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600' }}">Semua</a>
         <a href="{{ route('inspections.index', ['type' => 'pre_rental']) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ request('type') == 'pre_rental' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Pre-Rental</a>
         <a href="{{ route('inspections.index', ['type' => 'post_rental']) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ request('type') == 'post_rental' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-amber-300 hover:text-amber-600' }}">Post-Rental</a>
     </div>
-    <a href="{{ route('inspections.create') }}" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fas fa-plus mr-1"></i> Inspeksi Baru</a>
+    <a href="{{ route('inspections.create') }}" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium text-center sm:text-auto"><i class="fas fa-plus mr-1"></i> Inspeksi Baru</a>
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">
@@ -18,7 +18,6 @@
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Booking</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Tipe Sewa</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Tipe</th>
-                <th class="text-left py-3 px-4 text-navy-500 font-medium">Scope</th>
                 <th class="text-center py-3 px-4 text-navy-500 font-medium">Kondisi</th>
                 <th class="text-center py-3 px-4 text-navy-500 font-medium">Kerusakan</th>
                 <th class="text-left py-3 px-4 text-navy-500 font-medium">Status</th>
@@ -40,12 +39,6 @@
                     </td>
                     <td class="py-3 px-4">
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $i->type == 'pre_rental' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700' }}">{{ $i->getTypeLabel() }}</span>
-                    </td>
-                    <td class="py-3 px-4">
-                        @php
-                            $sColors = ['kendaraan' => 'bg-blue-100 text-blue-700', 'elektronik' => 'bg-purple-100 text-purple-700', 'camping' => 'bg-green-100 text-green-700'];
-                        @endphp
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $sColors[$i->scope] ?? 'bg-gray-100 text-gray-700' }}">{{ $i->getScopeLabel() }}</span>
                     </td>
                     <td class="py-3 px-4 text-center">
                         <span class="font-bold">{{ $i->overall_condition ?? '-' }}/10</span>
@@ -95,7 +88,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="10" class="py-8 text-center text-navy-400">Belum ada data inspeksi</td></tr>
+                <tr><td colspan="9" class="py-8 text-center text-navy-400">Belum ada data inspeksi</td></tr>
                 @endforelse
             </tbody>
         </table>

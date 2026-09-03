@@ -20,7 +20,7 @@
                     <label class="block text-sm font-medium text-navy-700 mb-1">Periode (Bulan) *</label>
                     <input type="month" name="period_month" value="{{ date('Y-m') }}" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-navy-700 mb-1">Gaji Pokok (Rp)</label>
                         <input type="number" name="base_salary" value="0" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
