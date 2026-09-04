@@ -463,10 +463,12 @@ class OverhaulTest extends TestCase
             ->assertDontSee($tendaBooking->booking_code);
 
         $this->actingAs($adminTenda)->get('/owner/elektronik/tenda')->assertSee($tendaItem->name);
-        $this->actingAs($adminTenda)->get('/owner/elektronik/drone')->assertForbidden();
+        $this->actingAs($adminTenda)->get('/owner/elektronik/drone')
+            ->assertRedirect(route('owner.elektronik.type', 'tenda'));
 
         $this->actingAs($adminDrone)->get('/owner/elektronik/drone')->assertSee($droneItem->name);
-        $this->actingAs($adminDrone)->get('/owner/elektronik/tenda')->assertForbidden();
+        $this->actingAs($adminDrone)->get('/owner/elektronik/tenda')
+            ->assertRedirect(route('owner.elektronik.type', 'drone'));
     }
 
     public function test_new_booking_notifies_superadmin_owner_and_matching_category_admin_only(): void

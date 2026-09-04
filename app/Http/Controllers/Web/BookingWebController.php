@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Vehicle;
 use App\Models\Driver;
+use App\Models\Inspection;
 use App\Models\Phone;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
@@ -1211,6 +1212,8 @@ class BookingWebController extends Controller
             if ($item) $item->update(['status' => 'rented']);
         }
 
+        $this->recordInspection($booking, 'pre_rental');
+
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'ongoing'));
 
         return back()->with('success', 'Perjalanan dimulai');
@@ -1236,8 +1239,77 @@ class BookingWebController extends Controller
             \App\Models\Driver::where('id', $booking->driver_id)->update(['status' => 'off_duty']);
         }
 
+        $this->recordInspection($booking, 'post_rental');
+
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'completed'));
 
         return back()->with('success', 'Perjalanan selesai');
+    }
+
+    /**
+     * Catat riwayat inspeksi kendaraan secara otomatis.
+     * - with_driver: inspeksi dicatat atas nama driver (driver yang menginspeksi).
+     * - lepas kunci (tanpa driver): khusus inspector.
+     * Hanya berlaku untuk produk kendaraan (vehicle).
+     */
+    private function recordInspection(Booking $booking, string $type): void
+    {
+        if (!$booking->vehicle_id) {
+            return;
+        }
+
+        $alreadyExists = Inspection::where('booking_id', $booking->id)
+            ->where('type', $type)
+            ->whereNotNull('vehicle_id')
+            ->exists();
+
+        if ($alreadyExists) {
+            return;
+        }
+
+        $withDriver = (bool) $booking->with_driver;
+
+        if ($withDriver) {
+            $driverUserId = $booking->driver ? (int) $booking->driver->user_id : null;
+            $inspectorId = $driverUserId;
+            $reportedBy = $driverUserId;
+            $status = $driverUserId ? 'reported' : 'open';
+        } else {
+            $inspectorId = $this->assignInspectorForVehicle($booking->vehicle_id);
+            $reportedBy = null;
+            $status = 'open';
+        }
+
+        Inspection::create([
+            'booking_id' => $booking->id,
+            'vehicle_id' => $booking->vehicle_id,
+            'inspector_id' => $inspectorId,
+            'assigned_to' => $inspectorId,
+            'reported_by' => $reportedBy,
+            'status' => $status,
+            'type' => $type,
+            'scope' => 'kendaraan',
+            'item_type' => Vehicle::class,
+            'item_id' => $booking->vehicle_id,
+        ]);
+    }
+
+    private function assignInspectorForVehicle(int $vehicleId): ?int
+    {
+        $vehicle = Vehicle::find($vehicleId);
+
+        if ($vehicle && $vehicle->owner_id) {
+            $ownerInspector = User::where('role', 'inspector')->where('owner_id', $vehicle->owner_id)->first();
+            if ($ownerInspector) {
+                return (int) $ownerInspector->id;
+            }
+        }
+
+        $platformInspector = User::where('role', 'inspector')
+            ->whereNull('owner_id')
+            ->orderBy('id')
+            ->first();
+
+        return $platformInspector ? (int) $platformInspector->id : null;
     }
 }

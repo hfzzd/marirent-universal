@@ -19,7 +19,7 @@
 <body class="bg-sky-50/50 flex">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {{-- SIDEBAR --}}
-    <aside id="sidebar" class="sidebar w-60 h-screen fixed md:sticky top-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
+    <aside id="sidebar" class="sidebar w-60 max-w-[85vw] h-screen fixed top-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
         <div class="p-4">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5 mb-5 pb-4 border-b border-white/5">
                 <div class="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -337,7 +337,7 @@
     <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-navy-900/50 z-30 md:hidden" onclick="toggleSidebar()" aria-hidden="true"></div>
 
     {{-- MAIN CONTENT --}}
-    <div class="flex-1 min-h-screen">
+    <div class="md:pl-60 flex-1 min-h-screen">
         {{-- TOPBAR --}}
         <header class="bg-white/80 backdrop-blur-md border-b border-sky-100 sticky top-0 z-30">
             <div class="flex items-center justify-between px-5 py-3">
@@ -440,22 +440,40 @@
     </div>
 
     <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            if (backdrop) {
-                backdrop.classList.toggle('hidden');
-            }
+        function isSidebarOpen() {
+            return !document.getElementById('sidebar')?.classList.contains('-translate-x-full');
         }
-        // Close sidebar on outside click (mobile)
-        document.addEventListener('click', function(e) {
+        function setSidebar(open) {
             const sidebar = document.getElementById('sidebar');
-            const btn = e.target.closest('button[onclick="toggleSidebar()"]');
-            if (window.innerWidth < 768 && !sidebar.contains(e.target) && !btn) {
-                sidebar.classList.add('-translate-x-full');
-                document.getElementById('sidebar-backdrop')?.classList.add('hidden');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar) return;
+            // On desktop the sidebar is always visible in-flow; keep it static.
+            if (window.innerWidth >= 768) return;
+            sidebar.classList.toggle('-translate-x-full', !open);
+            if (backdrop) backdrop.classList.toggle('hidden', !open);
+            // Lock body scroll while the drawer is open so it never feels like it covers the page.
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+        function toggleSidebar() {
+            setSidebar(!isSidebarOpen());
+        }
+        function closeSidebar() {
+            setSidebar(false);
+        }
+        // Auto-close sidebar after clicking a link/logout inside, or anywhere outside (mobile)
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth >= 768) return;
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+            const hamburger = e.target.closest('button[onclick="toggleSidebar()"]');
+            if (hamburger) return; // handled by toggleSidebar
+            if (sidebar.contains(e.target)) {
+                const target = e.target.closest('a, #sidebar-logout-form button');
+                if (target) closeSidebar();
+                return;
             }
+            // clicked outside the sidebar
+            closeSidebar();
         });
         // Close dropdowns on outside click
         document.addEventListener('click', function(e) {

@@ -168,6 +168,7 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
     Route::get('/create-item/{type}/{item}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
     Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
+    Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
     Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
     Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
     Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');

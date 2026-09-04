@@ -28,7 +28,8 @@ class BrandCatalogPhotoController extends Controller
                 continue;
             }
 
-            $query = $model::where('is_active', true)
+            $query = $model::withoutGlobalScope(\App\Models\Scopes\MerchantScope::class)
+                ->where('is_active', true)
                 ->whereNotNull('brand')
                 ->where('brand', '!=', '');
 

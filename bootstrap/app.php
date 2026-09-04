@@ -24,7 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 try {
                     return response()->view('errors.' . $status, [], $status);
                 } catch (\Throwable $viewError) {
-                    return response()->plain("Error {$status}", $status);
+                    return response("Error {$status}", $status);
                 }
             }
         });
