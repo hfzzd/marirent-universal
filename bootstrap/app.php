@@ -20,6 +20,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e) {
             $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
+            \Illuminate\Support\Facades\Log::error('Exception caught: ' . $e->getMessage(), [
+                'status' => $status,
+                'exception' => $e,
+                'url' => request()->url(),
+            ]);
+
+            if (config('app.debug')) {
+                return null;
+            }
+
             if (in_array($status, [404, 500])) {
                 try {
                     return response()->view('errors.' . $status, [], $status);

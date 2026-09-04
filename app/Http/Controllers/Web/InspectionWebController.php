@@ -119,9 +119,9 @@ class InspectionWebController extends Controller
             'fuel_level' => 'nullable|numeric|min:0|max:100',
             'odometer_reading' => 'nullable|numeric|min:0',
             'damage_items' => 'nullable|array',
-            'damage_items.*' => 'string|max:255',
+            'damage_items.*' => 'nullable|string|max:255',
             'completeness' => 'nullable|array',
-            'completeness.*' => 'string|max:255',
+            'completeness.*' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:2000',
             'recommendations' => 'nullable|string|max:2000',
         ]);
@@ -163,6 +163,8 @@ class InspectionWebController extends Controller
             $reportedBy = $user->id;
             $status = 'reported';
             $inspectorId = $this->assignInspectorForBooking($booking);
+        } elseif ($user->isInspector()) {
+            $inspectorId = $user->id;
         }
 
         $data = [

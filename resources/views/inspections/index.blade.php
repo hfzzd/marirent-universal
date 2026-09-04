@@ -29,7 +29,7 @@
                 @forelse($inspections as $i)
                 <tr class="border-b hover:bg-emerald-50/30">
                     <td class="py-3 px-4 font-medium text-navy-800">{{ $i->getItemName() }}</td>
-                    <td class="py-3 px-4 text-sky-600 font-medium text-xs">{{ $i->booking->booking_code ?? '-' }}</td>
+                    <td class="py-3 px-4 text-sky-600 font-medium text-xs">{{ $i->booking?->booking_code ?? '-' }}</td>
                     <td class="py-3 px-4">
                         @if($i->booking && $i->booking->with_driver !== null)
                             <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $i->booking->with_driver ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-700' }}">{{ $i->getRentalTypeLabel() }}</span>

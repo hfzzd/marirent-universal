@@ -109,7 +109,7 @@
             <div class="px-5 py-3.5 hover:bg-sky-50/30 transition flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <p class="font-bold text-navy-800 text-[13px] truncate">{{ $b->vehicle?->name ?? $b->bookingItems->first()?->item_type ?? ($b->category?->name ?? 'Unit Sewa') }}</p>
-                    <p class="text-[11px] text-gray-400 truncate">{{ $b->booking_code }} &bull; {{ $b->user->name ?? '-' }} &bull; Mulai {{ \Carbon\Carbon::parse($b->start_date)->translatedFormat('d M Y') }}</p>
+                    <p class="text-[11px] text-gray-400 truncate">{{ $b->booking_code }} &bull; {{ $b->user?->name ?? '-' }} &bull; Mulai {{ \Carbon\Carbon::parse($b->start_date)->translatedFormat('d M Y') }}</p>
                 </div>
                 <a href="{{ route('inspections.create', ['booking_id' => $b->id]) }}" class="btn-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap flex-shrink-0">
                     <i class="fas fa-play mr-1"></i> Awal
@@ -134,7 +134,7 @@
             <div class="px-5 py-3.5 hover:bg-sky-50/30 transition flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <p class="font-bold text-navy-800 text-[13px] truncate">{{ $b->vehicle?->name ?? $b->bookingItems->first()?->item_type ?? ($b->category?->name ?? 'Unit Sewa') }}</p>
-                    <p class="text-[11px] text-gray-400 truncate">{{ $b->booking_code }} &bull; {{ $b->user->name ?? '-' }} &bull; Selesai {{ \Carbon\Carbon::parse($b->end_date)->translatedFormat('d M Y') }}</p>
+                    <p class="text-[11px] text-gray-400 truncate">{{ $b->booking_code }} &bull; {{ $b->user?->name ?? '-' }} &bull; Selesai {{ \Carbon\Carbon::parse($b->end_date)->translatedFormat('d M Y') }}</p>
                 </div>
                 <a href="{{ route('inspections.create', ['booking_id' => $b->id]) }}" class="bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap flex-shrink-0">
                     <i class="fas fa-stop mr-1"></i> Akhir
