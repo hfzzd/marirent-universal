@@ -88,6 +88,7 @@
                         @endif
                     </div>
 
+                    @if($booking->vehicle)
                     {{-- Driver --}}
                     <div class="bg-gradient-to-br from-purple-50/60 to-purple-100/30 p-4 rounded-xl border border-purple-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Driver</p>
@@ -96,12 +97,13 @@
                         <p class="text-[12px] text-gray-400 mt-0.5">SIM {{ $booking->driver->license_type ?? '-' }}</p>
                         @else
                         <p class="font-bold text-navy-800 text-[15px]">Lepas Kunci</p>
-                        <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->isVehicleBooking() ? 'Tanpa driver' : ucfirst($booking->rental_type) }}</p>
+                        <p class="text-[12px] text-gray-400 mt-0.5">Tanpa driver</p>
                         @endif
                     </div>
+                    @endif
 
-                    {{-- Assign Driver (Admin/Owner) --}}
-                    @if($booking->vehicle && in_array(auth()->user()->role, ['superadmin','owner','admin']) && !in_array($booking->status, ['completed', 'cancelled']))
+                    {{-- Assign Driver (Owner/Superadmin) --}}
+                    @if($booking->vehicle && in_array(auth()->user()->role, ['superadmin','owner']) && !in_array($booking->status, ['completed', 'cancelled']))
                     <div class="bg-gradient-to-br from-indigo-50/60 to-indigo-100/30 p-4 rounded-xl border border-indigo-100/50" x-data="{ open: false }">
                         <div class="flex items-center justify-between gap-2">
                             <div>

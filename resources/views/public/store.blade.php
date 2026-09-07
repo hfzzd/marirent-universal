@@ -98,6 +98,11 @@
             <div class="p-4">
                 <h3 class="font-bold text-navy-900 text-[14px] leading-tight truncate">{{ $p['name'] }}</h3>
                 <p class="text-[11px] text-gray-400 mt-0.5">{{ $p['brand'] }} {{ $p['subtitle'] }}</p>
+                @if(!empty($p['company']))
+                <p class="text-[10px] text-emerald-600 mt-1 flex items-center gap-1 truncate">
+                    <i class="fas fa-building text-[8px]"></i> {{ $p['company'] }}
+                </p>
+                @endif
                 <div class="flex items-end justify-between border-t border-gray-100/60 pt-3 mt-3">
                     <div class="bg-sky-50 px-3 py-1.5 rounded-xl">
                         <p class="text-[9px] text-gray-400 uppercase tracking-wider font-semibold">Harga sewa</p>

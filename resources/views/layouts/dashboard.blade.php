@@ -122,6 +122,9 @@
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
                     <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
                 </a>
+                <a href="{{ route('inspectors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspectors.*') ? 'active' : '' }}">
+                    <i class="fas fa-user-shield w-5 mr-2.5 text-sm"></i> Inspektur
+                </a>
                 <a href="{{ route('superadmin.absen') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.absen') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list w-5 mr-2.5 text-sm"></i> Absen Driver
                 </a>
@@ -178,6 +181,9 @@
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
                     <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
                 </a>
+                <a href="{{ route('inspectors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspectors.*') ? 'active' : '' }}">
+                    <i class="fas fa-user-shield w-5 mr-2.5 text-sm"></i> Inspektur
+                </a>
                 <a href="{{ route('salaries.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('salaries.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave w-5 mr-2.5 text-sm"></i> Penggajian
                 </a>
@@ -203,6 +209,9 @@
                 </a>
                 <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
+                </a>
+                <a href="{{ route('item-replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('item-replacements.*') ? 'active' : '' }}">
+                    <i class="fas fa-sync-alt w-5 mr-2.5 text-sm"></i> Penggantian Unit
                 </a>
                 @endif
 
@@ -248,6 +257,9 @@
                 </a>
                 <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
+                </a>
+                <a href="{{ route('item-replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('item-replacements.*') ? 'active' : '' }}">
+                    <i class="fas fa-sync-alt w-5 mr-2.5 text-sm"></i> Penggantian Unit
                 </a>
 
                 @elseif($role === 'driver')

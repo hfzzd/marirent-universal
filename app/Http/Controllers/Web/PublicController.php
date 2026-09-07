@@ -41,7 +41,7 @@ class PublicController extends Controller
 
         foreach ($models as $modelClass) {
             $type = $this->typeForModel($modelClass);
-            $query = $modelClass::with('category')
+            $query = $modelClass::with(['category', 'company'])
                 ->where('owner_id', $userId)
                 ->where('is_active', true)
                 ->where('status', 'available');
@@ -104,6 +104,7 @@ class PublicController extends Controller
                 'image' => $item->image,
                 'category_slug' => $item->category->slug ?? '',
                 'icon' => ($item->category->slug ?? '') == 'motor' ? 'fa-motorcycle' : 'fa-car',
+                'company' => $item->company?->name,
                 'tags' => array_filter([
                     $item->seats ? $item->seats . ' Kursi' : null,
                     ucfirst($item->transmission),
@@ -136,6 +137,7 @@ class PublicController extends Controller
             'icon' => $config['icon'],
             'tags' => array_filter([$item->color ?? null]),
             'merchant' => $this->merchantInfo($item->owner_id),
+            'company' => $item->company?->name,
             'link' => route('public.item', [$this->itemRouteType($type), $item->slug]),
         ];
     }
@@ -571,25 +573,25 @@ class PublicController extends Controller
     {
         $products = collect();
 
-        $vehicleQuery = Vehicle::with('category')
+        $vehicleQuery = Vehicle::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
-        $phoneQuery = Phone::with('category')
+        $phoneQuery = Phone::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
-        $cameraQuery = Camera::with('category')
+        $cameraQuery = Camera::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
-        $campingQuery = CampingEquipment::with('category')
+        $campingQuery = CampingEquipment::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
-        $psQuery = Playstation::with('category')
+        $psQuery = Playstation::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
-        $droneQuery = Drone::with('category')
+        $droneQuery = Drone::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
-        $musikQuery = MusicalInstrument::with('category')
+        $musikQuery = MusicalInstrument::with(['category', 'company'])
             ->where('is_active', true)
             ->where('status', 'available');
 
@@ -709,6 +711,7 @@ class PublicController extends Controller
             'status' => $v->status,
             'icon' => $v->category->slug == 'motor' ? 'fa-motorcycle' : 'fa-car',
             'icon_color' => $v->category->slug == 'motor' ? 'text-amber' : 'text-sky',
+            'company' => $v->company?->name,
             'tags' => array_filter([
                 $v->seats ? $v->seats . ' Kursi' : null,
                 ucfirst($v->transmission),
@@ -744,6 +747,7 @@ class PublicController extends Controller
             'rating' => round($p->getAverageRating()),
             'review_count' => $p->reviews->count(),
             'merchant' => $this->merchantInfo($p->owner_id),
+            'company' => $p->company?->name,
             'created_at' => $p->created_at,
         ];
     }
@@ -770,6 +774,7 @@ class PublicController extends Controller
             'rating' => round($c->getAverageRating()),
             'review_count' => $c->reviews->count(),
             'merchant' => $this->merchantInfo($c->owner_id),
+            'company' => $c->company?->name,
             'created_at' => $c->created_at,
         ];
     }
@@ -797,6 +802,7 @@ class PublicController extends Controller
             'rating' => round($c->getAverageRating()),
             'review_count' => $c->reviews->count(),
             'merchant' => $this->merchantInfo($c->owner_id),
+            'company' => $c->company?->name,
             'created_at' => $c->created_at,
         ];
     }
@@ -824,6 +830,7 @@ class PublicController extends Controller
             'rating' => round($p->getAverageRating()),
             'review_count' => $p->reviews->count(),
             'merchant' => $this->merchantInfo($p->owner_id),
+            'company' => $p->company?->name,
             'created_at' => $p->created_at,
         ];
     }
@@ -851,6 +858,7 @@ class PublicController extends Controller
             'rating' => round($d->getAverageRating()),
             'review_count' => $d->reviews->count(),
             'merchant' => $this->merchantInfo($d->owner_id),
+            'company' => $d->company?->name,
             'created_at' => $d->created_at,
         ];
     }
@@ -877,6 +885,7 @@ class PublicController extends Controller
             'rating' => round($m->getAverageRating()),
             'review_count' => $m->reviews->count(),
             'merchant' => $this->merchantInfo($m->owner_id),
+            'company' => $m->company?->name,
             'created_at' => $m->created_at,
         ];
     }

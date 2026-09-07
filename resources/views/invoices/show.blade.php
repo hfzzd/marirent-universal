@@ -179,7 +179,7 @@
                     @endif
 
                     {{-- Admin Verify/Reject Buttons --}}
-                    @if($p->status === 'pending' && in_array(auth()->user()->role, ['superadmin', 'owner']))
+                    @if($p->status === 'pending' && in_array(auth()->user()->role, ['superadmin', 'owner', 'admin']))
                     <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
                         <form method="POST" action="{{ route('invoices.verify-payment', $p) }}" class="inline">
                             @csrf

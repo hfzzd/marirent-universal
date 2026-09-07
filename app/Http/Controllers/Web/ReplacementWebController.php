@@ -22,10 +22,13 @@ class ReplacementWebController extends Controller
             if ($driver) {
                 $query->whereHas('booking', fn($q) => $q->where('driver_id', $driver->id));
             }
-        }
-
-        if ($role === 'user') {
+        } elseif ($role === 'user') {
             $query->where('requested_by', Auth::id());
+        } elseif (in_array($role, ['owner', 'admin'])) {
+            $ownerId = $role === 'owner' ? Auth::id() : Auth::user()->merchantId();
+            $query->whereIn('original_vehicle_id', function ($q) use ($ownerId) {
+                $q->select('id')->from('vehicles')->where('owner_id', $ownerId);
+            });
         }
 
         if ($request->status) {
@@ -37,7 +40,7 @@ class ReplacementWebController extends Controller
         $modalBookings = [];
         $modalVehicles = [];
 
-        if (in_array($role, ['driver', 'user'])) {
+        if (in_array($role, ['driver', 'user', 'owner', 'admin'])) {
             $formData = $this->getFormData();
             $modalBookings = $formData['bookings'];
             $modalVehicles = $formData['vehicles'];
@@ -46,15 +49,48 @@ class ReplacementWebController extends Controller
         return view('replacements.index', compact('replacements', 'modalBookings', 'modalVehicles'));
     }
 
+    private function companyOwnerId(): ?int
+    {
+        $role = Auth::user()->role;
+        if ($role === 'owner') {
+            return (int) Auth::id();
+        }
+        if ($role === 'admin') {
+            $merchantId = Auth::user()->merchantId();
+            return $merchantId ? (int) $merchantId : null;
+        }
+        return null;
+    }
+
+    private function guardCompanyReplacement(VehicleReplacement $replacement): void
+    {
+        $ownerId = $this->companyOwnerId();
+        if ($ownerId !== null && (int) $replacement->originalVehicle?->owner_id !== $ownerId) {
+            abort(403, 'Penggantian ini bukan milik company Anda');
+        }
+    }
+
     protected function getFormData(): array
     {
         $role = Auth::user()->role;
 
-        if (in_array($role, ['superadmin', 'owner'])) {
-            $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
+        if (in_array($role, ['superadmin', 'owner', 'admin'])) {
+            $query = Booking::whereIn('status', ['confirmed', 'ongoing'])
                 ->whereNotNull('vehicle_id')
-                ->with(['vehicle.category', 'user'])
-                ->get();
+                ->with(['vehicle.category', 'user']);
+
+            $ownerId = $this->companyOwnerId();
+            if ($ownerId) {
+                $query->whereHas('vehicle', fn($q) => $q->where('owner_id', $ownerId));
+            }
+
+            $bookings = $query->get();
+
+            $vehicleQuery = Vehicle::where('status', 'available')->where('is_active', true)->with('category');
+            if ($ownerId) {
+                $vehicleQuery->where('owner_id', $ownerId);
+            }
+            $vehicles = $vehicleQuery->get();
         } elseif ($role === 'driver') {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             $bookings = $driver
@@ -64,7 +100,9 @@ class ReplacementWebController extends Controller
             $bookings = Booking::where('user_id', Auth::id())->where('status', 'ongoing')->where('with_driver', false)->whereNotNull('vehicle_id')->where('actual_start_date', '!=', null)->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values();
         }
 
-        $vehicles = Vehicle::where('status', 'available')->where('is_active', true)->with('category')->get();
+        if (!isset($vehicles)) {
+            $vehicles = Vehicle::where('status', 'available')->where('is_active', true)->with('category')->get();
+        }
 
         return [
             'bookings' => $bookings->map(fn($b) => [
@@ -93,15 +131,21 @@ class ReplacementWebController extends Controller
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'user'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
-        if (in_array($role, ['superadmin', 'owner'])) {
-            $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
+        if (in_array($role, ['superadmin', 'owner', 'admin'])) {
+            $query = Booking::whereIn('status', ['confirmed', 'ongoing'])
                 ->whereNotNull('vehicle_id')
-                ->with(['vehicle.category', 'user'])
-                ->get();
+                ->with(['vehicle.category', 'user']);
+
+            $ownerId = $this->companyOwnerId();
+            if ($ownerId) {
+                $query->whereHas('vehicle', fn($q) => $q->where('owner_id', $ownerId));
+            }
+
+            $bookings = $query->get();
         } elseif ($role === 'driver') {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             if (!$driver) {
@@ -134,6 +178,7 @@ class ReplacementWebController extends Controller
         $vehicles = Vehicle::where('status', 'available')
             ->where('is_active', true)
             ->with('category')
+            ->when(($ownerId = $this->companyOwnerId()), fn($q) => $q->where('owner_id', $ownerId))
             ->get();
 
         return view('replacements.create', compact('bookings', 'vehicles'));
@@ -153,7 +198,7 @@ class ReplacementWebController extends Controller
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'user'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
@@ -194,9 +239,19 @@ class ReplacementWebController extends Controller
                     abort(403, 'Anda tidak memiliki akses untuk booking ini');
                 }
             }
+        } else {
+            $ownerId = $this->companyOwnerId();
+            if ($ownerId !== null && (int) $booking->vehicle?->owner_id !== $ownerId) {
+                abort(403, 'Booking ini bukan milik company Anda');
+            }
+        }
+$replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
+
+        $ownerId = $this->companyOwnerId();
+        if (in_array($role, ['owner', 'admin']) && (int) $replacementVehicle->owner_id !== $ownerId) {
+            abort(403, 'Kendaraan pengganti bukan milik company Anda');
         }
 
-        $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
         if ($replacementVehicle->category_id !== $booking->vehicle->category_id) {
             return back()->with('error', 'Kendaraan pengganti harus dalam kategori yang sama');
         }
@@ -231,9 +286,10 @@ class ReplacementWebController extends Controller
 
     public function approve(VehicleReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat menyetujui');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, dan admin yang dapat menyetujui');
         }
+        $this->guardCompanyReplacement($replacement);
 
         $replacement->update([
             'status' => 'approved',
@@ -267,9 +323,10 @@ class ReplacementWebController extends Controller
 
     public function reject(VehicleReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat menolak');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, dan admin yang dapat menolak');
         }
+        $this->guardCompanyReplacement($replacement);
 
         $replacement->update(['status' => 'rejected', 'approved_by' => Auth::id()]);
         return back()->with('success', 'Permintaan ditolak');
@@ -277,9 +334,10 @@ class ReplacementWebController extends Controller
 
     public function updateStatus(Request $request, VehicleReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat mengubah status');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, dan admin yang dapat mengubah status');
         }
+        $this->guardCompanyReplacement($replacement);
 
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',

@@ -37,6 +37,9 @@ class ItemReplacementWebController extends Controller
 
         if ($role === 'user') {
             $query->whereHas('booking', fn($q) => $q->where('user_id', Auth::id()));
+        } elseif (in_array($role, ['owner', 'admin'])) {
+            $ownerId = $this->itemMerchantOwnerId();
+            $query->whereHas('booking', fn($q) => $q->ownedByMerchant($ownerId));
         }
 
         if ($request->status) {
@@ -59,8 +62,9 @@ class ItemReplacementWebController extends Controller
 
     public function create(Request $request)
     {
-        if (Auth::user()->role !== 'user') {
-            abort(403, 'Hanya user yang dapat mengajukan penggantian unit elektronik');
+        $role = Auth::user()->role;
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'user'])) {
+            abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 
         $type = $request->type ?? 'hp';
@@ -69,17 +73,47 @@ class ItemReplacementWebController extends Controller
         }
 
         $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
-            ->where('user_id', Auth::id())
             ->where('item_type', '!=', null)
-            ->with(['user', 'category'])
-            ->get();
+            ->with(['user', 'category']);
 
-        $items = $this->getAvailableItems($type);
+        if ($role === 'user') {
+            $bookings->where('user_id', Auth::id());
+        } else {
+            $ownerId = $this->itemMerchantOwnerId();
+            if ($ownerId) {
+                $bookings->ownedByMerchant($ownerId);
+            }
+        }
+
+        $bookings = $bookings->get();
+
+        $items = $this->getAvailableItems($type, $role);
 
         return view('item-replacements.create', compact('type', 'bookings', 'items'));
     }
 
-    private function getAvailableItems(string $type)
+    private function itemMerchantOwnerId(): ?int
+    {
+        $role = Auth::user()->role;
+        if ($role === 'owner') {
+            return (int) Auth::id();
+        }
+        if ($role === 'admin') {
+            $merchantId = Auth::user()->merchantId();
+            return $merchantId ? (int) $merchantId : null;
+        }
+        return null;
+    }
+
+    private function guardCompanyItemReplacement(ItemReplacement $replacement): void
+    {
+        $ownerId = $this->itemMerchantOwnerId();
+        if ($ownerId && !Booking::where('id', $replacement->booking_id)->ownedByMerchant($ownerId)->exists()) {
+            abort(403, 'Penggantian unit ini bukan milik company Anda');
+        }
+    }
+
+    private function getAvailableItems(string $type, ?string $role = null)
     {
         $modelClass = match ($type) {
             'hp' => Phone::class,
@@ -90,16 +124,23 @@ class ItemReplacementWebController extends Controller
             'musik' => MusicalInstrument::class,
         };
 
-        return $modelClass::where('status', 'available')
+        $query = $modelClass::where('status', 'available')
             ->where('is_active', true)
-            ->with('category')
-            ->get();
+            ->with('category');
+
+        $ownerId = $this->itemMerchantOwnerId();
+        if ($role !== 'user' && $ownerId) {
+            $query->where('owner_id', $ownerId);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
     {
-        if (Auth::user()->role !== 'user') {
-            abort(403, 'Hanya user yang dapat mengajukan penggantian unit elektronik');
+        $role = Auth::user()->role;
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'user'])) {
+            abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 
         $validated = $request->validate([
@@ -113,8 +154,16 @@ class ItemReplacementWebController extends Controller
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
-        if ($booking->user_id !== Auth::id()) {
-            abort(403);
+
+        if ($role === 'user') {
+            if ($booking->user_id !== Auth::id()) {
+                abort(403);
+            }
+        } else {
+            $ownerId = $this->itemMerchantOwnerId();
+            if ($ownerId && !Booking::where('id', $booking->id)->ownedByMerchant($ownerId)->exists()) {
+                abort(403, 'Booking ini bukan milik company Anda');
+            }
         }
 
         $modelClass = match ($validated['item_type']) {
@@ -128,6 +177,13 @@ class ItemReplacementWebController extends Controller
 
         $originalItem = $modelClass::findOrFail($validated['original_item_id']);
         $replacementItem = $modelClass::findOrFail($validated['replacement_item_id']);
+
+        $ownerId = $this->itemMerchantOwnerId();
+        if (in_array($role, ['owner', 'admin']) && $ownerId) {
+            if ((int) $originalItem->owner_id !== $ownerId || (int) $replacementItem->owner_id !== $ownerId) {
+                abort(403, 'Unit tidak termasuk milik company Anda');
+            }
+        }
 
         $priceDiff = 0;
         if ($replacementItem->daily_price > $originalItem->daily_price) {
@@ -159,9 +215,10 @@ class ItemReplacementWebController extends Controller
 
     public function approve(ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat menyetujui');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, dan admin yang dapat menyetujui');
         }
+        $this->guardCompanyItemReplacement($replacement);
 
         $replacement->update([
             'status' => 'approved',
@@ -199,9 +256,10 @@ class ItemReplacementWebController extends Controller
 
     public function reject(ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat menolak');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, dan admin yang dapat menolak');
         }
+        $this->guardCompanyItemReplacement($replacement);
 
         $replacement->update(['status' => 'rejected', 'approved_by' => Auth::id()]);
         return back()->with('success', 'Permintaan ditolak');
@@ -209,9 +267,10 @@ class ItemReplacementWebController extends Controller
 
     public function returnItem(Request $request, ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
             abort(403);
         }
+        $this->guardCompanyItemReplacement($replacement);
 
         $validated = $request->validate([
             'condition_notes' => 'required|string|max:2000',
