@@ -14,7 +14,8 @@ class Driver extends Model
     public const TENANT_COLUMN = 'owner_id';
 
     protected $fillable = [
-        'user_id', 'owner_id', 'license_number', 'license_expiry',
+        'user_id', 'owner_id', 'company_id', 'position',
+        'license_number', 'license_expiry',
         'license_type', 'daily_salary', 'trip_salary', 'status',
         'notes', 'is_active',
     ];
@@ -31,6 +32,7 @@ class Driver extends Model
 
     public function user() { return $this->belongsTo(User::class); }
     public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
+    public function company() { return $this->belongsTo(Company::class, 'company_id'); }
     public function bookings() { return $this->hasMany(Booking::class); }
     public function tripReports() { return $this->hasMany(TripReport::class); }
     public function salaries() { return $this->hasMany(DriverSalary::class); }

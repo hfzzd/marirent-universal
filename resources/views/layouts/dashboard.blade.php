@@ -226,9 +226,6 @@
                 <a href="{{ route('admin.brand-catalog.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('admin.brand-catalog*') ? 'active' : '' }}">
                     <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
                 </a>
-                <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
-                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
-                </a>
                 <a href="{{ route('salaries.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('salaries.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave w-5 mr-2.5 text-sm"></i> Penggajian
                 </a>

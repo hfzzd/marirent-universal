@@ -68,6 +68,11 @@ class Booking extends Model
     public function parentBooking() { return $this->belongsTo(Booking::class, 'parent_booking_id'); }
     public function childBookings() { return $this->hasMany(Booking::class, 'parent_booking_id'); }
 
+    public function isVehicleBooking(): bool
+    {
+        return $this->vehicle_id !== null;
+    }
+
     public function getDuration(): int
     {
         return $this->start_date->diffInDays($this->end_date);

@@ -76,7 +76,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 mb-1">Driver</p>
-                    <p class="font-semibold text-navy-800">{{ $rental->with_driver ? ($rental->driver?->user?->name ?? $rental->driver?->name ?? 'Ya') : 'Tanpa Driver' }}</p>
+                    <p class="font-semibold text-navy-800">{{ $rental->with_driver ? ($rental->driver?->user?->name ?? $rental->driver?->name ?? 'Ya') : 'Lepas Kunci' }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 mb-1">Tanggal Mulai</p>

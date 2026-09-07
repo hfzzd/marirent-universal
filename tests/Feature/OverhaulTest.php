@@ -629,4 +629,346 @@ class OverhaulTest extends TestCase
             ->assertDontSee('Gambar/Mobil/Brand/toyota.png')
             ->assertDontSee('Gambar/Mobil/Mobil/alphard.jpg');
     }
+
+    public function test_verified_manual_payment_updates_invoice_amounts_and_booking_status(): void
+    {
+        $mobil = Category::where('slug', 'mobil')->firstOrFail();
+        $owner = $this->makeOwner('pay_owner@example.test');
+        $customer = $this->makeRoleUser('pay_cust@example.test', 'user');
+        $vehicle = $this->makeVehicle($owner, 'PAY-CAR-1', $mobil);
+        $super = User::where('role', 'superadmin')->firstOrFail();
+
+        $booking = Booking::create([
+            'booking_code' => Booking::generateBookingCode(),
+            'user_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
+            'category_id' => $mobil->id,
+            'rental_type' => 'daily',
+            'start_date' => now()->addDays(1)->format('Y-m-d H:i'),
+            'end_date' => now()->addDays(3)->format('Y-m-d H:i'),
+            'base_price' => 600000,
+            'total_price' => 600000,
+            'final_price' => 600000,
+            'status' => 'confirmed',
+            'payment_status' => 'unpaid',
+            'payment_plan' => 'full',
+        ]);
+
+        $invoice = Invoice::create([
+            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
+            'booking_id' => $booking->id,
+            'user_id' => $customer->id,
+            'owner_id' => $owner->id,
+            'category_id' => $mobil->id,
+            'type' => 'rental',
+            'subtotal' => 600000,
+            'total_amount' => 600000,
+            'paid_amount' => 0,
+            'due_amount' => 600000,
+            'status' => 'sent',
+            'due_date' => now()->addDays(7),
+        ]);
+
+        $this->actingAs($customer)->post('/invoices/' . $invoice->id . '/pay', [
+            'amount' => 600000,
+            'method' => 'transfer',
+            'reference_number' => 'REF-MANUAL-1',
+        ])->assertRedirect();
+
+        $payment = Payment::where('invoice_id', $invoice->id)->first();
+        $this->assertNotNull($payment);
+        $this->assertSame('pending', $payment->status);
+
+        $invoice->refresh();
+        $this->assertEquals(0, (float) $invoice->paid_amount);
+        $this->assertSame('sent', $invoice->status);
+        $this->assertSame('unpaid', $booking->fresh()->payment_status);
+
+        $this->actingAs($super)->post('/invoices/payments/' . $payment->id . '/verify')->assertRedirect();
+
+        $invoice->refresh();
+        $this->assertSame('paid', $invoice->status);
+        $this->assertEquals(600000, (float) $invoice->paid_amount);
+        $this->assertEquals(0, (float) $invoice->due_amount);
+        $this->assertSame('paid', $booking->fresh()->payment_status);
+        $this->assertSame('verified', $payment->fresh()->status);
+    }
+
+    public function test_admin_can_assign_driver_to_existing_booking_and_update_invoice(): void
+    {
+        $mobil = Category::where('slug', 'mobil')->firstOrFail();
+        $owner = $this->makeOwner('assign_owner@example.test');
+        $customer = $this->makeRoleUser('assign_cust@example.test', 'user');
+        $driverUser = $this->makeRoleUser('assign_driver@example.test', 'driver');
+        $vehicle = $this->makeVehicle($owner, 'ASSIGN-CAR-1', $mobil);
+        $vehicle->update(['with_driver' => true, 'with_driver_daily_price' => 150000]);
+        $super = User::where('role', 'superadmin')->firstOrFail();
+
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'owner_id' => $owner->id,
+            'license_number' => 'SIM-ASSIGN-1',
+            'daily_salary' => 150000,
+            'status' => 'off_duty',
+            'is_active' => true,
+        ]);
+
+        $booking = Booking::create([
+            'booking_code' => Booking::generateBookingCode(),
+            'user_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
+            'category_id' => $mobil->id,
+            'rental_type' => 'daily',
+            'start_date' => now()->addDays(1)->format('Y-m-d H:i'),
+            'end_date' => now()->addDays(3)->format('Y-m-d H:i'),
+            'base_price' => 200000,
+            'total_price' => 200000,
+            'final_price' => 200000,
+            'status' => 'confirmed',
+            'payment_status' => 'unpaid',
+            'payment_plan' => 'full',
+        ]);
+
+        $this->actingAs($super)->post('/bookings/' . $booking->id . '/assign-driver', [
+            'driver_id' => $driver->id,
+        ])->assertRedirect();
+
+        $booking->refresh();
+        $this->assertSame($driver->id, $booking->driver_id);
+        $this->assertTrue($booking->with_driver);
+        $this->assertEquals(300000, (float) $booking->driver_price);
+        $this->assertEquals(500000, (float) $booking->total_price);
+        $this->assertEquals(500000, (float) $booking->final_price);
+        $this->assertSame('on_duty', $driver->fresh()->status);
+
+        $this->actingAs($super)->post('/bookings/' . $booking->id . '/remove-driver')->assertRedirect();
+        $booking->refresh();
+        $this->assertNull($booking->driver_id);
+        $this->assertFalse($booking->with_driver);
+        $this->assertEquals(0, (float) $booking->driver_price);
+        $this->assertEquals(200000, (float) $booking->final_price);
+        $this->assertSame('off_duty', $driver->fresh()->status);
+    }
+
+    public function test_invoice_can_be_resent_multiple_times_until_paid(): void
+    {
+        $owner = $this->makeOwner('resend_owner@example.test');
+        $customer = $this->makeRoleUser('resend_cust@example.test', 'user');
+        $super = User::where('role', 'superadmin')->firstOrFail();
+
+        $invoice = Invoice::create([
+            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
+            'user_id' => $customer->id,
+            'owner_id' => $owner->id,
+            'type' => 'rental',
+            'subtotal' => 500000,
+            'total_amount' => 500000,
+            'paid_amount' => 0,
+            'due_amount' => 500000,
+            'status' => 'sent',
+            'due_date' => now()->addDays(7),
+        ]);
+
+        $this->actingAs($super)->post('/invoices/' . $invoice->id . '/send')->assertRedirect();
+        $this->assertSame('sent', $invoice->fresh()->status);
+
+        $this->actingAs($super)->post('/invoices/' . $invoice->id . '/send')->assertRedirect();
+        $this->assertSame('sent', $invoice->fresh()->status);
+
+        $invoice->update(['status' => 'paid', 'paid_amount' => 500000, 'due_amount' => 0, 'paid_at' => now()]);
+        $this->actingAs($super)->post('/invoices/' . $invoice->id . '/send')->assertRedirect();
+        $this->assertSame('paid', $invoice->fresh()->status);
+    }
+
+    public function test_booking_detail_renders_with_driver_card_and_assign_panel(): void
+    {
+        $mobil = Category::where('slug', 'mobil')->firstOrFail();
+        $owner = $this->makeOwner('detail_owner@example.test');
+        $otherOwner = $this->makeOwner('detail_other_owner@example.test');
+        $customer = $this->makeRoleUser('detail_cust@example.test', 'user');
+        $driverUser = $this->makeRoleUser('detail_driver@example.test', 'driver');
+        $vehicle = $this->makeVehicle($owner, 'DETAIL-CAR-1', $mobil);
+        $super = User::where('role', 'superadmin')->firstOrFail();
+
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'owner_id' => $otherOwner->id,
+            'license_number' => 'SIM-DETAIL-1',
+            'daily_salary' => 150000,
+            'status' => 'off_duty',
+            'is_active' => true,
+        ]);
+
+        $booking = Booking::create([
+            'booking_code' => Booking::generateBookingCode(),
+            'user_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
+            'category_id' => $mobil->id,
+            'rental_type' => 'daily',
+            'start_date' => now()->addDays(1)->format('Y-m-d H:i'),
+            'end_date' => now()->addDays(3)->format('Y-m-d H:i'),
+            'base_price' => 200000,
+            'total_price' => 200000,
+            'final_price' => 200000,
+            'status' => 'confirmed',
+            'payment_status' => 'unpaid',
+            'payment_plan' => 'full',
+        ]);
+
+        $this->actingAs($super)->get('/bookings/' . $booking->id)
+            ->assertOk()
+            ->assertSee('Lepas Kunci')
+            ->assertSee('Kelola Driver')
+            ->assertSee('Tugaskan')
+            ->assertSee($driverUser->name)
+            ->assertSee('Tersedia');
+    }
+
+    private function makeCompany(User $owner, string $name = 'PT Test Karyawan'): \App\Models\Company
+    {
+        return \App\Models\Company::create([
+            'user_id' => $owner->id,
+            'name' => $name,
+            'slug' => \Illuminate\Support\Str::slug($name) . '-' . uniqid(),
+            'city' => 'Jakarta',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+    }
+
+    private function makeOwnedDriver(User $owner, \App\Models\Company $company, string $email, string $position = 'Driver'): Driver
+    {
+        $user = $this->makeRoleUser($email, 'driver');
+        return Driver::create([
+            'user_id' => $user->id,
+            'owner_id' => $owner->id,
+            'company_id' => $company->id,
+            'position' => $position,
+            'license_number' => 'SIM-' . strtoupper(substr(uniqid(), -6)),
+            'daily_salary' => 150000,
+            'status' => 'off_duty',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_superadmin_and_owner_manage_drivers_but_admin_denied(): void
+    {
+        $tenda = Category::where('slug', 'sewa-tenda')->firstOrFail();
+        $owner = $this->makeOwner('drv_owner@example.test');
+        $company = $this->makeCompany($owner);
+        $driver = $this->makeOwnedDriver($owner, $company, 'drv_own@example.test');
+        $admin = $this->makeAdmin('drv_admin@example.test', $owner, $tenda->id);
+        $super = User::where('role', 'superadmin')->firstOrFail();
+
+        $this->actingAs($super)->get('/drivers')->assertOk()->assertSee($company->name);
+        $this->actingAs($super)->get('/drivers/' . $driver->id)->assertOk()->assertSee($company->name);
+
+        $this->actingAs($owner)->get('/drivers')->assertOk()->assertSee($driver->user->name);
+
+        $this->actingAs($admin)->get('/drivers')->assertForbidden();
+        $this->actingAs($admin)->post('/drivers')->assertForbidden();
+        $this->actingAs($admin)->delete('/drivers/' . $driver->id)->assertForbidden();
+    }
+
+    public function test_superadmin_can_create_driver_and_karyawan_account_for_company(): void
+    {
+        $owner = $this->makeOwner('drv_create_owner@example.test');
+        $company = $this->makeCompany($owner, 'PT Driver Baru');
+        $super = User::where('role', 'superadmin')->firstOrFail();
+
+        $this->actingAs($super)->post('/drivers', [
+            'company_id' => $company->id,
+            'name' => 'Slamet Supir',
+            'email' => 'slamet@example.test',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'phone' => '081234000111',
+            'position' => 'Driver',
+            'license_number' => 'SIM-CREATE-1',
+            'license_type' => 'A',
+            'license_expiry' => now()->addYears(1)->format('Y-m-d'),
+            'daily_salary' => 150000,
+            'trip_salary' => 50000,
+        ])->assertRedirect();
+
+        $driver = Driver::whereHas('user', fn($q) => $q->where('email', 'slamet@example.test'))->first();
+        $this->assertNotNull($driver);
+        $this->assertSame($company->id, $driver->company_id);
+        $this->assertSame($owner->id, $driver->owner_id);
+        $this->assertSame('driver', $driver->user->role);
+        $this->assertSame('SIM-CREATE-1', $driver->license_number);
+
+        $this->actingAs($super)->post('/drivers', [
+            'company_id' => $company->id,
+            'name' => 'Siti Admin',
+            'email' => 'siti@example.test',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'position' => 'Karyawan',
+            'daily_salary' => 100000,
+            'trip_salary' => 0,
+        ])->assertRedirect();
+
+        $karyawan = Driver::whereHas('user', fn($q) => $q->where('email', 'siti@example.test'))->first();
+        $this->assertNotNull($karyawan);
+        $this->assertSame('Karyawan', $karyawan->position);
+        $this->assertNull($karyawan->license_number);
+
+        $this->actingAs($super)->get('/drivers')->assertSee('Slamet Supir')->assertSee('Siti Admin');
+
+        $this->actingAs($super)->put('/drivers/' . $driver->id, [
+            'company_id' => $company->id,
+            'name' => 'Slamet Supir Edan',
+            'position' => 'Driver Senior',
+            'license_number' => 'SIM-CREATE-1',
+            'license_type' => 'A',
+            'daily_salary' => 200000,
+            'status' => 'off_duty',
+            'is_active' => 1,
+            'password' => '',
+            'password_confirmation' => '',
+        ])->assertRedirect();
+
+        $this->assertSame('Slamet Supir Edan', $driver->fresh()->user->name);
+        $this->assertSame('Driver Senior', $driver->fresh()->position);
+        $this->assertEquals(200000, (float) $driver->fresh()->daily_salary);
+
+        $this->actingAs($super)->delete('/drivers/' . $karyawan->id)->assertRedirect();
+        $this->assertNull(Driver::find($karyawan->id));
+        $this->assertNull(User::find($karyawan->user_id));
+    }
+
+    public function test_owner_only_manages_own_drivers(): void
+    {
+        $owner = $this->makeOwner('drv_own_owner@example.test');
+        $other = $this->makeOwner('drv_other_owner@example.test');
+        $ownCompany = $this->makeCompany($owner, 'PT Own Aja');
+        $otherCompany = $this->makeCompany($other, 'PT Lain');
+        $ownDriver = $this->makeOwnedDriver($owner, $ownCompany, 'drv_mine@example.test');
+        $otherDriver = $this->makeOwnedDriver($other, $otherCompany, 'drv_theirs@example.test');
+
+        $this->actingAs($owner)->get('/drivers/')
+            ->assertOk()
+            ->assertSee('drv_mine@example.test')
+            ->assertDontSee('drv_theirs@example.test');
+
+        $this->actingAs($owner)->get('/drivers/' . $ownDriver->id)->assertOk();
+
+        $otherShow = $this->actingAs($owner)->get('/drivers/' . $otherDriver->id);
+        $this->assertContains($otherShow->getStatusCode(), [403, 404]);
+
+        $otherUpdate = $this->actingAs($owner)->put('/drivers/' . $otherDriver->id, [
+            'name' => 'Hacked',
+            'password' => '',
+            'password_confirmation' => '',
+            'license_number' => 'X',
+            'daily_salary' => 1,
+            'status' => 'off_duty',
+            'is_active' => 1,
+        ]);
+        $this->assertContains($otherUpdate->getStatusCode(), [403, 404]);
+
+        $otherDelete = $this->actingAs($owner)->delete('/drivers/' . $otherDriver->id);
+        $this->assertContains($otherDelete->getStatusCode(), [403, 404]);
+    }
 }

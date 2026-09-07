@@ -187,12 +187,13 @@ class InvoiceWebController extends Controller
             abort(403);
         }
 
-        if ($invoice->status === 'draft') {
-            $invoice->update(['status' => 'sent']);
-            return back()->with('success', 'Invoice berhasil dikirim ke admin.');
+        if ($invoice->status === 'paid') {
+            return back()->with('error', 'Invoice sudah lunas dan tidak bisa dikirim ulang.');
         }
 
-        return back()->with('error', 'Invoice sudah dikirim sebelumnya.');
+        $invoice->update(['status' => 'sent']);
+
+        return back()->with('success', 'Invoice berhasil dikirim ulang.');
     }
 
     private function invoiceBelongsToStaffCategory(Invoice $invoice): bool
@@ -307,10 +308,9 @@ class InvoiceWebController extends Controller
         $invoice->update([
             'payment_method' => $payment->method,
             'payment_reference' => $payment->reference_number,
-            'paid_at' => $invoice->paid_amount >= $invoice->total_amount ? now() : $invoice->paid_at,
         ]);
 
-        $this->syncLinkedBookings($invoice);
+        $this->refreshInvoiceFromPayments($invoice);
 
         return back()->with('success', 'Pembayaran berhasil diverifikasi');
     }
@@ -344,9 +344,29 @@ class InvoiceWebController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        $this->syncLinkedBookings($payment->invoice);
+        $this->refreshInvoiceFromPayments($payment->invoice->fresh());
 
         return back()->with('success', 'Pembayaran ditolak');
+    }
+
+    private function refreshInvoiceFromPayments(Invoice $invoice): void
+    {
+        if (!$invoice) {
+            return;
+        }
+
+        $total = (float) $invoice->total_amount;
+        $paid = (float) $invoice->payments()->where('status', 'verified')->sum('amount');
+        $due = max(0, $total - $paid);
+
+        $invoice->update([
+            'paid_amount' => $paid,
+            'due_amount' => $due,
+            'paid_at' => $paid >= $total && $total > 0 ? now() : $invoice->paid_at,
+            'status' => $paid >= $total && $total > 0 ? 'paid' : ($paid > 0 ? 'partial' : 'sent'),
+        ]);
+
+        $this->syncLinkedBookings($invoice->fresh());
     }
 
     private function syncLinkedBookings(Invoice $invoice): void

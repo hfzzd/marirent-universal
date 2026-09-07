@@ -905,7 +905,161 @@ class BookingWebController extends Controller
                 ->get();
         }
 
-        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles', 'isMerchantStaff'));
+        $availableDrivers = collect();
+        if ($booking->vehicle_id && $isMerchantStaff && !in_array($booking->status, ['completed', 'cancelled'])) {
+            $query = Driver::with('user')
+                ->where('is_active', true)
+                ->where('status', '!=', 'on_trip');
+
+            if (Auth::user()->isMerchantStaff()) {
+                $merchantId = Auth::user()->merchantId();
+                $vehicleOwner = $booking->vehicle?->owner_id;
+                $query->where(function ($q) use ($merchantId, $vehicleOwner) {
+                    $q->where('owner_id', $merchantId);
+                    if ($vehicleOwner) {
+                        $q->orWhere('owner_id', $vehicleOwner);
+                    }
+                });
+            }
+
+            $availableDrivers = $query->orderBy('status')->orderBy('id')->get();
+        }
+
+        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles', 'availableDrivers', 'isMerchantStaff'));
+    }
+
+    public function assignDriver(Request $request, Booking $booking)
+    {
+        $user = Auth::user();
+
+        if (!in_array($user->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403);
+        }
+
+        if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
+            abort(403);
+        }
+
+        if (!$booking->vehicle_id) {
+            return back()->with('error', 'Driver hanya dapat ditugaskan pada booking kendaraan');
+        }
+
+        if (!in_array($booking->status, ['pending', 'confirmed', 'ongoing'])) {
+            return back()->with('error', 'Driver hanya dapat diubah pada booking yang masih aktif');
+        }
+
+        $validated = $request->validate([
+            'driver_id' => 'required|exists:drivers,id',
+        ]);
+
+        $driver = Driver::findOrFail($validated['driver_id']);
+        if ($driver->status === 'on_trip') {
+            return back()->with('error', 'Driver sedang bertugas dan tidak dapat ditugaskan');
+        }
+
+        $vehicle = $booking->vehicle;
+        $driverPrice = 0;
+        if ($vehicle && $vehicle->with_driver) {
+            $driverDays = max(1, $booking->start_date->diffInDays($booking->end_date));
+            $driverPrice = round(($vehicle->with_driver_daily_price ?? 0) * $driverDays);
+        }
+
+        $oldTotal = (float) $booking->final_price;
+        $newTotal = (float) $booking->base_price + $driverPrice;
+        $newFinal = max(0, $newTotal - (float) $booking->discount);
+
+        $booking->update([
+            'driver_id' => $driver->id,
+            'with_driver' => true,
+            'driver_price' => $driverPrice,
+            'total_price' => $newTotal,
+            'final_price' => $newFinal,
+        ]);
+
+        $booking->setDpAmountFromPlan();
+
+        Driver::where('id', $driver->id)->update(['status' => 'on_duty']);
+
+        $invoice = $booking->invoice ?? $booking->invoices()->first();
+        if ($invoice) {
+            $paidSoFar = (float) $invoice->paid_amount;
+            $invoice->update([
+                'subtotal' => $newFinal,
+                'total_amount' => $newFinal,
+                'due_amount' => max(0, $newFinal - $paidSoFar),
+                'status' => $paidSoFar >= $newFinal && $newFinal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
+            ]);
+            foreach ($invoice->items as $item) {
+                $item->update([
+                    'unit_price' => $newFinal,
+                    'total_price' => $newFinal,
+                ]);
+            }
+        }
+
+        $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
+        if ($driver->user_id) {
+            \App\Models\User::find($driver->user_id)?->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
+        }
+
+        return back()->with('success', 'Driver ' . ($driver->user->name ?? '#' . $driver->id) . ' ditugaskan ke booking ' . $booking->booking_code . '. Total tagihan: Rp ' . number_format($newFinal, 0, ',', '.'));
+    }
+
+    public function removeDriver(Booking $booking)
+    {
+        $user = Auth::user();
+
+        if (!in_array($user->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403);
+        }
+
+        if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
+            abort(403);
+        }
+
+        if (!in_array($booking->status, ['pending', 'confirmed', 'ongoing'])) {
+            return back()->with('error', 'Driver hanya dapat dilepas pada booking yang masih aktif');
+        }
+
+        if (!$booking->driver_id) {
+            return back()->with('error', 'Booking ini tidak memiliki driver');
+        }
+
+        Driver::where('id', $booking->driver_id)->update(['status' => 'off_duty']);
+
+        $newTotal = (float) $booking->base_price;
+        $newFinal = max(0, $newTotal - (float) $booking->discount);
+
+        $booking->update([
+            'driver_id' => null,
+            'with_driver' => false,
+            'driver_price' => 0,
+            'total_price' => $newTotal,
+            'final_price' => $newFinal,
+        ]);
+
+        $booking->setDpAmountFromPlan();
+
+        $invoice = $booking->invoice ?? $booking->invoices()->first();
+        if ($invoice) {
+            $paidSoFar = (float) $invoice->paid_amount;
+            $invoice->update([
+                'subtotal' => $newFinal,
+                'total_amount' => $newFinal,
+                'due_amount' => max(0, $newFinal - $paidSoFar),
+                'status' => $paidSoFar >= $newFinal && $newFinal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
+            ]);
+            foreach ($invoice->items as $item) {
+                $item->update([
+                    'unit_price' => $newFinal,
+                    'total_price' => $newFinal,
+                ]);
+            }
+        }
+
+        $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
+
+        return back()->with('success', 'Driver dilepas dari booking ' . $booking->booking_code . '. Booking kembali ' . ($booking->isVehicleBooking() ? 'lepas kunci' : 'tanpa driver') . '. Total tagihan: Rp ' . number_format($newFinal, 0, ',', '.'));
     }
 
     public function reschedule(Request $request, Booking $booking)

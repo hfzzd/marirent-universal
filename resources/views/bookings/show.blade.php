@@ -91,14 +91,61 @@
                     {{-- Driver --}}
                     <div class="bg-gradient-to-br from-purple-50/60 to-purple-100/30 p-4 rounded-xl border border-purple-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Driver</p>
-                        @if($booking->driver)
+                        @if($booking->driver && $booking->with_driver)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->driver->user->name ?? '-' }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">SIM {{ $booking->driver->license_type ?? '-' }}</p>
                         @else
-                        <p class="font-bold text-navy-800 text-[15px]">Tanpa Driver</p>
-                        <p class="text-[12px] text-gray-400 mt-0.5">{{ ucfirst($booking->rental_type) }}</p>
+                        <p class="font-bold text-navy-800 text-[15px]">Lepas Kunci</p>
+                        <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->isVehicleBooking() ? 'Tanpa driver' : ucfirst($booking->rental_type) }}</p>
                         @endif
                     </div>
+
+                    {{-- Assign Driver (Admin/Owner) --}}
+                    @if($booking->vehicle && in_array(auth()->user()->role, ['superadmin','owner','admin']) && !in_array($booking->status, ['completed', 'cancelled']))
+                    <div class="bg-gradient-to-br from-indigo-50/60 to-indigo-100/30 p-4 rounded-xl border border-indigo-100/50" x-data="{ open: false }">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1">Kelola Driver</p>
+                                @if($booking->driver)
+                                <p class="text-[12px] text-navy-700 font-medium">Saat ini: {{ $booking->driver->user->name ?? ('#' . $booking->driver->id) }}</p>
+                                @else
+                                <p class="text-[12px] text-navy-700 font-medium">Belum ada driver ditugaskan</p>
+                                @endif
+                            </div>
+                            <button type="button" @click="open = !open" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap">
+                                <i class="fas fa-user-cog text-[10px] mr-1"></i> {{ $booking->driver ? 'Ganti' : 'Tugaskan' }}
+                            </button>
+                        </div>
+                        <form method="POST" action="{{ route('bookings.assign-driver', $booking) }}" x-show="open" x-cloak x-transition class="mt-3 space-y-2.5">
+                            @csrf
+                            <div>
+                                <label class="block text-[11px] font-semibold text-navy-700 mb-1">Pilih Driver *</label>
+                                <select name="driver_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-indigo-500 bg-white">
+                                    <option value="">-- Pilih driver tersedia --</option>
+                                    @foreach($availableDrivers as $d)
+                                    <option value="{{ $d->id }}" {{ $booking->driver_id == $d->id ? 'selected' : '' }}>
+                                        {{ $d->user->name ?? ('#' . $d->id) }} ({{ $d->status == 'off_duty' ? 'Tersedia' : $d->status }})
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @if($availableDrivers->isEmpty())
+                                <p class="text-[11px] text-red-500 mt-1">Tidak ada driver tersedia untuk unit ini.</p>
+                                @endif
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold transition" {{ $availableDrivers->isEmpty() ? 'disabled' : '' }}>
+                                    <i class="fas fa-check text-[10px] mr-1"></i> Simpan Driver
+                                </button>
+                                @if($booking->driver)
+                                <button type="submit" formaction="{{ route('bookings.remove-driver', $booking) }}" onclick="return confirm('Lepas driver dari booking ini?')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-[11px] font-medium transition">
+                                    <i class="fas fa-user-minus text-[10px] mr-1"></i> Lepas
+                                </button>
+                                @endif
+                            </div>
+                            <p class="text-[10px] text-gray-400">Harga driver dihitung ulang otomatis dari tarif with-driver unit dan ditambahkan ke tagihan.</p>
+                        </form>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- Lokasi --}}

@@ -179,15 +179,18 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel');
     Route::post('/{booking}/start-trip', [BookingWebController::class, 'startTrip'])->name('bookings.start');
     Route::post('/{booking}/complete', [BookingWebController::class, 'complete'])->name('bookings.complete');
+    Route::post('/{booking}/assign-driver', [BookingWebController::class, 'assignDriver'])->name('bookings.assign-driver');
+    Route::post('/{booking}/remove-driver', [BookingWebController::class, 'removeDriver'])->name('bookings.remove-driver');
 });
 
-Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('drivers')->group(function () {
-    Route::get('/', [DriverWebController::class, 'index'])->name('drivers.index');
-    Route::get('/create', [DriverWebController::class, 'create'])->name('drivers.create');
-    Route::post('/', [DriverWebController::class, 'store'])->name('drivers.store');
-    Route::get('/{driver}/edit', [DriverWebController::class, 'edit'])->name('drivers.edit');
-    Route::put('/{driver}', [DriverWebController::class, 'update'])->name('drivers.update');
-    Route::delete('/{driver}', [DriverWebController::class, 'destroy'])->name('drivers.destroy');
+Route::middleware(['auth', 'role:superadmin,owner'])->prefix('drivers')->group(function () {
+Route::get('/', [DriverWebController::class, 'index'])->name('drivers.index');
+Route::get('/create', [DriverWebController::class, 'create'])->name('drivers.create');
+Route::post('/', [DriverWebController::class, 'store'])->name('drivers.store');
+Route::get('/{driver}', [DriverWebController::class, 'show'])->name('drivers.show');
+Route::get('/{driver}/edit', [DriverWebController::class, 'edit'])->name('drivers.edit');
+Route::put('/{driver}', [DriverWebController::class, 'update'])->name('drivers.update');
+Route::delete('/{driver}', [DriverWebController::class, 'destroy'])->name('drivers.destroy');
 });
 
 // Attendance Routes

@@ -236,6 +236,9 @@ class DatabaseSeeder extends Seeder
         // Seed perusahaan/merchant partner (16 company di berbagai kota & kategori)
         $this->call(CompanySeeder::class);
 
+        // Seed driver & karyawan untuk setiap company (dengan asal company)
+        $this->call(DriverSeeder::class);
+
         // Run bulk vehicle seed data (50 mobil + 50 motor)
         $this->call(VehicleSeeder::class);
 

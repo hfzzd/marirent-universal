@@ -54,7 +54,7 @@
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $rental->vehicle->name ?? $rental->category_type }}</td>
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $rental->start_date->format('d M Y') }}</td>
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $rental->end_date->format('d M Y') }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">{{ $rental->with_driver ? ($rental->driver?->user?->name ?? $rental->driver?->name ?? 'Ya') : 'Tidak' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ $rental->with_driver ? ($rental->driver?->user?->name ?? $rental->driver?->name ?? 'Ya') : 'Lepas Kunci' }}</td>
                         <td class="px-6 py-4">
                             @php
                                 $statusClasses = [

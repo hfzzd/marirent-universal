@@ -207,11 +207,11 @@
                             <a href="{{ route('invoices.show', $inv) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
                                 <i class="fas fa-eye text-[10px]"></i> Detail
                             </a>
-                            @if(!$isUser && $inv->status === 'draft')
+                            @if(!$isUser && $inv->status !== 'paid')
                             <form method="POST" action="{{ route('invoices.send', $inv) }}" class="inline">
                                 @csrf
-                                <button type="submit" class="text-emerald-600 text-[12px] font-medium hover:text-emerald-700 transition inline-flex items-center gap-1">
-                                    <i class="fas fa-paper-plane text-[10px]"></i> Kirim
+                                <button type="submit" class="{{ $inv->status === 'draft' ? 'text-emerald-600 hover:text-emerald-700' : 'text-amber-600 hover:text-amber-700' }} text-[12px] font-medium transition inline-flex items-center gap-1">
+                                    <i class="fas fa-paper-plane text-[10px]"></i> {{ $inv->status === 'draft' ? 'Kirim' : 'Kirim Ulang' }}
                                 </button>
                             </form>
                             @endif
