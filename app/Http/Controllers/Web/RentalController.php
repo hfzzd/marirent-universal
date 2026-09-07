@@ -43,9 +43,12 @@ class RentalController extends Controller
             } else {
                 $query->whereRaw('1 = 0');
             }
-        } elseif ($user->isOwner()) {
-            $query->whereHas('vehicle', function ($q) use ($user) {
-                $q->where('owner_id', $user->id);
+        } elseif ($user->isMerchantStaff()) {
+            $ownerId = $user->merchantId();
+            $catId = $user->merchantCategoryId();
+            $query->whereHas('vehicle', function ($q) use ($ownerId, $catId) {
+                if ($ownerId) $q->where('owner_id', $ownerId);
+                if ($catId) $q->where('category_id', $catId);
             });
         }
 
@@ -59,11 +62,14 @@ class RentalController extends Controller
         $user = Auth::user();
         $vehicles = Vehicle::where('is_active', true)
             ->where('status', 'available')
+            ->when($user->isMerchantStaff() && $user->merchantId(), fn($q) => $q->where('owner_id', $user->merchantId()))
+            ->when($user->isMerchantStaff() && $user->merchantCategoryId(), fn($q) => $q->where('category_id', $user->merchantCategoryId()))
             ->with('category')
             ->get();
 
         $drivers = Driver::where('status', 'off_duty')
             ->where('is_active', true)
+            ->when($user->isMerchantStaff() && $user->merchantId(), fn($q) => $q->where('owner_id', $user->merchantId()))
             ->with('user')
             ->get();
 
@@ -275,11 +281,15 @@ class RentalController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->isSuperAdmin() && !$user->isOwner()) {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff()) {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
-        $rental = Rental::findOrFail($id);
+        $rental = Rental::with('vehicle')->findOrFail($id);
+
+        if ($user->isMerchantStaff() && $rental->vehicle && (int) $rental->vehicle->owner_id !== (int) $user->merchantId()) {
+            abort(403, 'Anda tidak memiliki akses ke sewa toko lain.');
+        }
 
         if ($rental->status !== 'pending') {
             return back()->with('error', 'Hanya sewa dengan status pending yang dapat dikonfirmasi.');
@@ -299,11 +309,15 @@ class RentalController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->isSuperAdmin() && !$user->isOwner()) {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff()) {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
-        $rental = Rental::findOrFail($id);
+        $rental = Rental::with('vehicle')->findOrFail($id);
+
+        if ($user->isMerchantStaff() && $rental->vehicle && (int) $rental->vehicle->owner_id !== (int) $user->merchantId()) {
+            abort(403, 'Anda tidak memiliki akses ke sewa toko lain.');
+        }
 
         if (!in_array($rental->status, ['ongoing', 'confirmed'])) {
             return back()->with('error', 'Sewa tidak dapat diselesaikan pada status saat ini.');

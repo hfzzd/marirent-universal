@@ -10,14 +10,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-    {{-- Vite (Tailwind + Custom CSS) --}}
-    @vite(['resources/css/app.css'])
+    {{-- Vite (Tailwind + Custom CSS + JS bundle) --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @yield('styles')
     @stack('styles')
 </head>
 <body class="bg-sky-50/50 flex">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {{-- SIDEBAR --}}
     <aside id="sidebar" class="sidebar w-60 max-w-[85vw] h-screen fixed top-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
         <div class="p-4">

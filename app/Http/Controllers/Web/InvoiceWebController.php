@@ -271,7 +271,7 @@ class InvoiceWebController extends Controller
             'method' => $validated['method'],
             'reference_number' => $validated['reference_number'] ?? null,
             'proof_photo' => $proofPath,
-            'status' => 'pending',
+            'status' => $validated['method'] === 'cash' ? 'verified' : 'pending',
             'notes' => $validated['notes'] ?? null,
             'paid_at' => now(),
         ]);

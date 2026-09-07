@@ -147,16 +147,25 @@ class BookingWebController extends Controller
 
         if ($validated['rental_type'] === 'hourly') {
             $hours = max(1, $startDate->diffInHours($endDate));
-            $totalPrice = $vehicle->hourly_price * $hours;
+            $totalPrice = ($vehicle->hourly_price ?? 0) * $hours;
+            $driverDays = 1;
+        } elseif ($validated['rental_type'] === 'weekly') {
+            $weeks = $request->filled('duration_weeks') ? max(1, (int) $request->duration_weeks) : max(1, (int) round($startDate->diffInDays($endDate) / 7));
+            $totalPrice = ($vehicle->weekly_price ?? ($vehicle->daily_price * 7)) * $weeks;
+            $driverDays = $weeks * 7;
+        } elseif ($validated['rental_type'] === 'monthly') {
+            $months = $request->filled('duration_months') ? max(1, (int) $request->duration_months) : max(1, (int) round($startDate->diffInDays($endDate) / 30));
+            $totalPrice = ($vehicle->monthly_price ?? ($vehicle->daily_price * 30)) * $months;
+            $driverDays = $months * 30;
         } else {
             $days = max(1, $startDate->diffInDays($endDate));
             $totalPrice = $basePrice * $days;
+            $driverDays = $days;
         }
 
         $withDriver = ($validated['with_driver'] ?? '0') === '1';
         $driverPrice = 0;
         if ($withDriver && $vehicle->with_driver) {
-            $driverDays = max(1, $startDate->diffInDays($endDate));
             $driverPrice = ($vehicle->with_driver_daily_price ?? 0) * $driverDays;
         }
 
@@ -245,15 +254,29 @@ class BookingWebController extends Controller
 
         $startDate = \Carbon\Carbon::parse($validated['start_date']);
         $endDate = \Carbon\Carbon::parse($validated['end_date']);
-        $duration = $validated['rental_type'] === 'hourly'
-            ? max(1, $startDate->diffInHours($endDate))
-            : max(1, $startDate->diffInDays($endDate));
 
-        $basePrice = $item->getPriceForType($validated['rental_type']);
+        if ($validated['rental_type'] === 'hourly') {
+            $duration = max(1, $startDate->diffInHours($endDate));
+            $basePrice = $item->hourly_price ?? 0;
+            $realDays = 1;
+        } elseif ($validated['rental_type'] === 'weekly') {
+            $duration = $request->filled('duration_weeks') ? max(1, (int) $request->duration_weeks) : max(1, (int) round($startDate->diffInDays($endDate) / 7));
+            $basePrice = $item->weekly_price ?? ($item->daily_price * 7);
+            $realDays = $duration * 7;
+        } elseif ($validated['rental_type'] === 'monthly') {
+            $duration = $request->filled('duration_months') ? max(1, (int) $request->duration_months) : max(1, (int) round($startDate->diffInDays($endDate) / 30));
+            $basePrice = $item->monthly_price ?? ($item->daily_price * 30);
+            $realDays = $duration * 30;
+        } else {
+            $duration = max(1, $startDate->diffInDays($endDate));
+            $basePrice = $item->daily_price;
+            $realDays = $duration;
+        }
+
         $subtotal = $basePrice * $duration;
 
         $insuranceRate = round($item->daily_price * 0.05);
-        $insuranceFee = $validated['with_insurance'] ? $insuranceRate * $duration : 0;
+        $insuranceFee = $validated['with_insurance'] ? $insuranceRate * $realDays : 0;
 
         $accessoriesCost = 0;
         $accessoriesData = $config['accessories'] ?? [];
@@ -261,7 +284,7 @@ class BookingWebController extends Controller
         foreach ($selectedAccessories as $accName) {
             foreach ($accessoriesData as $acc) {
                 if ($acc['name'] === $accName) {
-                    $accessoriesCost += $acc['price'] * $duration;
+                    $accessoriesCost += $acc['price'] * $realDays;
                     break;
                 }
             }
@@ -554,9 +577,20 @@ class BookingWebController extends Controller
 
         $startDate = \Carbon\Carbon::parse($validated['start_date']);
         $endDate = \Carbon\Carbon::parse($validated['end_date']);
-        $duration = $validated['rental_type'] === 'hourly'
-            ? max(1, $startDate->diffInHours($endDate))
-            : max(1, $startDate->diffInDays($endDate));
+
+        if ($validated['rental_type'] === 'hourly') {
+            $duration = max(1, $startDate->diffInHours($endDate));
+            $realDays = 1;
+        } elseif ($validated['rental_type'] === 'weekly') {
+            $duration = max(1, (int) round($startDate->diffInDays($endDate) / 7));
+            $realDays = $duration * 7;
+        } elseif ($validated['rental_type'] === 'monthly') {
+            $duration = max(1, (int) round($startDate->diffInDays($endDate) / 30));
+            $realDays = $duration * 30;
+        } else {
+            $duration = max(1, $startDate->diffInDays($endDate));
+            $realDays = $duration;
+        }
 
         [$merchantId, $categoryId] = $this->staffProductScope();
         foreach ($validated['items'] as $itemData) {
@@ -607,7 +641,7 @@ class BookingWebController extends Controller
             $subtotal = $basePrice * $duration;
 
             $insuranceRate = round($item->daily_price * 0.05);
-            $insuranceFee = $itemData['with_insurance'] ? $insuranceRate * $duration : 0;
+            $insuranceFee = $itemData['with_insurance'] ? $insuranceRate * $realDays : 0;
 
             $accessoriesCost = 0;
             $accessoriesData = $config['accessories'] ?? [];
@@ -615,7 +649,7 @@ class BookingWebController extends Controller
             foreach ($selectedAccessories as $accName) {
                 foreach ($accessoriesData as $acc) {
                     if ($acc['name'] === $accName) {
-                        $accessoriesCost += $acc['price'] * $duration;
+                        $accessoriesCost += $acc['price'] * $realDays;
                         break;
                     }
                 }
@@ -762,9 +796,24 @@ class BookingWebController extends Controller
 
         $startDate = \Carbon\Carbon::parse($validated['start_date']);
         $endDate = \Carbon\Carbon::parse($validated['end_date']);
-        $duration = $validated['rental_type'] === 'hourly'
-            ? max(1, $startDate->diffInHours($endDate))
-            : max(1, $startDate->diffInDays($endDate));
+
+        if ($validated['rental_type'] === 'hourly') {
+            $duration = max(1, $startDate->diffInHours($endDate));
+            $basePrice = $item->hourly_price ?? 0;
+            $realDays = 1;
+        } elseif ($validated['rental_type'] === 'weekly') {
+            $duration = $request->filled('duration_weeks') ? max(1, (int) $request->duration_weeks) : max(1, (int) round($startDate->diffInDays($endDate) / 7));
+            $basePrice = $item->weekly_price ?? ($item->daily_price * 7);
+            $realDays = $duration * 7;
+        } elseif ($validated['rental_type'] === 'monthly') {
+            $duration = $request->filled('duration_months') ? max(1, (int) $request->duration_months) : max(1, (int) round($startDate->diffInDays($endDate) / 30));
+            $basePrice = $item->monthly_price ?? ($item->daily_price * 30);
+            $realDays = $duration * 30;
+        } else {
+            $duration = max(1, $startDate->diffInDays($endDate));
+            $basePrice = $item->daily_price;
+            $realDays = $duration;
+        }
 
         $itemId = $validated['item_id'];
         $itemKind = $validated['item_kind'];
@@ -804,7 +853,6 @@ class BookingWebController extends Controller
             return back()->with('error', 'Item tidak sesuai kategori Anda')->withInput();
         }
 
-        $basePrice = $item->getPriceForType($validated['rental_type']);
         $totalPrice = $basePrice * $duration;
 
         $driverPrice = 0;
@@ -812,8 +860,7 @@ class BookingWebController extends Controller
         if (($validated['driver_id'] ?? null) && in_array($itemKind, ['mobil', 'motor'])) {
             $driverId = $validated['driver_id'];
             if ($item->with_driver) {
-                $driverDays = max(1, $startDate->diffInDays($endDate));
-                $driverPrice = ($item->with_driver_daily_price ?? 0) * $driverDays;
+                $driverPrice = ($item->with_driver_daily_price ?? 0) * $realDays;
             }
         }
 
@@ -1155,23 +1202,34 @@ class BookingWebController extends Controller
     private function recalculateBookingPrices(Booking $booking, \Carbon\Carbon $start, \Carbon\Carbon $end): ?array
     {
         $rentalType = $booking->rental_type;
-        $duration = $rentalType === 'hourly'
-            ? max(1, $start->diffInHours($end))
-            : max(1, $start->diffInDays($end));
-
         $unit = $booking->item_id && $booking->item_type ? $booking->item : ($booking->vehicle ?? null);
         if (!$unit) {
             return null;
         }
 
-        $basePrice = $unit->getPriceForType($rentalType);
-        $rentalRate = $rentalType === 'hourly' ? ($unit->hourly_price ?? 0) : $basePrice;
+        if ($rentalType === 'hourly') {
+            $duration = max(1, $start->diffInHours($end));
+            $rentalRate = $unit->hourly_price ?? 0;
+            $realDays = 1;
+        } elseif ($rentalType === 'weekly') {
+            $duration = max(1, (int) round($start->diffInDays($end) / 7));
+            $rentalRate = $unit->weekly_price ?? ($unit->daily_price * 7);
+            $realDays = $duration * 7;
+        } elseif ($rentalType === 'monthly') {
+            $duration = max(1, (int) round($start->diffInDays($end) / 30));
+            $rentalRate = $unit->monthly_price ?? ($unit->daily_price * 30);
+            $realDays = $duration * 30;
+        } else {
+            $duration = max(1, $start->diffInDays($end));
+            $rentalRate = $unit->daily_price;
+            $realDays = $duration;
+        }
+
         $subtotal = round($rentalRate * $duration);
 
         $driverPrice = 0;
         if ($booking->with_driver && $booking->vehicle && $booking->vehicle->with_driver) {
-            $driverDays = max(1, $start->diffInDays($end));
-            $driverPrice = round(($booking->vehicle->with_driver_daily_price ?? 0) * $driverDays);
+            $driverPrice = round(($booking->vehicle->with_driver_daily_price ?? 0) * $realDays);
         } else {
             $driverPrice = (float) ($booking->driver_price ?? 0);
         }
@@ -1179,7 +1237,7 @@ class BookingWebController extends Controller
         $insuranceFee = 0;
         if ($booking->with_insurance && $unit->daily_price) {
             $insuranceRate = round($unit->daily_price * 0.05);
-            $insuranceFee = round($insuranceRate * $duration);
+            $insuranceFee = round($insuranceRate * $realDays);
         }
 
         $accessoriesCost = 0;
@@ -1189,7 +1247,7 @@ class BookingWebController extends Controller
             foreach ($booking->accessories as $accName) {
                 foreach ($config['accessories'] ?? [] as $acc) {
                     if ($acc['name'] === $accName) {
-                        $accessoriesCost += round($acc['price'] * $duration);
+                        $accessoriesCost += round($acc['price'] * $realDays);
                         break;
                     }
                 }
@@ -1314,6 +1372,14 @@ class BookingWebController extends Controller
 
     public function confirm(Booking $booking)
     {
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, atau admin merchant yang dapat mengonfirmasi booking.');
+        }
+        if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
+            abort(403, 'Anda tidak memiliki akses ke booking ini.');
+        }
+
         if ($booking->status !== 'pending') {
             return back()->with('error', 'Booking tidak dapat dikonfirmasi');
         }
@@ -1331,6 +1397,22 @@ class BookingWebController extends Controller
 
     public function cancel(Booking $booking)
     {
+        $user = Auth::user();
+        if ($user->role === 'user') {
+            if ((int) $booking->user_id !== (int) $user->id) {
+                abort(403, 'Anda hanya dapat membatalkan booking milik Anda sendiri.');
+            }
+            if ($booking->status !== 'pending') {
+                return back()->with('error', 'Booking yang sudah dikonfirmasi atau berjalan tidak dapat dibatalkan.');
+            }
+        } elseif ($user->isMerchantStaff()) {
+            if (!$this->bookingAccessibleByStaff($booking, $user)) {
+                abort(403, 'Anda tidak memiliki akses ke booking toko lain.');
+            }
+        } elseif (!$user->isSuperAdmin()) {
+            abort(403, 'Akses ditolak.');
+        }
+
         if (in_array($booking->status, ['completed', 'cancelled'])) {
             return back()->with('error', 'Booking tidak dapat dibatalkan');
         }
@@ -1352,6 +1434,14 @@ class BookingWebController extends Controller
 
     public function startTrip(Booking $booking)
     {
+        $user = Auth::user();
+        $isAssignedDriver = $user->role === 'driver' && $booking->driver && (int) $booking->driver->user_id === (int) $user->id;
+        if (!$user->isSuperAdmin() && !$isAssignedDriver) {
+            if (!in_array($user->role, ['owner', 'admin']) || !$this->bookingAccessibleByStaff($booking, $user)) {
+                abort(403, 'Akses ditolak.');
+            }
+        }
+
         if ($booking->status !== 'confirmed') {
             return back()->with('error', 'Booking harus dikonfirmasi dulu');
         }
@@ -1370,13 +1460,21 @@ class BookingWebController extends Controller
 
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'ongoing'));
 
-        return back()->with('success', 'Perjalanan dimulai');
+        return back()->with('success', $booking->isVehicleBooking() ? 'Perjalanan dimulai' : 'Sewa unit dimulai');
     }
 
     public function complete(Booking $booking)
     {
+        $user = Auth::user();
+        $isAssignedDriver = $user->role === 'driver' && $booking->driver && (int) $booking->driver->user_id === (int) $user->id;
+        if (!$user->isSuperAdmin() && !$isAssignedDriver) {
+            if (!in_array($user->role, ['owner', 'admin']) || !$this->bookingAccessibleByStaff($booking, $user)) {
+                abort(403, 'Akses ditolak.');
+            }
+        }
+
         if ($booking->status !== 'ongoing') {
-            return back()->with('error', 'Perjalanan belum dimulai');
+            return back()->with('error', 'Perjalanan atau sewa belum dimulai');
         }
 
         $oldStatus = $booking->status;
@@ -1397,7 +1495,7 @@ class BookingWebController extends Controller
 
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'completed'));
 
-        return back()->with('success', 'Perjalanan selesai');
+        return back()->with('success', $booking->isVehicleBooking() ? 'Perjalanan selesai' : 'Sewa unit selesai');
     }
 
     /**

@@ -19,8 +19,8 @@ class SalaryWebController extends Controller
             if ($driver) {
                 $query->where('driver_id', $driver->id);
             }
-        } elseif (Auth::user()->role === 'owner') {
-            $query->where('owner_id', Auth::id());
+        } elseif (Auth::user()->isMerchantStaff()) {
+            $query->where('owner_id', Auth::user()->merchantId());
         }
 
         if ($request->period_month) {
@@ -34,7 +34,8 @@ class SalaryWebController extends Controller
 
     public function create()
     {
-        $drivers = Driver::where('owner_id', Auth::id())->where('is_active', true)->get();
+        $ownerId = Auth::user()->merchantId();
+        $drivers = Driver::when($ownerId, fn($q) => $q->where('owner_id', $ownerId))->where('is_active', true)->get();
         return view('salaries.create', compact('drivers'));
     }
 
@@ -50,7 +51,7 @@ class SalaryWebController extends Controller
             'notes' => 'nullable|string|max:2000',
         ]);
 
-        $validated['owner_id'] = Auth::id();
+        $validated['owner_id'] = Auth::user()->merchantId() ?? Auth::id();
         $validated['base_salary'] = $validated['base_salary'] ?? 0;
         $validated['trip_bonus'] = $validated['trip_bonus'] ?? 0;
         $validated['overtime_pay'] = $validated['overtime_pay'] ?? 0;
@@ -70,12 +71,18 @@ class SalaryWebController extends Controller
 
     public function approve(DriverSalary $salary)
     {
+        if (Auth::user()->isMerchantStaff() && (int)$salary->owner_id !== (int)Auth::user()->merchantId()) {
+            abort(403);
+        }
         $salary->update(['status' => 'approved']);
         return back()->with('success', 'Gaji berhasil disetujui');
     }
 
     public function pay(DriverSalary $salary)
     {
+        if (Auth::user()->isMerchantStaff() && (int)$salary->owner_id !== (int)Auth::user()->merchantId()) {
+            abort(403);
+        }
         $salary->update(['status' => 'paid']);
         return back()->with('success', 'Gaji berhasil dibayar');
     }

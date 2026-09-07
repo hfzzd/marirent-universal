@@ -83,21 +83,99 @@
                             </div>
                         </div>
 
-                        {{-- Dates --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tanggal Mulai *</label>
-                                <input type="datetime-local" name="start_date" x-model="startDate" required
-                                    min="{{ now()->addHours(1)->format('Y-m-d\TH:i') }}"
-                                    class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                        {{-- Dates & Duration Controls --}}
+                        <template x-if="rentalType === 'hourly' || rentalType === 'daily'">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tanggal & Jam Mulai *</label>
+                                    <input type="datetime-local" name="start_date" x-model="startDate" required
+                                        min="{{ now()->addHours(1)->format('Y-m-d\TH:i') }}"
+                                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tanggal & Jam Selesai *</label>
+                                    <input type="datetime-local" name="end_date" x-model="endDate" required
+                                        min="{{ now()->addHours(2)->format('Y-m-d\TH:i') }}"
+                                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tanggal Selesai *</label>
-                                <input type="datetime-local" name="end_date" x-model="endDate" required
-                                    min="{{ now()->addHours(2)->format('Y-m-d\TH:i') }}"
-                                    class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                        </template>
+
+                        <template x-if="rentalType === 'weekly'">
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tanggal Mulai Sewa *</label>
+                                        <input type="datetime-local" name="start_date" x-model="startDate" required
+                                            min="{{ now()->addHours(1)->format('Y-m-d\TH:i') }}"
+                                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Durasi Sewa (Berapa Minggu?) *</label>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" @click="durationWeeks = Math.max(1, durationWeeks - 1)" class="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition">
+                                                <i class="fas fa-minus text-xs"></i>
+                                            </button>
+                                            <input type="number" name="duration_weeks" x-model.number="durationWeeks" min="1" max="52" required
+                                                class="flex-1 text-center font-bold text-navy-900 border border-gray-200 rounded-xl py-2.5 text-[14px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                                            <button type="button" @click="durationWeeks++" class="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition">
+                                                <i class="fas fa-plus text-xs"></i>
+                                            </button>
+                                            <span class="text-sm font-semibold text-navy-700">Minggu</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="end_date" :value="calculatedEndDate">
+                                <div class="bg-sky-50/70 border border-sky-200/80 rounded-xl p-3.5 flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-sky-500 text-white flex items-center justify-center flex-shrink-0 text-xs">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div class="text-[12px]">
+                                        <span class="text-gray-500">Estimasi Pengembalian Barang:</span>
+                                        <p class="font-bold text-navy-900" x-text="calculatedEndDateFormatted"></p>
+                                        <p class="text-[11px] text-sky-600 mt-0.5">Total durasi: <span x-text="durationWeeks"></span> minggu (<span x-text="durationWeeks * 7"></span> hari)</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </template>
+
+                        <template x-if="rentalType === 'monthly'">
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tanggal Mulai Sewa *</label>
+                                        <input type="datetime-local" name="start_date" x-model="startDate" required
+                                            min="{{ now()->addHours(1)->format('Y-m-d\TH:i') }}"
+                                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Durasi Sewa (Berapa Bulan?) *</label>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" @click="durationMonths = Math.max(1, durationMonths - 1)" class="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition">
+                                                <i class="fas fa-minus text-xs"></i>
+                                            </button>
+                                            <input type="number" name="duration_months" x-model.number="durationMonths" min="1" max="36" required
+                                                class="flex-1 text-center font-bold text-navy-900 border border-gray-200 rounded-xl py-2.5 text-[14px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                                            <button type="button" @click="durationMonths++" class="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition">
+                                                <i class="fas fa-plus text-xs"></i>
+                                            </button>
+                                            <span class="text-sm font-semibold text-navy-700">Bulan</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="end_date" :value="calculatedEndDate">
+                                <div class="bg-sky-50/70 border border-sky-200/80 rounded-xl p-3.5 flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-sky-500 text-white flex items-center justify-center flex-shrink-0 text-xs">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div class="text-[12px]">
+                                        <span class="text-gray-500">Estimasi Pengembalian Barang:</span>
+                                        <p class="font-bold text-navy-900" x-text="calculatedEndDateFormatted"></p>
+                                        <p class="text-[11px] text-sky-600 mt-0.5">Total durasi: <span x-text="durationMonths"></span> bulan</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
 
                         {{-- Urgency Level --}}
                         <div>
@@ -139,7 +217,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach($config['accessories'] as $acc)
                                 <label class="flex items-center gap-2.5 border border-gray-200 rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-sky-300 transition has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50/60">
-                                    <input type="checkbox" name="accessories[]" value="{{ $acc['name'] }}" class="accent-sky-600 rounded">
+                                    <input type="checkbox" name="accessories[]" value="{{ $acc['name'] }}" x-model="selectedAccessories" class="accent-sky-600 rounded">
                                     <div class="flex-1">
                                         <p class="text-[12px] font-semibold text-navy-700">{{ $acc['name'] }}</p>
                                         @if($acc['price'] > 0)
@@ -386,6 +464,8 @@ function bookingForm() {
         rentalType: '{{ old('rental_type', 'daily') }}',
         startDate: '{{ old('start_date') }}',
         endDate: '{{ old('end_date') }}',
+        durationWeeks: {{ max(1, (int)old('duration_weeks', 1)) }},
+        durationMonths: {{ max(1, (int)old('duration_months', 1)) }},
         urgency: '{{ old('urgency', 'normal') }}',
         withInsurance: '{{ old('with_insurance', '0') }}',
         paymentPlan: '{{ old('payment_plan', 'full') }}',
@@ -397,7 +477,40 @@ function bookingForm() {
         get unitPrice() {
             return { hourly: hourlyPrice, daily: dailyPrice, weekly: weeklyPrice, monthly: monthlyPrice }[this.rentalType] || dailyPrice;
         },
+        get calculatedEndDate() {
+            if (!this.startDate) return '';
+            const d = new Date(this.startDate);
+            if (isNaN(d.getTime())) return '';
+            if (this.rentalType === 'weekly') {
+                const w = Math.max(1, parseInt(this.durationWeeks || 1));
+                d.setDate(d.getDate() + (w * 7));
+            } else if (this.rentalType === 'monthly') {
+                const m = Math.max(1, parseInt(this.durationMonths || 1));
+                d.setMonth(d.getMonth() + m);
+            }
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        },
+        get calculatedEndDateFormatted() {
+            if (!this.startDate) return 'Pilih tanggal mulai terlebih dahulu';
+            const d = new Date(this.startDate);
+            if (isNaN(d.getTime())) return '-';
+            if (this.rentalType === 'weekly') {
+                const w = Math.max(1, parseInt(this.durationWeeks || 1));
+                d.setDate(d.getDate() + (w * 7));
+            } else if (this.rentalType === 'monthly') {
+                const m = Math.max(1, parseInt(this.durationMonths || 1));
+                d.setMonth(d.getMonth() + m);
+            }
+            return d.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' });
+        },
         get durationValue() {
+            if (this.rentalType === 'weekly') {
+                return Math.max(1, parseInt(this.durationWeeks || 1));
+            }
+            if (this.rentalType === 'monthly') {
+                return Math.max(1, parseInt(this.durationMonths || 1));
+            }
             if (!this.startDate || !this.endDate) return 0;
             const start = new Date(this.startDate);
             const end = new Date(this.endDate);
@@ -406,10 +519,25 @@ function bookingForm() {
             if (this.rentalType === 'hourly') return Math.max(1, Math.ceil(diff / (1000 * 60 * 60)));
             return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
         },
+        get durationDays() {
+            if (this.rentalType === 'weekly') {
+                return this.durationValue * 7;
+            }
+            if (this.rentalType === 'monthly') {
+                return this.durationValue * 30;
+            }
+            return this.durationValue;
+        },
         get durationText() {
             const v = this.durationValue;
             if (v === 0) return '-';
-            const unit = { hourly: 'jam', daily: 'hari', weekly: 'minggu', monthly: 'bulan' }[this.rentalType] || 'hari';
+            if (this.rentalType === 'weekly') {
+                return `${v} minggu (${v * 7} hari)`;
+            }
+            if (this.rentalType === 'monthly') {
+                return `${v} bulan`;
+            }
+            const unit = { hourly: 'jam', daily: 'hari' }[this.rentalType] || 'hari';
             return v + ' ' + unit;
         },
         get subtotal() {
@@ -419,7 +547,7 @@ function bookingForm() {
             return this.withInsurance === '1';
         },
         get insuranceTotal() {
-            return this.isInsured ? insuranceRate * this.durationValue : 0;
+            return this.isInsured ? insuranceRate * this.durationDays : 0;
         },
         get urgencyMultiplier() {
             return { normal: 0, urgent: 0.10, very_urgent: 0.20 }[this.urgency] || 0;
@@ -431,7 +559,7 @@ function bookingForm() {
             let cost = 0;
             this.selectedAccessories.forEach(name => {
                 const acc = accessoriesData.find(a => a.name === name);
-                if (acc) cost += acc.price * this.durationValue;
+                if (acc) cost += acc.price * this.durationDays;
             });
             return cost;
         },
@@ -445,7 +573,7 @@ function bookingForm() {
             return this.grandTotal - this.dueNow;
         },
         formatRupiah(n) {
-            return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+            return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
         }
     };
 }

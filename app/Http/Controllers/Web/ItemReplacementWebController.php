@@ -159,8 +159,8 @@ class ItemReplacementWebController extends Controller
 
     public function approve(ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat menyetujui');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, atau admin yang dapat menyetujui');
         }
 
         $replacement->update([
@@ -199,8 +199,8 @@ class ItemReplacementWebController extends Controller
 
     public function reject(ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
-            abort(403, 'Hanya superadmin dan owner yang dapat menolak');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Hanya superadmin, owner, atau admin yang dapat menolak');
         }
 
         $replacement->update(['status' => 'rejected', 'approved_by' => Auth::id()]);
@@ -209,7 +209,7 @@ class ItemReplacementWebController extends Controller
 
     public function returnItem(Request $request, ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
             abort(403);
         }
 
