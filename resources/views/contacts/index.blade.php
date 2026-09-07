@@ -8,7 +8,7 @@
             <span class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm shadow-sm"><i class="fas fa-address-book"></i></span>
             Direktori Buku Kontak
         </h2>
-        <p class="text-xs text-gray-400 mt-0.5">Daftar kontak seluruh Pelanggan, Driver, Mitra Owner, dan Admin sistem.</p>
+        <p class="text-xs text-gray-400 mt-0.5">Daftar kontak Pelanggan, Driver, Karyawan, Mitra Owner, dan Admin sistem.</p>
     </div>
     <div class="flex items-center gap-2">
         <a href="{{ route('chat.index') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-sky-500/20 flex items-center gap-1.5 transition">
@@ -28,6 +28,9 @@
         </a>
         <a href="{{ route('contacts.index', ['role' => 'driver']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'driver' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Driver ({{ $counts['driver'] }})
+        </a>
+        <a href="{{ route('contacts.index', ['role' => 'employee']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'employee' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+            Karyawan ({{ $counts['employee'] }})
         </a>
         <a href="{{ route('contacts.index', ['role' => 'owner']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'owner' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Mitra Owner ({{ $counts['owner'] }})
@@ -66,6 +69,8 @@
                 <span class="badge badge-yellow text-[10px] uppercase">Owner</span>
                 @elseif($c->role === 'driver')
                 <span class="badge badge-teal text-[10px] uppercase">Driver</span>
+                @elseif($c->role === 'employee')
+                <span class="badge badge-blue text-[10px] uppercase">Karyawan</span>
                 @else
                 <span class="badge badge-gray text-[10px] uppercase">Pelanggan</span>
                 @endif

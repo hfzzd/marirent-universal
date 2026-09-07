@@ -19,10 +19,24 @@ class DriverWebController extends Controller
         }
     }
 
+    private function authorizeView(): void
+    {
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
+            abort(403, 'Anda tidak memiliki akses ke halaman driver.');
+        }
+    }
+
     private function guardDriver(Driver $driver): void
     {
-        if (Auth::user()->isOwner() && (int) $driver->owner_id !== (int) Auth::id()) {
+        $user = Auth::user();
+        if ($user->isOwner() && (int) $driver->owner_id !== (int) Auth::id()) {
             abort(403, 'Anda tidak memiliki akses ke driver ini.');
+        }
+        if ($user->isAdmin()) {
+            if ((int) $driver->owner_id !== (int) $user->merchantId()
+                || ($user->merchantCategoryId() && (int) $driver->user?->category_id !== (int) $user->merchantCategoryId())) {
+                abort(403, 'Driver ini bukan bagian dari kategori Anda.');
+            }
         }
     }
 
@@ -36,17 +50,22 @@ class DriverWebController extends Controller
 
     private function resolveOwnCompany(): ?Company
     {
-        return Company::where('user_id', Auth::id())->first();
+        return Company::ensureForOwner(Auth::user());
     }
 
     public function index(Request $request)
     {
-        $this->authorizeManage();
+        $this->authorizeView();
 
         $query = Driver::with(['user', 'company', 'owner']);
 
         if (Auth::user()->isOwner()) {
             $query->where('owner_id', Auth::id());
+        } elseif (Auth::user()->isAdmin()) {
+            $query->where('owner_id', Auth::user()->merchantId());
+            if ($categoryId = Auth::user()->merchantCategoryId()) {
+                $query->whereHas('user', fn($q) => $q->where('category_id', $categoryId));
+            }
         } elseif ($request->filled('company_id')) {
             $query->where('company_id', $request->company_id);
         }
@@ -99,6 +118,7 @@ class DriverWebController extends Controller
         ]);
 
         $company = $this->resolveCompanyFromRequest($request);
+        $position = $validated['position'] ?? null;
 
         $user = User::create([
             'name' => $validated['name'],
@@ -106,8 +126,9 @@ class DriverWebController extends Controller
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['address'] ?? null,
-            'role' => 'driver',
+            'role' => User::roleForPosition($position, $company?->owner?->category_id),
             'owner_id' => $company?->user_id,
+            'category_id' => $company?->owner?->category_id,
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
@@ -116,7 +137,7 @@ class DriverWebController extends Controller
             'user_id' => $user->id,
             'owner_id' => $company?->user_id ?? Auth::id(),
             'company_id' => $company?->id,
-            'position' => $validated['position'] ?? null,
+            'position' => $position,
             'license_number' => $validated['license_number'] ?? null,
             'license_type' => $validated['license_type'] ?? null,
             'license_expiry' => $validated['license_expiry'] ?? null,
@@ -133,7 +154,7 @@ class DriverWebController extends Controller
 
     public function show(Driver $driver)
     {
-        $this->authorizeManage();
+        $this->authorizeView();
         $this->guardDriver($driver);
 
         $driver->load(['user', 'company', 'owner', 'salaries']);
@@ -194,14 +215,20 @@ class DriverWebController extends Controller
         }
         $driver->user->update($userData);
 
+        $position = array_key_exists('position', $validated)
+            ? $validated['position']
+            : $driver->position;
+
         $driver->user->update([
             'owner_id' => $company?->user_id ?? $driver->user->owner_id,
+            'category_id' => $company?->owner?->category_id ?? $driver->user->category_id,
+            'role' => User::roleForPosition($position, $company?->owner?->category_id ?? $driver->user->category_id),
         ]);
 
         $driver->update([
             'owner_id' => $company?->user_id ?? $driver->owner_id,
             'company_id' => $company?->id ?? $driver->company_id,
-            'position' => $validated['position'] ?? null,
+            'position' => $position,
             'license_number' => $validated['license_number'] ?? null,
             'license_type' => $validated['license_type'] ?? null,
             'license_expiry' => $validated['license_expiry'] ?? null,

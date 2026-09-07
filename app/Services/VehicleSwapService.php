@@ -155,6 +155,7 @@ class VehicleSwapService
                 'swapped_at' => now(),
                 'reason' => $reason !== '' ? $reason : 'Penggantian langsung oleh operator',
                 'price_difference' => (float) ($priceDifference ?? 0),
+                'mark_maintenance' => $markMaintenance,
             ]);
 
             $recipient = $notifiable();

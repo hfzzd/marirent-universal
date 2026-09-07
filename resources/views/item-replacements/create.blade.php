@@ -93,6 +93,22 @@
             </div>
         </div>
 
+        <div class="glass-card rounded-2xl p-6 mb-5 border border-amber-100/70 bg-amber-50/20">
+            <h3 class="text-[13px] font-bold text-navy-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-triangle-exclamation text-amber-500"></i> Kondisi Unit Asal
+            </h3>
+            <label class="flex items-start gap-2.5 cursor-pointer">
+                <input type="hidden" name="mark_maintenance" value="0">
+                <input type="checkbox" name="mark_maintenance" value="1" checked class="mt-0.5 rounded border-gray-300 text-amber-500 focus:ring-amber-400" onchange="document.getElementById('damageNotesField').classList.toggle('hidden', !this.checked)">
+                <span class="text-[12px] font-semibold text-navy-700">Unit asal rusak, tandai sebagai maintenance</span>
+            </label>
+            <div id="damageNotesField" class="mt-3">
+                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Detail Kerusakan</label>
+                <textarea name="damage_notes" rows="2" maxlength="2000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none bg-white resize-none" placeholder="Jelaskan kerusakan unit asal...">{{ old('damage_notes') }}</textarea>
+                @error('damage_notes') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
         {{-- Foto Bukti --}}
         <div class="glass-card rounded-2xl p-6 mb-6 border border-sky-100/50">
             <h3 class="text-[13px] font-bold text-navy-800 mb-4 flex items-center gap-2">

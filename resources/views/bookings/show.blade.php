@@ -418,36 +418,27 @@
                     </span>
                 </div>
                 @endif
-            </div>
-
-            {{-- Link Terkait (Admin/Owner/Inspector) --}}
-            @if(in_array(auth()->user()->role, ['superadmin','owner','admin','inspector']))
-            <div class="glass-card rounded-2xl p-6">
-                <h3 class="text-[14px] font-bold text-navy-800 mb-3"><i class="fas fa-link text-sky-500 mr-2"></i>Link Terkait</h3>
-                <div class="space-y-2">
-                    @if(in_array($booking->status, ['confirmed','ongoing']) && in_array(auth()->user()->role, ['superadmin','owner','admin','inspector']) && !(auth()->user()->role === 'inspector' && $booking->with_driver))
-                    <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition"><i class="fas fa-clipboard-check text-emerald-600 text-[11px]"></i></span>
-                        Mulai Inspeksi
-                    </a>
-                    @endif
-                    <a href="{{ route('inspections.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-list-check text-sky-600 text-[11px]"></i></span>
-                        Riwayat Inspeksi
-                    </a>
-                    @if(in_array(auth()->user()->role, ['superadmin','owner','admin']))
-                    <a href="{{ route('reports.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-route text-sky-600 text-[11px]"></i></span>
-                        Laporan Perjalanan
-                    </a>
-                    <a href="{{ route('invoices.index') }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-file-invoice-dollar text-sky-600 text-[11px]"></i></span>
-                        Invoice
-                    </a>
+                @php
+                    $verifiedPayments = $booking->payments->where('status', 'verified');
+                    $lastVerifiedPayment = $verifiedPayments->sortByDesc('verified_at')->first();
+                    $paymentConfirmed = $booking->payment_status === 'paid' || $verifiedPayments->isNotEmpty();
+                    $verifiedTotal = $verifiedPayments->sum('amount') ?: (float) ($booking->invoice?->paid_amount ?? 0);
+                @endphp
+                @if($paymentConfirmed)
+                <div class="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-bold text-emerald-700"><i class="fas fa-circle-check mr-1"></i> Pembayaran Terkonfirmasi</span>
+                        <span class="badge badge-green text-[10px]">{{ $booking->payment_status === 'paid' ? 'Lunas' : 'Terverifikasi' }}</span>
+                    </div>
+                    <p class="text-[12px] font-bold text-emerald-800 mt-2">Rp {{ number_format($verifiedTotal, 0, ',', '.') }}</p>
+                    @if($lastVerifiedPayment)
+                    <p class="text-[10px] text-emerald-700 mt-1">{{ ucfirst(str_replace('_', ' ', $lastVerifiedPayment->method)) }} &bull; {{ $lastVerifiedPayment->verified_at?->format('d M Y H:i') }}</p>
+                    @elseif($booking->invoice?->paid_at)
+                    <p class="text-[10px] text-emerald-700 mt-1">Dikonfirmasi {{ $booking->invoice->paid_at->format('d M Y H:i') }}</p>
                     @endif
                 </div>
+                @endif
             </div>
-            @endif
 
             {{-- Timeline --}}
             <div class="glass-card rounded-2xl p-6">

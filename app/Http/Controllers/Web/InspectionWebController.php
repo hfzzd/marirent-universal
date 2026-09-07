@@ -15,7 +15,7 @@ class InspectionWebController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Inspection::with(['booking', 'booking.vehicle', 'booking.user', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
+        $query = Inspection::with(['booking', 'booking.vehicle', 'booking.item', 'booking.user', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
         $user = Auth::user();
 
         if ($user->isInspector()) {
@@ -23,13 +23,20 @@ class InspectionWebController extends Controller
         } elseif ($user->isMerchantStaff()) {
             $merchantId = $user->merchantId();
             $categoryId = $user->merchantCategoryId();
-            $query->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId)->when($categoryId, fn($q) => $q->where('category_id', $categoryId)))
-                ->orWhereHas('booking.vehicle', fn($vq) => $vq->where('owner_id', $merchantId)->when($categoryId, fn($q) => $q->where('category_id', $categoryId)));
+            $query->where(function ($inspectionQuery) use ($merchantId, $categoryId) {
+                $inspectionQuery
+                    ->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId)->when($categoryId, fn($q) => $q->where('category_id', $categoryId)))
+                    ->orWhereHas('booking', fn($bookingQuery) => $bookingQuery->forMerchantCategory($merchantId, $categoryId));
+            });
         } elseif ($user->isDriver()) {
             $driver = Driver::where('user_id', $user->id)->first();
             if ($driver) {
-                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id)->where('with_driver', true));
+                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id));
+            } else {
+                $query->whereRaw('1 = 0');
             }
+        } elseif (!$user->isSuperAdmin()) {
+            $query->whereRaw('1 = 0');
         }
 
         if ($request->booking_id) {
@@ -57,6 +64,9 @@ class InspectionWebController extends Controller
     public function create(Request $request)
     {
         $user = Auth::user();
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector() && !$user->isDriver()) {
+            abort(403);
+        }
 
         $bookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
             ->with(['user', 'vehicle', 'category', 'bookingItems'])
@@ -256,7 +266,7 @@ class InspectionWebController extends Controller
 
     public function show(Inspection $inspection)
     {
-        $inspection->load(['booking', 'booking.user', 'booking.vehicle', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
+        $inspection->load(['booking', 'booking.user', 'booking.vehicle', 'booking.item', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
         $user = Auth::user();
 
         if ($user->isMerchantStaff() && !$this->inspectionForMerchant($inspection, $user)) {
@@ -280,6 +290,10 @@ class InspectionWebController extends Controller
             if (!$isAssigned && !$isReportedBy && !$isAssignedTo && !$isInspectorId) {
                 abort(403);
             }
+        }
+
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector() && !$user->isDriver()) {
+            abort(403);
         }
 
         return view('inspections.show', compact('inspection'));
@@ -326,22 +340,18 @@ class InspectionWebController extends Controller
             return true;
         }
 
-        $matchesMerchant = false;
-        if ($inspection->vehicle) {
-            $matchesMerchant = (int) $inspection->vehicle->owner_id === $merchantId;
-        } elseif ($inspection->booking?->vehicle) {
-            $matchesMerchant = (int) $inspection->booking->vehicle->owner_id === $merchantId;
-        } else {
-            return true;
-        }
-
-        if (!$matchesMerchant) {
+        $ownerId = $inspection->vehicle?->owner_id
+            ?? $inspection->booking?->merchantOwnerId();
+        if (!$ownerId || (int) $ownerId !== (int) $merchantId) {
             return false;
         }
 
         if ($categoryId) {
-            $vehicle = $inspection->vehicle ?? $inspection->booking?->vehicle;
-            return $vehicle && (int) $vehicle->category_id === $categoryId;
+            if ($inspection->vehicle) {
+                return (int) $inspection->vehicle->category_id === (int) $categoryId;
+            }
+
+            return $inspection->booking?->belongsToCategory($categoryId) ?? false;
         }
 
         return true;

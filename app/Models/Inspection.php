@@ -54,14 +54,10 @@ class Inspection extends Model
         $merchantId = $user->merchantId();
 
         if ($this->vehicle && $this->vehicle->owner_id) {
-            return $this->vehicle->owner_id == $merchantId;
+            return (int) $this->vehicle->owner_id === (int) $merchantId;
         }
 
-        if ($this->booking?->user_id) {
-            return true;
-        }
-
-        return false;
+        return $this->booking?->merchantOwnerId() === (int) $merchantId;
     }
 
     public function getStatusLabel(): string

@@ -17,11 +17,12 @@ class InvoiceWebController extends Controller
     {
         $query = Invoice::with(['booking', 'booking.vehicle', 'booking.vehicle.category', 'booking.category', 'user', 'items', 'payments' => fn ($q) => $q->where('status', 'pending')]);
 
-        if (Auth::user()->role === 'user') {
+        $user = Auth::user();
+        if ($user->role === 'user') {
             $query->where('user_id', Auth::id());
-        } elseif (Auth::user()->isMerchantStaff()) {
-            $query->where('owner_id', Auth::user()->merchantId());
-            $categoryId = Auth::user()->merchantCategoryId();
+        } elseif ($user->isMerchantStaff()) {
+            $query->where('owner_id', $user->merchantId());
+            $categoryId = $user->merchantCategoryId();
             if ($categoryId) {
                 $query->where(function ($q) use ($categoryId) {
                     $q->where('category_id', $categoryId)
@@ -29,6 +30,10 @@ class InvoiceWebController extends Controller
                       ->orWhereHas('bookings', fn($bq) => $bq->where('category_id', $categoryId)->orWhereHas('childBookings', fn($cq) => $cq->where('category_id', $categoryId)));
                 });
             }
+        } elseif ($user->isInspector()) {
+            // Inspectors retain read access to the financial context of their assignments.
+        } elseif (!$user->isSuperAdmin()) {
+            $query->whereRaw('1 = 0');
         }
 
         if ($request->type) {
@@ -218,7 +223,7 @@ class InvoiceWebController extends Controller
     {
         $user = Auth::user();
         if ($user->role === 'user') {
-            abort_unless($invoice->user_id === $user->id, 403);
+            abort_unless((int) $invoice->user_id === (int) $user->id, 403);
             return;
         }
         if ($user->role === 'driver') {
@@ -234,10 +239,15 @@ class InvoiceWebController extends Controller
         if ($user->isMerchantStaff() && !$this->invoiceBelongsToStaffCategory($invoice)) {
             abort(403);
         }
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector()) {
+            abort(403);
+        }
     }
 
     public function pay(Request $request, Invoice $invoice)
     {
+        $this->authorizeInvoiceAccess($invoice);
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:1',
             'method' => 'required|in:cash,transfer,ewallet,credit_card,other',

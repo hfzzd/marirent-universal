@@ -144,7 +144,7 @@
             @forelse($inspectorReports as $r)
             <div class="px-5 py-3 flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <p class="font-bold text-navy-800 text-[13px] truncate">{{ $r->vehicle?->name ?? 'Unit' }}</p>
+                    <p class="font-bold text-navy-800 text-[13px] truncate">{{ $r->getItemName() }}</p>
                     <p class="text-[11px] text-gray-400 truncate">Dilaporkan oleh {{ $r->reportedBy?->name ?? '-' }} &bull; {{ \Carbon\Carbon::parse($r->created_at)->diffForHumans() }}</p>
                 </div>
                 <span class="badge badge-red text-[10px] whitespace-nowrap flex-shrink-0">Menunggu Inspector</span>

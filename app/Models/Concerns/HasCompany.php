@@ -14,7 +14,7 @@ trait HasCompany
     {
         static::creating(function ($model) {
             if (empty($model->company_id) && !empty($model->owner_id)) {
-                $model->company_id = Company::where('user_id', $model->owner_id)->value('id');
+                $model->company_id = Company::ensureForOwner((int) $model->owner_id)->id;
             }
         });
     }

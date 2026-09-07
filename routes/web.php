@@ -188,7 +188,7 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/{booking}/remove-driver', [BookingWebController::class, 'removeDriver'])->name('bookings.remove-driver');
 });
 
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('drivers')->group(function () {
+Route::middleware(['auth', 'role:superadmin,owner,admin'])->prefix('drivers')->group(function () {
 Route::get('/', [DriverWebController::class, 'index'])->name('drivers.index');
 Route::get('/create', [DriverWebController::class, 'create'])->name('drivers.create');
 Route::post('/', [DriverWebController::class, 'store'])->name('drivers.store');
@@ -272,6 +272,7 @@ Route::middleware('auth')->prefix('item-replacements')->group(function () {
     Route::get('/', [ItemReplacementWebController::class, 'index'])->name('item-replacements.index');
     Route::get('/create', [ItemReplacementWebController::class, 'create'])->name('item-replacements.create');
     Route::post('/', [ItemReplacementWebController::class, 'store'])->name('item-replacements.store');
+    Route::get('/{replacement}', [ItemReplacementWebController::class, 'show'])->name('item-replacements.show');
     Route::post('/{replacement}/approve', [ItemReplacementWebController::class, 'approve'])->name('item-replacements.approve');
     Route::post('/{replacement}/reject', [ItemReplacementWebController::class, 'reject'])->name('item-replacements.reject');
     Route::post('/{replacement}/return', [ItemReplacementWebController::class, 'returnItem'])->name('item-replacements.return');

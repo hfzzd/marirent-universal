@@ -39,7 +39,9 @@ class ItemReplacementWebController extends Controller
             $query->whereHas('booking', fn($q) => $q->where('user_id', Auth::id()));
         } elseif (in_array($role, ['owner', 'admin'])) {
             $ownerId = $this->itemMerchantOwnerId();
-            $query->whereHas('booking', fn($q) => $q->ownedByMerchant($ownerId));
+            $query->whereHas('booking', fn($q) => $q->forMerchantCategory($ownerId, Auth::user()->merchantCategoryId()));
+        } elseif ($role !== 'superadmin') {
+            $query->whereRaw('1 = 0');
         }
 
         if ($request->status) {
@@ -60,10 +62,22 @@ class ItemReplacementWebController extends Controller
         return view('item-replacements.index', compact('replacements'));
     }
 
+    public function show(ItemReplacement $replacement)
+    {
+        $replacement->load([
+            'booking.user', 'booking.category', 'booking.vehicle',
+            'requestedBy', 'approvedBy', 'returnedBy',
+            'originalItem', 'replacementItem',
+        ]);
+        $this->guardReplacementView($replacement);
+
+        return view('item-replacements.show', compact('replacement'));
+    }
+
     public function create(Request $request)
     {
         $role = Auth::user()->role;
-        if (!in_array($role, ['superadmin', 'owner', 'admin', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'user'])) {
             abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 
@@ -81,7 +95,7 @@ class ItemReplacementWebController extends Controller
         } else {
             $ownerId = $this->itemMerchantOwnerId();
             if ($ownerId) {
-                $bookings->ownedByMerchant($ownerId);
+                $bookings->forMerchantCategory($ownerId, Auth::user()->merchantCategoryId());
             }
         }
 
@@ -108,9 +122,28 @@ class ItemReplacementWebController extends Controller
     private function guardCompanyItemReplacement(ItemReplacement $replacement): void
     {
         $ownerId = $this->itemMerchantOwnerId();
-        if ($ownerId && !Booking::where('id', $replacement->booking_id)->ownedByMerchant($ownerId)->exists()) {
+        if ($ownerId && !Booking::where('id', $replacement->booking_id)
+            ->forMerchantCategory($ownerId, Auth::user()->merchantCategoryId())
+            ->exists()) {
             abort(403, 'Penggantian unit ini bukan milik company Anda');
         }
+    }
+
+    private function guardReplacementView(ItemReplacement $replacement): void
+    {
+        $user = Auth::user();
+
+        if ($user->role === 'user') {
+            abort_unless((int) $replacement->booking?->user_id === (int) $user->id, 403);
+            return;
+        }
+
+        if (in_array($user->role, ['owner', 'admin'])) {
+            $this->guardCompanyItemReplacement($replacement);
+            return;
+        }
+
+        abort_unless($user->isSuperAdmin(), 403);
     }
 
     private function getAvailableItems(string $type, ?string $role = null)
@@ -132,6 +165,9 @@ class ItemReplacementWebController extends Controller
         if ($role !== 'user' && $ownerId) {
             $query->where('owner_id', $ownerId);
         }
+        if ($categoryId = Auth::user()->merchantCategoryId()) {
+            $query->where('category_id', $categoryId);
+        }
 
         return $query->get();
     }
@@ -139,7 +175,7 @@ class ItemReplacementWebController extends Controller
     public function store(Request $request)
     {
         $role = Auth::user()->role;
-        if (!in_array($role, ['superadmin', 'owner', 'admin', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'user'])) {
             abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 
@@ -151,6 +187,8 @@ class ItemReplacementWebController extends Controller
             'reason' => 'required|string|max:2000',
             'initial_item_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'final_item_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'mark_maintenance' => 'nullable|in:0,1',
+            'damage_notes' => 'nullable|string|max:2000',
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
@@ -175,8 +213,19 @@ class ItemReplacementWebController extends Controller
             'musik' => MusicalInstrument::class,
         };
 
+        if ($booking->item_type !== $modelClass || (int) $booking->item_id !== (int) $validated['original_item_id']) {
+            return back()->with('error', 'Unit asal tidak sesuai dengan unit pada booking')->withInput();
+        }
+
         $originalItem = $modelClass::findOrFail($validated['original_item_id']);
         $replacementItem = $modelClass::findOrFail($validated['replacement_item_id']);
+
+        if ((int) $originalItem->id === (int) $replacementItem->id) {
+            return back()->with('error', 'Unit pengganti harus berbeda dari unit asal')->withInput();
+        }
+        if ($replacementItem->status !== 'available' || !$replacementItem->is_active) {
+            return back()->with('error', 'Unit pengganti tidak tersedia')->withInput();
+        }
 
         $ownerId = $this->itemMerchantOwnerId();
         if (in_array($role, ['owner', 'admin']) && $ownerId) {
@@ -206,6 +255,8 @@ class ItemReplacementWebController extends Controller
             'status' => 'pending',
             'reason' => $validated['reason'],
             'price_difference' => $priceDiff,
+            'mark_maintenance' => $request->boolean('mark_maintenance'),
+            'damage_notes' => $validated['damage_notes'] ?? null,
             'initial_item_photo' => $initialPhoto,
             'final_item_photo' => $finalPhoto,
         ]);
@@ -219,6 +270,10 @@ class ItemReplacementWebController extends Controller
             abort(403, 'Hanya superadmin, owner, dan admin yang dapat menyetujui');
         }
         $this->guardCompanyItemReplacement($replacement);
+
+        if ($replacement->status !== 'pending') {
+            return back()->with('error', 'Pengajuan ini sudah diproses');
+        }
 
         $replacement->update([
             'status' => 'approved',
@@ -236,7 +291,9 @@ class ItemReplacementWebController extends Controller
 
         $originalItem = $modelClass::find($replacement->original_item_id);
         if ($originalItem) {
-            $originalItem->update(['status' => 'available']);
+            $originalItem->update([
+                'status' => $replacement->mark_maintenance ? 'maintenance' : 'available',
+            ]);
         }
 
         $replacementItem = $modelClass::find($replacement->replacement_item_id);
@@ -256,8 +313,8 @@ class ItemReplacementWebController extends Controller
 
     public function reject(ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
-            abort(403, 'Hanya superadmin, owner, dan admin yang dapat menolak');
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403, 'Admin hanya dapat menyetujui pengajuan penggantian');
         }
         $this->guardCompanyItemReplacement($replacement);
 
@@ -267,16 +324,20 @@ class ItemReplacementWebController extends Controller
 
     public function returnItem(Request $request, ItemReplacement $replacement)
     {
-        if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
-            abort(403);
+        if (!in_array(Auth::user()->role, ['superadmin', 'owner'])) {
+            abort(403, 'Admin hanya dapat menyetujui pengajuan penggantian');
         }
         $this->guardCompanyItemReplacement($replacement);
+
+        if ($replacement->status !== 'approved' || $replacement->is_returned) {
+            return back()->with('error', 'Unit ini tidak dapat diproses untuk pengembalian');
+        }
 
         $validated = $request->validate([
             'condition_notes' => 'required|string|max:2000',
             'condition_rating' => 'required|integer|min:1|max:10',
-            'is_damaged' => 'nullable|in:0,1',
-            'damage_notes' => 'nullable|string|max:2000',
+            'return_is_damaged' => 'nullable|in:0,1',
+            'return_damage_notes' => 'nullable|string|max:2000',
         ]);
 
         $replacement->update([
@@ -285,9 +346,23 @@ class ItemReplacementWebController extends Controller
             'is_returned' => true,
             'returned_at' => now(),
             'returned_by' => Auth::id(),
-            'is_damaged' => $validated['is_damaged'] ?? false,
-            'damage_notes' => $validated['damage_notes'] ?? null,
+            'return_is_damaged' => $validated['return_is_damaged'] ?? false,
+            'return_damage_notes' => $validated['return_damage_notes'] ?? null,
         ]);
+
+        $modelClass = match ($replacement->item_type) {
+            'hp' => Phone::class,
+            'camera' => Camera::class,
+            'tenda' => CampingEquipment::class,
+            'ps' => Playstation::class,
+            'drone' => Drone::class,
+            'musik' => MusicalInstrument::class,
+        };
+        if ($replacementItem = $modelClass::find($replacement->replacement_item_id)) {
+            $replacementItem->update([
+                'status' => $replacement->return_is_damaged ? 'maintenance' : 'available',
+            ]);
+        }
 
         return back()->with('success', 'Pengembalian unit berhasil dicatat');
     }

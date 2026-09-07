@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Camera;
 use App\Models\CampingEquipment;
 use App\Models\Category;
+use App\Models\Company;
 use App\Models\Driver;
 use App\Models\Drone;
 use App\Models\Inspection;
@@ -177,14 +178,14 @@ class OverhaulTest extends TestCase
         $customer = User::where('role', 'user')->firstOrFail();
         $vehicle = Vehicle::where('status', 'available')->where('is_active', true)->firstOrFail();
 
-        $this->actingAs($customer)->post('/bookings', [
+        $response = $this->actingAs($customer)->post('/bookings', [
             'vehicle_id' => $vehicle->id,
             'rental_type' => 'daily',
             'start_date' => now()->addDays(1)->format('Y-m-d H:i'),
             'end_date' => now()->addDays(3)->format('Y-m-d H:i'),
             'with_driver' => '0',
             'payment_plan' => 'dp50',
-        ])->assertRedirect();
+        ])->assertSessionHasNoErrors();
 
         $booking = Booking::where('user_id', $customer->id)->latest('id')->first();
         $this->assertSame('dp50', $booking->payment_plan);
@@ -193,6 +194,127 @@ class OverhaulTest extends TestCase
         $invoice = $booking->invoice;
         $this->assertNotNull($invoice);
         $this->assertStringContainsString('DP 50%', $invoice->notes ?? '');
+        $response->assertRedirect(route('invoices.show', $invoice));
+    }
+
+    public function test_non_vehicle_staff_account_is_created_as_employee(): void
+    {
+        $nonVehicleCategory = Category::where('slug', 'sewa-tenda')->firstOrFail();
+        $owner = $this->makeOwner('employee_owner@example.test', $nonVehicleCategory->id);
+        $company = Company::ensureForOwner($owner);
+
+        $this->actingAs($owner)->post('/drivers', [
+            'name' => 'Staff Operasional',
+            'email' => 'employee_staff@example.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'phone' => '081234567890',
+            'position' => 'Driver',
+            'daily_salary' => 100000,
+            'trip_salary' => 0,
+        ])->assertRedirect(route('drivers.index'));
+
+        $staff = User::where('email', 'employee_staff@example.test')->firstOrFail();
+        $profile = Driver::where('user_id', $staff->id)->firstOrFail();
+
+        $this->assertSame('employee', $staff->role);
+        $this->assertSame($company->id, $profile->company_id);
+        $this->assertSame($owner->id, $profile->owner_id);
+    }
+
+    public function test_staff_booking_confirmation_redirects_to_existing_invoice(): void
+    {
+        $mobil = Category::where('slug', 'mobil')->firstOrFail();
+        $owner = $this->makeOwner('confirm_invoice_owner@example.test');
+        $customer = $this->makeRoleUser('confirm_invoice_customer@example.test', 'user');
+        $vehicle = $this->makeVehicle($owner, 'CONFIRM-INVOICE-CAR', $mobil);
+        $booking = Booking::create([
+            'booking_code' => Booking::generateBookingCode(),
+            'user_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
+            'category_id' => $mobil->id,
+            'rental_type' => 'daily',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+            'base_price' => 200000,
+            'total_price' => 200000,
+            'final_price' => 200000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_plan' => 'full',
+            'with_driver' => false,
+        ]);
+        $invoice = Invoice::create([
+            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
+            'booking_id' => $booking->id,
+            'user_id' => $customer->id,
+            'owner_id' => $owner->id,
+            'category_id' => $mobil->id,
+            'type' => 'rental',
+            'subtotal' => 200000,
+            'total_amount' => 200000,
+            'paid_amount' => 0,
+            'due_amount' => 200000,
+            'status' => 'sent',
+            'due_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($owner)->post('/bookings/' . $booking->id . '/confirm')
+            ->assertRedirect(route('invoices.show', $invoice));
+        $this->assertSame('confirmed', $booking->fresh()->status);
+    }
+
+    public function test_pre_rental_inspection_is_visible_to_assigned_driver_and_admin(): void
+    {
+        $mobil = Category::where('slug', 'mobil')->firstOrFail();
+        $owner = $this->makeOwner('inspection_visibility_owner@example.test');
+        $admin = $this->makeAdmin('inspection_visibility_admin@example.test', $owner);
+        $driverUser = $this->makeRoleUser('inspection_visibility_driver@example.test', 'driver');
+        $customer = $this->makeRoleUser('inspection_visibility_customer@example.test', 'user');
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'owner_id' => $owner->id,
+            'license_number' => 'SIM-VISIBILITY-1',
+            'daily_salary' => 150000,
+            'status' => 'off_duty',
+            'is_active' => true,
+        ]);
+        $vehicle = $this->makeVehicle($owner, 'VISIBLE-PRE-INSPECTION', $mobil);
+        $booking = Booking::create([
+            'booking_code' => Booking::generateBookingCode(),
+            'user_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
+            'driver_id' => $driver->id,
+            'category_id' => $mobil->id,
+            'rental_type' => 'daily',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+            'base_price' => 200000,
+            'total_price' => 200000,
+            'final_price' => 200000,
+            'status' => 'confirmed',
+            'payment_status' => 'unpaid',
+            'payment_plan' => 'full',
+            'with_driver' => true,
+        ]);
+        Inspection::create([
+            'booking_id' => $booking->id,
+            'vehicle_id' => $vehicle->id,
+            'type' => 'pre_rental',
+            'scope' => 'kendaraan',
+            'status' => 'open',
+            'item_type' => Vehicle::class,
+            'item_id' => $vehicle->id,
+        ]);
+
+        $this->actingAs($driverUser)->get('/inspections')
+            ->assertOk()
+            ->assertSee($booking->booking_code)
+            ->assertSee($vehicle->name);
+        $this->actingAs($admin)->get('/inspections')
+            ->assertOk()
+            ->assertSee($booking->booking_code)
+            ->assertSee($vehicle->name);
     }
 
     public function test_dp50_item_booking_via_phone_category(): void
@@ -918,7 +1040,7 @@ class OverhaulTest extends TestCase
         ]);
     }
 
-    public function test_superadmin_and_owner_manage_drivers_but_admin_denied(): void
+    public function test_superadmin_and_owner_manage_drivers_but_admin_can_view_only(): void
     {
         $tenda = Category::where('slug', 'sewa-tenda')->firstOrFail();
         $owner = $this->makeOwner('drv_owner@example.test');
@@ -932,7 +1054,7 @@ class OverhaulTest extends TestCase
 
         $this->actingAs($owner)->get('/drivers')->assertOk()->assertSee($driver->user->name);
 
-        $this->actingAs($admin)->get('/drivers')->assertForbidden();
+        $this->actingAs($admin)->get('/drivers')->assertOk()->assertDontSee($driver->user->name);
         $this->actingAs($admin)->post('/drivers')->assertForbidden();
         $this->actingAs($admin)->delete('/drivers/' . $driver->id)->assertForbidden();
     }
@@ -979,6 +1101,7 @@ class OverhaulTest extends TestCase
         $karyawan = Driver::whereHas('user', fn($q) => $q->where('email', 'siti@example.test'))->first();
         $this->assertNotNull($karyawan);
         $this->assertSame('Karyawan', $karyawan->position);
+        $this->assertSame('employee', $karyawan->user->role);
         $this->assertNull($karyawan->license_number);
 
         $this->actingAs($super)->get('/drivers')->assertSee('Slamet Supir')->assertSee('Siti Admin');
@@ -998,6 +1121,7 @@ class OverhaulTest extends TestCase
 
         $this->assertSame('Slamet Supir Edan', $driver->fresh()->user->name);
         $this->assertSame('Driver Senior', $driver->fresh()->position);
+        $this->assertSame('driver', $driver->fresh()->user->role);
         $this->assertEquals(200000, (float) $driver->fresh()->daily_salary);
 
         $this->actingAs($super)->delete('/drivers/' . $karyawan->id)->assertRedirect();
@@ -1237,10 +1361,7 @@ class OverhaulTest extends TestCase
         ]);
 
         $this->actingAs($admin)->get('/replacements')->assertOk();
-        $this->actingAs($admin)->get('/replacements/create')
-            ->assertOk()
-            ->assertSee('REP-MY-CAR-1')
-            ->assertDontSee('REP-OTHER-CAR-1');
+        $this->actingAs($admin)->get('/replacements/create')->assertForbidden();
 
         $this->actingAs($owner)->get('/replacements/create')
             ->assertOk()
@@ -1265,10 +1386,7 @@ class OverhaulTest extends TestCase
             ->assertOk()
             ->assertSee('Penggantian Unit');
 
-        $this->actingAs($admin)->get('/item-replacements/create?type=hp')
-            ->assertOk()
-            ->assertSee($myPhone->name)
-            ->assertDontSee($otherPhone->name);
+        $this->actingAs($admin)->get('/item-replacements/create?type=hp')->assertForbidden();
 
         $this->actingAs($owner)->get('/item-replacements/create?type=hp')
             ->assertOk()

@@ -69,7 +69,15 @@ class VehicleWebController extends Controller
 
     public function create(Request $request)
     {
-        $categories = Category::where('is_active', true)->get();
+        if (($categoryId = Auth::user()->merchantCategoryId())
+            && !Category::whereKey($categoryId)->whereIn('slug', ['mobil', 'motor'])->exists()) {
+            abort(403, 'Akun ini tidak memiliki kategori kendaraan.');
+        }
+
+        $categories = Category::where('is_active', true)
+            ->whereIn('slug', ['mobil', 'motor'])
+            ->when(Auth::user()->merchantCategoryId(), fn($q, $categoryId) => $q->whereKey($categoryId))
+            ->get();
         $selectedType = $request->query('type', 'mobil');
         $defaultCategory = $categories->firstWhere('slug', $selectedType) ?? $categories->first();
 
@@ -100,9 +108,11 @@ class VehicleWebController extends Controller
             'with_driver' => 'boolean',
             'is_active' => 'boolean',
         ]);
+        $this->assertCategoryAccessible((int) $validated['category_id']);
+        $this->assertVehicleCategory((int) $validated['category_id']);
 
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
-        $validated['owner_id'] = Auth::id();
+        $validated['owner_id'] = Auth::user()->merchantId() ?? Auth::id();
         $validated['condition'] = $validated['condition'] ?? 'good';
 
         if ($request->hasFile('image')) {
@@ -121,7 +131,11 @@ class VehicleWebController extends Controller
 
     public function edit(Vehicle $vehicle)
     {
-        $categories = Category::where('is_active', true)->get();
+        $this->guardVehicle($vehicle);
+        $categories = Category::where('is_active', true)
+            ->whereIn('slug', ['mobil', 'motor'])
+            ->when(Auth::user()->merchantCategoryId(), fn($q, $categoryId) => $q->whereKey($categoryId))
+            ->get();
         return view('vehicles.edit', compact('vehicle', 'categories'));
     }
 
@@ -149,6 +163,9 @@ class VehicleWebController extends Controller
             'with_driver' => 'boolean',
             'is_active' => 'boolean',
         ]);
+        $this->guardVehicle($vehicle);
+        $this->assertCategoryAccessible((int) $validated['category_id']);
+        $this->assertVehicleCategory((int) $validated['category_id']);
 
         $validated['slug'] = $vehicle->slug;
 
@@ -168,6 +185,7 @@ class VehicleWebController extends Controller
 
     public function destroy(Vehicle $vehicle)
     {
+        $this->guardVehicle($vehicle);
         $isMotor = $vehicle->category && $vehicle->category->slug === 'motor';
         $vehicle->delete();
 
@@ -176,5 +194,27 @@ class VehicleWebController extends Controller
         }
 
         return redirect()->route('vehicles.index')->with('success', 'Mobil berhasil dihapus');
+    }
+
+    private function assertCategoryAccessible(int $categoryId): void
+    {
+        $allowedCategoryId = Auth::user()->merchantCategoryId();
+        if ($allowedCategoryId && $allowedCategoryId !== $categoryId) {
+            abort(403, 'Kategori inventaris tidak sesuai dengan akun Anda.');
+        }
+    }
+
+    private function assertVehicleCategory(int $categoryId): void
+    {
+        abort_unless(Category::whereKey($categoryId)->whereIn('slug', ['mobil', 'motor'])->exists(), 403, 'Kategori bukan kendaraan.');
+    }
+
+    private function guardVehicle(Vehicle $vehicle): void
+    {
+        $user = Auth::user();
+        if ($user->isMerchantStaff() && (int) $vehicle->owner_id !== (int) $user->merchantId()) {
+            abort(403, 'Unit ini bukan milik company Anda.');
+        }
+        $this->assertCategoryAccessible((int) $vehicle->category_id);
     }
 }

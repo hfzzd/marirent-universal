@@ -130,6 +130,21 @@ class ElektronikController extends Controller
         }
     }
 
+    private function assertCategoryAccessible(int $categoryId): void
+    {
+        $allowedCategoryId = Auth::user()->merchantCategoryId();
+        if ($allowedCategoryId && $allowedCategoryId !== $categoryId) {
+            abort(403, 'Kategori inventaris tidak sesuai dengan akun Anda.');
+        }
+    }
+
+    private function allowedCategories()
+    {
+        return Category::where('is_active', true)
+            ->when(Auth::user()->merchantCategoryId(), fn($q, $categoryId) => $q->whereKey($categoryId))
+            ->get();
+    }
+
     private function staffCategoryId(): ?int
     {
         return $this->isOwner() ? Auth::user()->merchantCategoryId() : null;
@@ -198,7 +213,7 @@ class ElektronikController extends Controller
             return $redirect;
         }
 
-        $categories = Category::where('is_active', true)->get();
+        $categories = $this->allowedCategories();
         $prefix = $this->getRoutePrefix();
 
         return view('superadmin.elektronik-create', compact('type', 'categories', 'prefix'));
@@ -269,6 +284,7 @@ class ElektronikController extends Controller
         };
 
         $validated = $request->validate(array_merge($baseRules, $extraRules));
+        $this->assertCategoryAccessible((int) $validated['category_id']);
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
         $validated['owner_id'] = $this->staffOwnerId();
 
@@ -307,8 +323,9 @@ class ElektronikController extends Controller
         if ($this->isOwner() && $item->owner_id !== $this->staffOwnerId()) {
             abort(403);
         }
+        $this->assertCategoryAccessible((int) $item->category_id);
 
-        $categories = Category::where('is_active', true)->get();
+        $categories = $this->allowedCategories();
         $prefix = $this->getRoutePrefix();
 
         return view('superadmin.elektronik-edit', compact('type', 'item', 'categories', 'prefix'));
@@ -325,6 +342,7 @@ class ElektronikController extends Controller
         if ($this->isOwner() && $item->owner_id !== $this->staffOwnerId()) {
             abort(403);
         }
+        $this->assertCategoryAccessible((int) $item->category_id);
 
         $baseRules = [
             'name' => 'required|string|max:255',
@@ -386,6 +404,7 @@ class ElektronikController extends Controller
         };
 
         $validated = $request->validate(array_merge($baseRules, $extraRules));
+        $this->assertCategoryAccessible((int) $validated['category_id']);
         $validated['slug'] = $item->slug;
 
         if ($request->hasFile('image')) {
@@ -419,6 +438,7 @@ class ElektronikController extends Controller
         if ($this->isOwner() && $item->owner_id !== $this->staffOwnerId()) {
             abort(403);
         }
+        $this->assertCategoryAccessible((int) $item->category_id);
 
         $item->delete();
 

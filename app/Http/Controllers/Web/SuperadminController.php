@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Maintenance;
 use App\Models\Merchant;
@@ -355,7 +356,7 @@ class SuperadminController extends Controller
                 'role' => 'owner',
             ]);
 
-            return Merchant::create([
+            $merchant = Merchant::create([
                 'user_id' => $user->id,
                 'slug' => $this->uniqueMerchantSlug($validated['store_name']),
                 'name' => $validated['store_name'],
@@ -365,6 +366,10 @@ class SuperadminController extends Controller
                 'is_active' => false,
                 'status' => 'pending',
             ]);
+
+            Company::ensureForOwner($user);
+
+            return $merchant;
         });
 
         return redirect()->route('superadmin.merchants')

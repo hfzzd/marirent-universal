@@ -20,6 +20,15 @@ class TripReportWebController extends Controller
             if ($driver) {
                 $query->where('driver_id', $driver->id);
             }
+        } elseif (Auth::user()->isMerchantStaff()) {
+            $query->whereHas('booking', fn($q) => $q->forMerchantCategory(
+                Auth::user()->merchantId(),
+                Auth::user()->merchantCategoryId()
+            ));
+        } elseif (Auth::user()->role === 'user') {
+            $query->whereHas('booking', fn($q) => $q->where('user_id', Auth::id()));
+        } elseif (!Auth::user()->isSuperAdmin()) {
+            $query->whereRaw('1 = 0');
         }
 
         if ($request->status) {
@@ -34,6 +43,10 @@ class TripReportWebController extends Controller
             });
         }
 
+        if ($request->filled('booking_id')) {
+            $query->where('booking_id', $request->booking_id);
+        }
+
         $reports = $query->latest()->paginate(15);
 
         return view('reports.index', compact('reports'));
@@ -41,7 +54,18 @@ class TripReportWebController extends Controller
 
     public function create(Request $request)
     {
-        $bookings = Booking::whereIn('status', ['ongoing'])->get();
+        $bookings = Booking::whereIn('status', ['ongoing']);
+        if (Auth::user()->role === 'driver') {
+            $driverId = Driver::where('user_id', Auth::id())->value('id');
+            $bookings->where('driver_id', $driverId);
+        } elseif (Auth::user()->isMerchantStaff()) {
+            $bookings->forMerchantCategory(Auth::user()->merchantId(), Auth::user()->merchantCategoryId());
+        } elseif (Auth::user()->role === 'user') {
+            $bookings->where('user_id', Auth::id());
+        } elseif (!Auth::user()->isSuperAdmin()) {
+            abort(403);
+        }
+        $bookings = $bookings->get();
 
         return view('reports.create', compact('bookings'));
     }
@@ -65,6 +89,7 @@ class TripReportWebController extends Controller
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
+        $this->guardBooking($booking);
         $validated['vehicle_id'] = $booking->vehicle_id;
         $validated['driver_id'] = $booking->driver_id;
 
@@ -101,7 +126,36 @@ class TripReportWebController extends Controller
 
     public function show(TripReport $tripReport)
     {
-        $tripReport->load(['booking', 'driver.user', 'vehicle']);
+        $tripReport->load(['booking.user', 'booking.category', 'driver.user', 'vehicle']);
+        $this->guardReport($tripReport);
         return view('reports.show', compact('tripReport'));
+    }
+
+    private function guardBooking(Booking $booking): void
+    {
+        $user = Auth::user();
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+        if ($user->role === 'driver') {
+            $driverId = Driver::where('user_id', $user->id)->value('id');
+            abort_unless($driverId && (int) $booking->driver_id === (int) $driverId, 403);
+            return;
+        }
+        if ($user->isMerchantStaff()) {
+            abort_unless($booking->forMerchantCategory($user->merchantId(), $user->merchantCategoryId())->exists(), 403);
+            return;
+        }
+        if ($user->role === 'user') {
+            abort_unless((int) $booking->user_id === (int) $user->id, 403);
+            return;
+        }
+        abort(403);
+    }
+
+    private function guardReport(TripReport $tripReport): void
+    {
+        abort_unless($tripReport->booking, 404);
+        $this->guardBooking($tripReport->booking);
     }
 }
