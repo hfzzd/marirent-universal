@@ -60,6 +60,13 @@
                             </span>
                             @endif
                         </div>
+                        @if(!empty($booking->accessories) && is_array($booking->accessories))
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            @foreach($booking->accessories as $acc)
+                            <span class="bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-md"><i class="fas fa-box-open mr-0.5"></i> {{ $acc }}</span>
+                            @endforeach
+                        </div>
+                        @endif
                         @elseif($booking->category)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->category->name }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->item_type ? class_basename($booking->item_type) : '-' }}</p>
@@ -130,7 +137,35 @@
                         <p class="text-[12px] text-gray-400 mt-0.5">Tanpa driver</p>
                         @endif
                     </div>
-@endif
+                    @else
+                    <div class="bg-gradient-to-br from-indigo-50/60 to-indigo-100/30 p-4 rounded-xl border border-indigo-100/50">
+                        <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5"><i class="fas fa-shield-halved text-indigo-500 mr-1"></i> Jaminan & Paket Sewa</p>
+                        <div class="space-y-1.5 text-[12px]">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500">Deposit:</span>
+                                <span class="font-bold text-navy-800">Rp {{ number_format($booking->deposit_amount ?? 0, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500">Asuransi:</span>
+                                @if($booking->with_insurance)
+                                <span class="badge badge-green text-[10px]"><i class="fas fa-check-circle mr-1"></i> Terlindungi</span>
+                                @else
+                                <span class="badge badge-gray text-[10px]">Tanpa Asuransi</span>
+                                @endif
+                            </div>
+                            @if(!empty($booking->accessories))
+                            <div class="pt-1.5 border-t border-indigo-100/70">
+                                <span class="text-[11px] text-gray-500 block mb-1">Aksesoris:</span>
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach($booking->accessories as $acc)
+                                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ $acc }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- Assign Driver (Admin/Owner) - Khusus Kendaraan --}}
                     @if($booking->vehicle && in_array(auth()->user()->role, ['superadmin','owner','admin']) && !in_array($booking->status, ['completed', 'cancelled']))
