@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Company;
 use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -107,6 +108,8 @@ class AuthController extends Controller
                 'is_active' => false,
                 'status' => 'pending',
             ]);
+
+            Company::ensureForOwner($user);
         });
 
         return redirect()->route('login')

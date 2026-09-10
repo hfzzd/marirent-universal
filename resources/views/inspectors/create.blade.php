@@ -1,0 +1,65 @@
+@extends('layouts.dashboard')
+@section('page-title', 'Tambah Akun Inspektur')
+@section('content')
+<div class="max-w-2xl">
+    <a href="{{ route('inspectors.index') }}" class="text-sky-600 text-sm mb-4 inline-block"><i class="fas fa-arrow-left mr-1"></i> Kembali</a>
+    <div class="bg-white rounded-2xl shadow-sm p-6">
+        <form method="POST" action="{{ route('inspectors.store') }}">
+            @csrf
+            <div class="space-y-4">
+                @if($isSuperadmin)
+                <div>
+                    <label class="block text-sm font-medium text-navy-700 mb-1">Asal Company *</label>
+                    <select name="company_id" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                        <option value="">-- Pilih company --</option>
+                        @foreach($companies as $c)
+                        <option value="{{ $c->id }}" {{ old('company_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->city ?? '-' }})</option>
+                        @endforeach
+                    </select>
+                    @error('company_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                @endif
+
+                <div>
+                    <label class="block text-sm font-medium text-navy-700 mb-1">Nama Lengkap *</label>
+                    <input type="text" name="name" value="{{ old('name') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-navy-700 mb-1">Email *</label>
+                        <input type="email" name="email" value="{{ old('email') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                        @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-navy-700 mb-1">No. HP</label>
+                        <input type="text" name="phone" value="{{ old('phone') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-navy-700 mb-1">Password *</label>
+                        <input type="password" name="password" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                        @error('password') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-navy-700 mb-1">Konfirmasi Password *</label>
+                        <input type="password" name="password_confirmation" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-navy-700 mb-1">Alamat</label>
+                    <input type="text" name="address" value="{{ old('address') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button type="submit" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Simpan</button>
+                <a href="{{ route('inspectors.index') }}" class="bg-gray-100 hover:bg-gray-200 px-6 py-2.5 rounded-lg text-sm font-medium text-navy-700">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

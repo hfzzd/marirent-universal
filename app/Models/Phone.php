@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompany;
 use App\Models\Concerns\TenantIsolatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,12 +10,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Phone extends Model
 {
-    use HasFactory, SoftDeletes, TenantIsolatable;
+    use HasFactory, SoftDeletes, TenantIsolatable, HasCompany;
 
     public const TENANT_COLUMN = 'owner_id';
 
     protected $fillable = [
-        'category_id', 'owner_id', 'name', 'slug', 'brand', 'phone_model',
+        'category_id', 'owner_id', 'company_id', 'name', 'slug', 'brand', 'phone_model',
         'storage_capacity', 'ram', 'color', 'description',
         'daily_price', 'weekly_price', 'monthly_price', 'hourly_price',
         'image', 'gallery', 'status', 'condition', 'is_active',

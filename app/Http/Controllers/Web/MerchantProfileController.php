@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class MerchantProfileController extends Controller
                 'status' => 'active',
             ]
         );
+        Company::ensureForOwner($owner);
 
         $stats = [
             'total_units' => \App\Models\Vehicle::where('owner_id', $owner->id)->count()
@@ -57,6 +59,7 @@ class MerchantProfileController extends Controller
             ['user_id' => $owner->id],
             ['slug' => $this->uniqueSlug($owner->name), 'name' => $owner->name]
         );
+        Company::ensureForOwner($owner);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -113,6 +116,7 @@ class MerchantProfileController extends Controller
             ['user_id' => $owner->id],
             ['slug' => $this->uniqueSlug($owner->name), 'name' => $owner->name]
         );
+        $company = Company::ensureForOwner($owner);
 
         $data = collect($validated)->except('commission_rate')->all();
 
@@ -121,6 +125,7 @@ class MerchantProfileController extends Controller
         }
 
         $merchant->update($data);
+        $company->update($data);
 
         return back()->with('merchant_success', 'Profil toko berhasil diperbarui.');
     }

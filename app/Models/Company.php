@@ -15,6 +15,61 @@ class Company extends Merchant
 {
     protected $table = 'companies';
 
+    /**
+     * Return the company profile for an owner, creating it from the merchant
+     * profile when an older account does not have one yet.
+     */
+    public static function ensureForOwner(User|int $owner): self
+    {
+        $ownerId = $owner instanceof User ? $owner->id : $owner;
+        $ownerUser = User::findOrFail($ownerId);
+
+        if ($ownerUser->role === 'admin' && $ownerUser->owner_id) {
+            $ownerId = (int) $ownerUser->owner_id;
+            $ownerUser = User::findOrFail($ownerId);
+        }
+
+        $company = static::withTrashed()->where('user_id', $ownerId)->first();
+        if ($company) {
+            if ($company->trashed()) {
+                $company->restore();
+            }
+
+            return $company;
+        }
+
+        $merchant = Merchant::withTrashed()->where('user_id', $ownerId)->first();
+        $name = $merchant?->name ?: ('Company ' . $ownerUser->name);
+        $slugBase = Str::slug($merchant?->slug ?: $name) ?: ('company-' . $ownerId);
+        $slug = $slugBase;
+        $suffix = 1;
+
+        while (static::withTrashed()->where('slug', $slug)->exists()) {
+            $slug = $slugBase . '-' . $suffix++;
+        }
+
+        $data = $merchant
+            ? $merchant->only([
+                'description', 'logo', 'banner', 'phone', 'company_email',
+                'website', 'instagram', 'address', 'city', 'pickup_address',
+                'operational_hours', 'commission_rate', 'is_active', 'status',
+                'verified_at',
+            ])
+            : [
+                'phone' => $ownerUser->phone,
+                'company_email' => $ownerUser->email,
+                'is_active' => true,
+                'status' => 'pending',
+                'commission_rate' => 0,
+            ];
+
+        return static::create(array_merge($data, [
+            'user_id' => $ownerId,
+            'slug' => $slug,
+            'name' => $name,
+        ]));
+    }
+
     public function profile()
     {
         return $this;

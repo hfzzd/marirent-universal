@@ -161,8 +161,9 @@
                     @endif
                 </div>
                 @if(
-                    in_array($role, ['superadmin','owner']) ||
-                    ($isDriver && $r->booking?->driver_id === (\App\Models\Driver::where('user_id', auth()->id())->first()?->id ?? 0))
+                    in_array($role, ['superadmin','owner','admin']) ||
+                    ($isDriver && $r->booking?->driver_id === (\App\Models\Driver::where('user_id', auth()->id())->first()?->id ?? 0)) ||
+                    ($role === 'user' && $r->booking?->user_id === auth()->id())
                 )
                 <a href="{{ route('reports.show', $r) }}" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1.5">
                     <i class="fas fa-eye text-[9px]"></i> Detail

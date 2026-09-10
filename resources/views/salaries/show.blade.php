@@ -21,6 +21,7 @@
             </div>
             <div class="space-y-3 text-sm">
                 <div class="flex justify-between"><span class="text-navy-500">Owner</span><span class="font-medium">{{ $salary->owner?->name }}</span></div>
+                <div class="flex justify-between"><span class="text-navy-500">Asal Company</span><span class="font-medium">{{ $salary->driver?->company?->name ?? '-' }}</span></div>
                 <div class="flex justify-between"><span class="text-navy-500">Status</span><span class="font-medium capitalize">{{ $salary->status }}</span></div>
                 @if($salary->invoice)
                 <div class="flex justify-between"><span class="text-navy-500">Invoice</span><a href="{{ route('invoices.show', $salary->invoice) }}" class="font-medium text-sky-600">{{ $salary->invoice->invoice_number }}</a></div>
@@ -30,7 +31,7 @@
                 @endif
             </div>
         </div>
-        @if(auth()->user()->role == 'owner')
+        @if(in_array(auth()->user()->role, ['superadmin', 'admin', 'owner']))
         <div class="flex gap-3 border-t pt-6">
             @if($salary->status == 'draft')
             <form method="POST" action="{{ route('salaries.approve', $salary) }}">@csrf

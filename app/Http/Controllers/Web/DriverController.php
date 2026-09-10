@@ -84,7 +84,7 @@ class DriverController extends Controller
                 'password'   => Hash::make($request->password),
                 'phone'      => $request->phone,
                 'address'    => $request->address,
-                'role'       => 'driver',
+                'role'       => User::roleForPosition($request->input('position'), $user->category_id),
                 'is_active'  => true,
             ]);
 

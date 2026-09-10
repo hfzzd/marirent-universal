@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Driver;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,13 +46,21 @@ class DriverController extends Controller
             'license_type' => 'nullable|string|max:20',
             'daily_salary' => 'required|numeric|min:0',
             'trip_salary' => 'nullable|numeric|min:0',
+            'position' => 'nullable|string|max:100',
+            'company_id' => 'nullable|exists:companies,id',
             'notes' => 'nullable|string|max:1000',
         ]);
 
         $validated['owner_id'] = $request->user()->id;
+        if (empty($validated['company_id']) && $request->user()->isOwner()) {
+            $validated['company_id'] = Company::ensureForOwner($request->user())->id;
+        }
 
         $driver = Driver::create($validated);
-        $driver->user->update(['role' => 'driver']);
+        $driver->user->update([
+            'role' => User::roleForPosition($validated['position'] ?? null, $request->user()->category_id),
+            'owner_id' => $validated['owner_id'],
+        ]);
 
         return response()->json([
             'success' => true, 'message' => 'Driver berhasil ditambahkan', 'data' => $driver->load('user'),

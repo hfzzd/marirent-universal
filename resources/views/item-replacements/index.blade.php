@@ -9,9 +9,11 @@
         </h2>
         <p class="text-xs text-gray-400 mt-0.5">Kelola permintaan penggantian unit HP, kamera, dan tenda.</p>
     </div>
+    @if(in_array(auth()->user()->role, ['superadmin','owner','user']))
     <a href="{{ route('item-replacements.create') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
         <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
     </a>
+    @endif
 </div>
 
 {{-- FILTERS --}}
@@ -87,22 +89,25 @@
                     </td>
                     <td class="py-3 px-5 text-center"><span class="{{ $r->status == 'approved' ? 'badge-green' : ($r->status == 'rejected' ? 'badge-red' : 'badge-blue') }} capitalize" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;">{{ $r->status }}</span></td>
                     <td class="py-3 px-5">
-                        @if($r->status == 'pending' && in_array(auth()->user()->role, ['superadmin','owner']))
-                        <div class="flex items-center gap-2">
-                        <form method="POST" action="{{ route('item-replacements.approve', $r) }}" class="inline">@csrf
-                            <button class="text-emerald-600 text-[11px] font-semibold hover:text-emerald-700"><i class="fas fa-check mr-1"></i>Setuju</button>
-                        </form>
-                        <form method="POST" action="{{ route('item-replacements.reject', $r) }}" class="inline">@csrf
-                            <button class="text-red-500 text-[11px] font-semibold hover:text-red-600"><i class="fas fa-times mr-1"></i>Tolak</button>
-                        </form>
-                        </div>
-                        @endif
+                         @if($r->status == 'pending' && in_array(auth()->user()->role, ['superadmin','owner','admin']))
+                         <div class="flex items-center gap-2">
+                         <form method="POST" action="{{ route('item-replacements.approve', $r) }}" class="inline">@csrf
+                             <button class="text-emerald-600 text-[11px] font-semibold hover:text-emerald-700"><i class="fas fa-check mr-1"></i>Setuju</button>
+                         </form>
+                         @if(in_array(auth()->user()->role, ['superadmin','owner']))
+                         <form method="POST" action="{{ route('item-replacements.reject', $r) }}" class="inline">@csrf
+                             <button class="text-red-500 text-[11px] font-semibold hover:text-red-600"><i class="fas fa-times mr-1"></i>Tolak</button>
+                         </form>
+                         @endif
+                         </div>
+                         @endif
                         @if($r->status == 'approved' && !$r->is_returned && in_array(auth()->user()->role, ['superadmin','owner']))
                         <button onclick="openReturnModal({{ $r->id }}, '{{ addslashes($r->booking->booking_code ?? '-') }}', '{{ addslashes($r->replacementItem->name ?? '-') }}')" class="text-amber-600 text-[11px] font-semibold"><i class="fas fa-undo-alt mr-1"></i>Kembalikan</button>
                         @endif
-                        @if($r->is_returned)
-                        <span class="text-emerald-600 text-[11px] font-semibold"><i class="fas fa-check-circle mr-1"></i>Dikembalikan</span>
-                        @endif
+                         @if($r->is_returned)
+                         <span class="text-emerald-600 text-[11px] font-semibold"><i class="fas fa-check-circle mr-1"></i>Dikembalikan</span>
+                         @endif
+                         <a href="{{ route('item-replacements.show', $r) }}" class="text-sky-600 text-[11px] font-semibold hover:text-sky-700"><i class="fas fa-eye mr-1"></i>Detail</a>
                     </td>
                 </tr>
                 @empty
@@ -140,13 +145,13 @@
             </div>
             <div class="mb-4">
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="is_damaged" value="1" class="rounded border-gray-300 text-amber-500 focus:ring-amber-300" onchange="document.getElementById('damageNotesField').classList.toggle('hidden', !this.checked)">
+                     <input type="checkbox" name="return_is_damaged" value="1" class="rounded border-gray-300 text-amber-500 focus:ring-amber-300" onchange="document.getElementById('damageNotesField').classList.toggle('hidden', !this.checked)">
                     <span class="text-sm text-gray-700">Unit mengalami kerusakan</span>
                 </label>
             </div>
             <div id="damageNotesField" class="mb-4 hidden">
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Detail Kerusakan</label>
-                <textarea name="damage_notes" rows="2" maxlength="2000" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-300" placeholder="Jelaskan kerusakan yang ditemukan..."></textarea>
+                 <textarea name="return_damage_notes" rows="2" maxlength="2000" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-300" placeholder="Jelaskan kerusakan yang ditemukan..."></textarea>
             </div>
             <div class="flex gap-2 justify-end">
                 <button type="button" onclick="closeReturnModal()" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">Batal</button>

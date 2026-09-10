@@ -161,7 +161,7 @@
             @endif
 
             {{-- Approval Actions (admin) --}}
-            @if(in_array(auth()->user()->role, ['superadmin','owner']))
+            @if(in_array(auth()->user()->role, ['superadmin','owner','admin']))
             <div class="glass-card rounded-2xl p-6 border border-sky-100" x-data="{ showStatusForm: false }">
                 <h3 class="text-[14px] font-bold text-navy-800 mb-4"><i class="fas fa-cog text-sky-500 mr-2"></i>Ubah Status</h3>
 
@@ -170,12 +170,15 @@
                     <form method="POST" action="{{ route('replacements.approve', $replacement) }}" onsubmit="return confirm('Setujui penggantian kendaraan ini?')">@csrf
                         <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-check"></i> Setujui</button>
                     </form>
+                    @if(in_array(auth()->user()->role, ['superadmin','owner']))
                     <form method="POST" action="{{ route('replacements.reject', $replacement) }}" onsubmit="return confirm('Tolak penggantian kendaraan ini?')">@csrf
                         <button class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2 shadow-sm"><i class="fas fa-times"></i> Tolak</button>
                     </form>
+                    @endif
                 </div>
                 @endif
 
+                @if(in_array(auth()->user()->role, ['superadmin','owner']))
                 <button @click="showStatusForm = !showStatusForm" class="text-[12px] text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1 transition">
                     <i class="fas fa-edit text-[10px]"></i>
                     <span x-text="showStatusForm ? 'Sembunyikan' : 'Ganti Status Manual'"></span>
@@ -201,6 +204,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
             @endif
         </div>

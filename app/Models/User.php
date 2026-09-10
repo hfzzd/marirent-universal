@@ -33,8 +33,30 @@ class User extends Authenticatable
     public function isOwner(): bool { return $this->role === 'owner'; }
     public function isUser(): bool { return $this->role === 'user'; }
     public function isDriver(): bool { return $this->role === 'driver'; }
+    public function isEmployee(): bool { return $this->role === 'employee'; }
     public function isInspector(): bool { return $this->role === 'inspector'; }
     public function isMerchantStaff(): bool { return in_array($this->role, ['admin', 'owner']); }
+
+    public static function roleForPosition(?string $position, ?int $categoryId = null): string
+    {
+        if ($categoryId && !Category::whereKey($categoryId)->whereIn('slug', ['mobil', 'motor'])->exists()) {
+            return 'employee';
+        }
+
+        $position = strtolower(trim((string) $position));
+
+        if ($position === '') {
+            return 'driver';
+        }
+
+        if (preg_match('/\b(non[- ]driver|bukan\s+driver)\b/', $position)) {
+            return 'employee';
+        }
+
+        return preg_match('/\b(driver|supir|pengemudi)\b/', $position) === 1
+            ? 'driver'
+            : 'employee';
+    }
 
     /**
      * Identitas platform / developer aplikasi (superadmin).
@@ -102,7 +124,7 @@ class User extends Authenticatable
             return $this->merchantId();
         }
 
-        if ($this->isDriver()) {
+        if ($this->isDriver() || $this->isEmployee()) {
             $ownerId = \App\Models\Driver::withoutGlobalScopes()
                 ->where('user_id', $this->id)
                 ->value('owner_id');
@@ -122,7 +144,7 @@ class User extends Authenticatable
      */
     public function merchantCategoryId(): ?int
     {
-        if (!$this->isMerchantStaff()) {
+        if (!$this->isMerchantStaff() && !$this->isEmployee()) {
             return null;
         }
 

@@ -13,6 +13,7 @@ class VehicleReplacement extends Model
         'booking_id', 'rental_id', 'original_vehicle_id', 'replacement_vehicle_id',
         'requested_by', 'approved_by', 'status', 'reason',
         'admin_notes', 'price_difference',
+        'mark_maintenance',
         'handover_type', 'handover_notes', 'actual_handover_at',
         'initial_vehicle_photo', 'final_vehicle_photo', 'swapped_at',
     ];
@@ -21,6 +22,7 @@ class VehicleReplacement extends Model
     {
         return [
             'price_difference' => 'decimal:2',
+            'mark_maintenance' => 'boolean',
             'swapped_at' => 'datetime',
             'actual_handover_at' => 'datetime',
         ];

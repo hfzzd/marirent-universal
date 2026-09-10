@@ -57,7 +57,11 @@ class Booking extends Model
     public function driver() { return $this->belongsTo(Driver::class); }
     public function category() { return $this->belongsTo(Category::class); }
     public function item() { return $this->morphTo(); }
-    public function inspection() { return $this->hasOne(Inspection::class); }
+    /** The most recent inspection, kept for existing callers that expect one model. */
+    public function inspection() { return $this->hasOne(Inspection::class)->latestOfMany(); }
+    public function inspections() { return $this->hasMany(Inspection::class)->latest(); }
+    public function preInspection() { return $this->hasOne(Inspection::class)->where('type', 'pre_rental')->latestOfMany(); }
+    public function postInspection() { return $this->hasOne(Inspection::class)->where('type', 'post_rental')->latestOfMany(); }
     public function tripReport() { return $this->hasOne(TripReport::class); }
     public function invoice() { return $this->hasOne(Invoice::class); }
     public function invoices() { return $this->belongsToMany(Invoice::class, 'booking_invoice'); }

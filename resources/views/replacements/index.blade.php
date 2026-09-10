@@ -210,7 +210,7 @@
                     <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">Driver</span>
                 @elseif($requesterRole === 'user')
                     <span class="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">Penyewa</span>
-                @elseif(in_array($requesterRole, ['superadmin', 'owner']))
+                 @elseif(in_array($requesterRole, ['superadmin', 'owner', 'admin']))
                     <span class="text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-medium">Admin</span>
                 @endif
             </div>
@@ -232,14 +232,16 @@
                     {{ $r->price_difference > 0 ? '+' : '' }} Rp {{ number_format((float)$r->price_difference, 0, ',', '.') }}
                 </div>
                 <div class="flex items-center gap-2">
-                    @if($r->status == 'pending' && in_array($role, ['superadmin','owner']))
-                    <form method="POST" action="{{ route('replacements.approve', $r) }}" class="inline">@csrf
-                        <button class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-check text-[9px]"></i> Setuju</button>
-                    </form>
-                    <form method="POST" action="{{ route('replacements.reject', $r) }}" class="inline">@csrf
-                        <button class="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-times text-[9px]"></i> Tolak</button>
-                    </form>
-                    @endif
+                     @if($r->status == 'pending' && in_array($role, ['superadmin','owner','admin']))
+                     <form method="POST" action="{{ route('replacements.approve', $r) }}" class="inline">@csrf
+                         <button class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-check text-[9px]"></i> Setuju</button>
+                     </form>
+                     @if(in_array($role, ['superadmin','owner']))
+                     <form method="POST" action="{{ route('replacements.reject', $r) }}" class="inline">@csrf
+                         <button class="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-times text-[9px]"></i> Tolak</button>
+                     </form>
+                     @endif
+                     @endif
                     <a href="{{ route('replacements.show', $r) }}" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1">
                         <i class="fas fa-eye text-[9px]"></i> Detail
                     </a>

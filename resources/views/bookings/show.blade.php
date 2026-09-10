@@ -118,7 +118,7 @@
                         @endif
                     </div>
 
-                    {{-- Driver untuk Kendaraan ATAU Paket/Jaminan untuk Non-Kendaraan --}}
+{{-- Driver untuk Kendaraan ATAU Paket/Jaminan untuk Non-Kendaraan --}}
                     @if($booking->isVehicleBooking())
                     <div class="bg-gradient-to-br from-purple-50/60 to-purple-100/30 p-4 rounded-xl border border-purple-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Driver</p>
@@ -130,35 +130,7 @@
                         <p class="text-[12px] text-gray-400 mt-0.5">Tanpa driver</p>
                         @endif
                     </div>
-                    @else
-                    <div class="bg-gradient-to-br from-indigo-50/60 to-indigo-100/30 p-4 rounded-xl border border-indigo-100/50">
-                        <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5"><i class="fas fa-shield-halved text-indigo-500 mr-1"></i> Jaminan & Paket Sewa</p>
-                        <div class="space-y-1.5 text-[12px]">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-500">Deposit:</span>
-                                <span class="font-bold text-navy-800">Rp {{ number_format($booking->deposit_amount ?? 0, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-500">Asuransi:</span>
-                                @if($booking->with_insurance)
-                                <span class="badge badge-green text-[10px]"><i class="fas fa-check-circle mr-1"></i> Terlindungi</span>
-                                @else
-                                <span class="badge badge-gray text-[10px]">Tanpa Asuransi</span>
-                                @endif
-                            </div>
-                            @if(!empty($booking->accessories))
-                            <div class="pt-1.5 border-t border-indigo-100/70">
-                                <span class="text-[11px] text-gray-500 block mb-1">Aksesoris:</span>
-                                <div class="flex flex-wrap gap-1">
-                                    @foreach($booking->accessories as $acc)
-                                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ $acc }}</span>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    @endif
+@endif
 
                     {{-- Assign Driver (Admin/Owner) - Khusus Kendaraan --}}
                     @if($booking->vehicle && in_array(auth()->user()->role, ['superadmin','owner','admin']) && !in_array($booking->status, ['completed', 'cancelled']))
@@ -500,36 +472,27 @@
                     </span>
                 </div>
                 @endif
-            </div>
-
-            {{-- Link Terkait (Admin/Owner/Inspector) --}}
-            @if(in_array(auth()->user()->role, ['superadmin','owner','admin','inspector']))
-            <div class="glass-card rounded-2xl p-6">
-                <h3 class="text-[14px] font-bold text-navy-800 mb-3"><i class="fas fa-link text-sky-500 mr-2"></i>Link Terkait</h3>
-                <div class="space-y-2">
-                    @if(in_array($booking->status, ['confirmed','ongoing']) && in_array(auth()->user()->role, ['superadmin','owner','admin','inspector']) && !(auth()->user()->role === 'inspector' && $booking->with_driver))
-                    <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition"><i class="fas fa-clipboard-check text-emerald-600 text-[11px]"></i></span>
-                        Mulai Inspeksi
-                    </a>
-                    @endif
-                    <a href="{{ route('inspections.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-list-check text-sky-600 text-[11px]"></i></span>
-                        Riwayat Inspeksi
-                    </a>
-                    @if(in_array(auth()->user()->role, ['superadmin','owner','admin']))
-                    <a href="{{ route('reports.index', ['booking_id' => $booking->id]) }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-route text-sky-600 text-[11px]"></i></span>
-                        Laporan Perjalanan
-                    </a>
-                    <a href="{{ route('invoices.index') }}" class="flex items-center gap-2.5 text-[13px] text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-3 py-2.5 rounded-xl transition group">
-                        <span class="w-7 h-7 rounded-lg bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center transition"><i class="fas fa-file-invoice-dollar text-sky-600 text-[11px]"></i></span>
-                        Invoice
-                    </a>
+                @php
+                    $verifiedPayments = $booking->payments->where('status', 'verified');
+                    $lastVerifiedPayment = $verifiedPayments->sortByDesc('verified_at')->first();
+                    $paymentConfirmed = $booking->payment_status === 'paid' || $verifiedPayments->isNotEmpty();
+                    $verifiedTotal = $verifiedPayments->sum('amount') ?: (float) ($booking->invoice?->paid_amount ?? 0);
+                @endphp
+                @if($paymentConfirmed)
+                <div class="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-bold text-emerald-700"><i class="fas fa-circle-check mr-1"></i> Pembayaran Terkonfirmasi</span>
+                        <span class="badge badge-green text-[10px]">{{ $booking->payment_status === 'paid' ? 'Lunas' : 'Terverifikasi' }}</span>
+                    </div>
+                    <p class="text-[12px] font-bold text-emerald-800 mt-2">Rp {{ number_format($verifiedTotal, 0, ',', '.') }}</p>
+                    @if($lastVerifiedPayment)
+                    <p class="text-[10px] text-emerald-700 mt-1">{{ ucfirst(str_replace('_', ' ', $lastVerifiedPayment->method)) }} &bull; {{ $lastVerifiedPayment->verified_at?->format('d M Y H:i') }}</p>
+                    @elseif($booking->invoice?->paid_at)
+                    <p class="text-[10px] text-emerald-700 mt-1">Dikonfirmasi {{ $booking->invoice->paid_at->format('d M Y H:i') }}</p>
                     @endif
                 </div>
+                @endif
             </div>
-            @endif
 
             {{-- Timeline --}}
             <div class="glass-card rounded-2xl p-6">

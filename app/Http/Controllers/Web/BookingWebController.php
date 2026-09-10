@@ -35,6 +35,10 @@ class BookingWebController extends Controller
             }
         } elseif ($user->isMerchantStaff()) {
             $query->forMerchantCategory($user->merchantId(), $user->merchantCategoryId());
+        } elseif ($user->isInspector()) {
+            $query->where('with_driver', false);
+        } elseif (!$user->isSuperAdmin()) {
+            $query->whereRaw('1 = 0');
         }
 
         if ($request->status) {
@@ -206,12 +210,13 @@ class BookingWebController extends Controller
 
         $vehicle->update(['status' => 'reserved']);
 
-        $this->createBookingInvoice($booking);
+        $invoice = $this->createBookingInvoice($booking);
 
         // Notify superadmin dan staf merchant (sesuai kategori) atas booking baru
         $this->notifyBookingCreated($booking);
 
-        return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Booking berhasil dibuat! Silakan lanjutkan pembayaran. Kode booking: ' . $booking->booking_code);
     }
 
     public function createItem(Request $request, string $type, string $item)
@@ -338,12 +343,13 @@ class BookingWebController extends Controller
 
         $item->update(['status' => 'reserved']);
 
-        $this->createBookingInvoice($booking);
+        $invoice = $this->createBookingInvoice($booking);
 
         // Notify superadmin dan staf merchant (sesuai kategori) atas booking item baru
         $this->notifyBookingCreated($booking);
 
-        return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibuat! Kode booking: ' . $booking->booking_code);
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Booking berhasil dibuat! Silakan lanjutkan pembayaran. Kode booking: ' . $booking->booking_code);
     }
 
     private function getItemConfig(string $type): array
@@ -448,7 +454,7 @@ class BookingWebController extends Controller
         };
     }
 
-    private function createBookingInvoice(Booking $booking, array $relatedBookings = []): void
+    private function createBookingInvoice(Booking $booking, array $relatedBookings = []): Invoice
     {
         $related = $relatedBookings !== [] ? $relatedBookings : [$booking];
         $subtotal = collect($related)->sum(fn($b) => (float) $b->final_price);
@@ -523,6 +529,8 @@ class BookingWebController extends Controller
             $ids->push($booking->id);
         }
         $invoice->bookings()->attach($ids);
+
+        return $invoice;
     }
 
     public function createMulti()
@@ -708,11 +716,12 @@ class BookingWebController extends Controller
 
         $booking->setDpAmountFromPlan();
 
-        $this->createBookingInvoice($booking, $childBookings);
+        $invoice = $this->createBookingInvoice($booking, $childBookings);
 
         $this->notifyBookingCreated($booking);
 
-        return redirect()->route('bookings.show', $booking)->with('success', 'Booking multi-item berhasil dibuat! Kode: ' . $booking->booking_code);
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Booking multi-item berhasil dibuat! Silakan lanjutkan pembayaran. Kode: ' . $booking->booking_code);
     }
 
     public function manualCreate()
@@ -906,7 +915,7 @@ class BookingWebController extends Controller
 
         $item->update(['status' => 'reserved']);
 
-        $this->createBookingInvoice($booking);
+        $invoice = $this->createBookingInvoice($booking);
 
         if ($driverId) {
             Driver::where('id', $driverId)->update(['status' => 'on_duty']);
@@ -922,7 +931,8 @@ class BookingWebController extends Controller
         // Notify superadmin dan staf merchant (sesuai kategori)
         $this->notifyBookingCreated($booking);
 
-        return redirect()->route('bookings.show', $booking)->with('success', 'Booking manual berhasil dibuat! Kode: ' . $booking->booking_code);
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Booking manual berhasil dibuat! Kode: ' . $booking->booking_code);
     }
 
     public function show(Booking $booking)
@@ -934,6 +944,17 @@ class BookingWebController extends Controller
         }
 
         if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
+            abort(403);
+        }
+
+        if ($user->isDriver()) {
+            $driver = Driver::where('user_id', $user->id)->first();
+            if (!$driver || (int) $booking->driver_id !== (int) $driver->id) {
+                abort(403);
+            }
+        }
+
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isDriver() && !$user->isInspector() && $user->role !== 'user') {
             abort(403);
         }
 
@@ -1335,6 +1356,7 @@ class BookingWebController extends Controller
             'status' => 'approved',
             'reason' => $validated['reason'] ?? null,
             'price_difference' => $validated['price_difference'] ?? 0,
+            'mark_maintenance' => ($validated['mark_maintenance'] ?? '1') === '1',
             'swapped_at' => now(),
         ]);
 
@@ -1373,11 +1395,11 @@ class BookingWebController extends Controller
     public function confirm(Booking $booking)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'owner', 'admin'])) {
-            abort(403, 'Hanya superadmin, owner, atau admin merchant yang dapat mengonfirmasi booking.');
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff()) {
+            abort(403);
         }
         if ($user->isMerchantStaff() && !$this->bookingAccessibleByStaff($booking, $user)) {
-            abort(403, 'Anda tidak memiliki akses ke booking ini.');
+            abort(403);
         }
 
         if ($booking->status !== 'pending') {
@@ -1391,6 +1413,12 @@ class BookingWebController extends Controller
         }
 
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $oldStatus, 'confirmed'));
+
+        $invoice = $booking->invoice ?? $booking->invoices()->first();
+        if ($invoice) {
+            return redirect()->route('invoices.show', $invoice)
+                ->with('success', 'Booking berhasil dikonfirmasi. Silakan lanjutkan pembayaran.');
+        }
 
         return back()->with('success', 'Booking berhasil dikonfirmasi');
     }

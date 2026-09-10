@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use App\Models\Company;
 use App\Models\Merchant;
 use Illuminate\Support\Str;
 
@@ -34,6 +35,8 @@ class MerchantSeeder extends Seeder
                 'is_active' => true,
                 'status' => 'active',
             ]);
+
+            Company::ensureForOwner($owner);
         }
 
         echo 'MerchantSeeder: created stores for ' . $owners->count() . " owners\n";

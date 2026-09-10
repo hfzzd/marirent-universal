@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompany;
 use App\Models\Concerns\TenantIsolatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,14 +10,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CampingEquipment extends Model
 {
-    use HasFactory, SoftDeletes, TenantIsolatable;
+    use HasFactory, SoftDeletes, TenantIsolatable, HasCompany;
 
     public const TENANT_COLUMN = 'owner_id';
 
     protected $table = 'camping_equipments';
 
     protected $fillable = [
-        'category_id', 'owner_id', 'name', 'slug', 'brand', 'equipment_model',
+        'category_id', 'owner_id', 'company_id', 'name', 'slug', 'brand', 'equipment_model',
         'type', 'capacity', 'weight', 'material', 'description',
         'daily_price', 'weekly_price', 'monthly_price', 'hourly_price',
         'image', 'gallery', 'status', 'condition', 'is_active',

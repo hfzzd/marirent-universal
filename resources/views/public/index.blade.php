@@ -22,13 +22,13 @@
     $req = new \Illuminate\Http\Request();
     $featuredVehicles = collect();
     $allQueries = [
-        \App\Models\Vehicle::with('category')->where('is_active', true)->where('status', 'available'),
-        \App\Models\Phone::with('category')->where('is_active', true)->where('status', 'available'),
-        \App\Models\Camera::with('category')->where('is_active', true)->where('status', 'available'),
-        \App\Models\CampingEquipment::with('category')->where('is_active', true)->where('status', 'available'),
-        \App\Models\Playstation::with('category')->where('is_active', true)->where('status', 'available'),
-        \App\Models\Drone::with('category')->where('is_active', true)->where('status', 'available'),
-        \App\Models\MusicalInstrument::with('category')->where('is_active', true)->where('status', 'available'),
+        \App\Models\Vehicle::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
+        \App\Models\Phone::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
+        \App\Models\Camera::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
+        \App\Models\CampingEquipment::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
+        \App\Models\Playstation::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
+        \App\Models\Drone::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
+        \App\Models\MusicalInstrument::with(['category', 'company'])->where('is_active', true)->where('status', 'available'),
     ];
     foreach ($allQueries as $q) {
         $items = $q->inRandomOrder()->limit(2)->get();
@@ -46,6 +46,7 @@
                     'category' => $item->category,
                     'icon' => $slug == 'motor' ? 'fa-motorcycle' : 'fa-car',
                     'icon_class' => $slug == 'motor' ? 'text-amber-200' : 'text-sky-200',
+                    'company' => $item->company?->name,
                 ]);
             } elseif ($item instanceof \App\Models\Phone) {
                 $featuredVehicles->push([
@@ -59,6 +60,7 @@
                     'category' => $item->category,
                     'icon' => 'fa-mobile-alt',
                     'icon_class' => 'text-blue-200',
+                    'company' => $item->company?->name,
                 ]);
             } elseif ($item instanceof \App\Models\Camera) {
                 $featuredVehicles->push([
@@ -72,6 +74,7 @@
                     'category' => $item->category,
                     'icon' => 'fa-camera',
                     'icon_class' => 'text-violet-200',
+                    'company' => $item->company?->name,
                 ]);
             } elseif ($item instanceof \App\Models\CampingEquipment) {
                 $featuredVehicles->push([
@@ -85,6 +88,7 @@
                     'category' => $item->category,
                     'icon' => 'fa-campground',
                     'icon_class' => 'text-emerald-200',
+                    'company' => $item->company?->name,
                 ]);
             } elseif ($item instanceof \App\Models\Playstation) {
                 $featuredVehicles->push([
@@ -98,6 +102,7 @@
                     'category' => $item->category,
                     'icon' => 'fa-gamepad',
                     'icon_class' => 'text-indigo-200',
+                    'company' => $item->company?->name,
                 ]);
             } elseif ($item instanceof \App\Models\Drone) {
                 $featuredVehicles->push([
@@ -111,6 +116,7 @@
                     'category' => $item->category,
                     'icon' => 'fa-drone',
                     'icon_class' => 'text-cyan-200',
+                    'company' => $item->company?->name,
                 ]);
             } elseif ($item instanceof \App\Models\MusicalInstrument) {
                 $featuredVehicles->push([
@@ -124,6 +130,7 @@
                     'category' => $item->category,
                     'icon' => 'fa-guitar',
                     'icon_class' => 'text-rose-200',
+                    'company' => $item->company?->name,
                 ]);
             }
         }
@@ -248,6 +255,11 @@
             <div class="p-5">
                 <h3 class="font-bold text-navy-900 text-[15px] mb-1">{{ $p['name'] }}</h3>
                 <p class="text-[12px] text-gray-400 mb-3">{{ $p['brand'] }} {{ $p['subtitle'] }}</p>
+                @if(!empty($p['company']))
+                <p class="text-[11px] text-emerald-600 mb-3 flex items-center gap-1.5 truncate">
+                    <i class="fas fa-building text-[10px]"></i> {{ $p['company'] }}
+                </p>
+                @endif
                 <div class="flex items-end justify-between border-t border-gray-100 pt-3">
                     <div>
                         <p class="text-[11px] text-gray-400">Mulai dari</p>

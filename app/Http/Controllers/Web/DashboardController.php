@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Company;
 
 class DashboardController extends Controller
 {
@@ -22,6 +23,7 @@ class DashboardController extends Controller
             'owner' => $user->merchantCategoryId() ? $this->merchantDashboard() : view('dashboard.owner'),
             'admin' => $this->merchantDashboard(),
             'driver' => $this->driverDashboard(),
+            'employee' => $this->employeeDashboard(),
             'inspector' => $this->inspectorDashboard(),
             default => redirect()->route('home'),
         };
@@ -75,13 +77,13 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
-        $inspectionQuery = \App\Models\Inspection::where('status', 'reported')
-            ->whereHas('vehicle', fn($q) => $q->where('owner_id', $merchantId));
-        if ($categoryId) {
-            $inspectionQuery->whereHas('vehicle', fn($q) => $q->where('category_id', $categoryId));
-        }
+        $inspectionQuery = \App\Models\Inspection::whereIn('status', ['open', 'reported', 'processing'])
+            ->where(function ($q) use ($merchantId, $categoryId) {
+                $q->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId)->when($categoryId, fn($cq) => $cq->where('category_id', $categoryId)))
+                    ->orWhereHas('booking', fn($bq) => $bq->forMerchantCategory($merchantId, $categoryId));
+            });
         $inspectorReports = $inspectionQuery
-            ->with(['vehicle', 'reportedBy'])
+            ->with(['vehicle', 'booking.item', 'reportedBy'])
             ->latest()
             ->limit(8)
             ->get();
@@ -150,6 +152,7 @@ class DashboardController extends Controller
                     'status' => 'pending',
                 ]
             );
+            Company::ensureForOwner($user);
             return view('dashboard.profile', compact('merchant'));
         }
 
@@ -238,7 +241,7 @@ class DashboardController extends Controller
             $preQueue = \App\Models\Booking::where('driver_id', $driverId)
                 ->where('with_driver', true)
                 ->where('status', 'confirmed')
-                ->whereDoesntHave('inspection', fn($q) => $q->where('type', 'pre_rental'))
+                ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'pre_rental'))
                 ->with(['user', 'vehicle', 'category', 'bookingItems'])
                 ->orderBy('start_date')
                 ->limit(10)
@@ -247,7 +250,7 @@ class DashboardController extends Controller
             $postQueue = \App\Models\Booking::where('driver_id', $driverId)
                 ->where('with_driver', true)
                 ->where('status', 'ongoing')
-                ->whereDoesntHave('inspection', fn($q) => $q->where('type', 'post_rental'))
+                ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'post_rental'))
                 ->with(['user', 'vehicle', 'category', 'bookingItems'])
                 ->orderBy('end_date')
                 ->limit(10)
@@ -282,17 +285,17 @@ class DashboardController extends Controller
             ->count();
 
         $pendingPre = \App\Models\Booking::where('status', 'confirmed')
-            ->whereDoesntHave('inspection', fn($q) => $q->where('type', 'pre_rental'))
+            ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'pre_rental'))
             ->where('with_driver', false)
             ->count();
 
         $pendingPost = \App\Models\Booking::where('status', 'ongoing')
-            ->whereDoesntHave('inspection', fn($q) => $q->where('type', 'post_rental'))
+            ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'post_rental'))
             ->where('with_driver', false)
             ->count();
 
         $preQueue = \App\Models\Booking::where('status', 'confirmed')
-            ->whereDoesntHave('inspection', fn($q) => $q->where('type', 'pre_rental'))
+            ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'pre_rental'))
             ->where('with_driver', false)
             ->with(['user', 'vehicle', 'category', 'bookingItems'])
             ->orderBy('start_date')
@@ -300,7 +303,7 @@ class DashboardController extends Controller
             ->get();
 
         $postQueue = \App\Models\Booking::where('status', 'ongoing')
-            ->whereDoesntHave('inspection', fn($q) => $q->where('type', 'post_rental'))
+            ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'post_rental'))
             ->where('with_driver', false)
             ->with(['user', 'vehicle', 'category', 'bookingItems'])
             ->orderBy('end_date')
@@ -317,5 +320,14 @@ class DashboardController extends Controller
             'totalInspections', 'thisMonthInspections', 'damageFindings',
             'pendingPre', 'pendingPost', 'preQueue', 'postQueue', 'recentInspections'
         ));
+    }
+
+    private function employeeDashboard()
+    {
+        $staff = \App\Models\Driver::where('user_id', Auth::id())
+            ->with('company')
+            ->first();
+
+        return view('dashboard.employee', compact('staff'));
     }
 }

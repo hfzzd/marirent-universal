@@ -20,9 +20,9 @@ class InspectionController extends Controller
         } elseif ($user && $user->isDriver()) {
             $driver = \App\Models\Driver::where('user_id', $user->id)->first();
             if ($driver) {
-                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id)->where('with_driver', true));
+                $query->whereHas('booking', fn($bq) => $bq->where('driver_id', $driver->id));
             } else {
-                return response()->json(['success' => true, 'data' => []]);
+                $query->whereRaw('1 = 0');
             }
         }
 

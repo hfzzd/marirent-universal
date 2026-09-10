@@ -27,6 +27,7 @@ use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\NotificationWebController;
 use App\Http\Controllers\Web\BrandCatalogPhotoController;
 use App\Http\Controllers\Web\RentalController;
+use App\Http\Controllers\Web\InspectorWebController;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
@@ -134,17 +135,21 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('owner')->gro
     Route::put('/store', [MerchantProfileController::class, 'update'])->name('merchant.profile.update');
     Route::post('/store/admins', [MerchantProfileController::class, 'storeAdmin'])->name('merchant.admin.store');
     Route::delete('/store/admins/{admin}', [MerchantProfileController::class, 'destroyAdmin'])->name('merchant.admin.destroy');
-    Route::get('/revenue', [OwnerRevenueController::class, 'index'])->name('owner.revenue.index');
-    Route::get('/revenue/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
-    Route::post('/revenue', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');
-    Route::get('/revenue/{invoice}', [OwnerRevenueController::class, 'show'])->name('owner.revenue.show');
-    Route::delete('/revenue/{invoice}', [OwnerRevenueController::class, 'destroy'])->name('owner.revenue.destroy');
     Route::get('/elektronik/{type}', [ElektronikController::class, 'index'])->name('owner.elektronik.type');
     Route::get('/elektronik/{type}/create', [ElektronikController::class, 'create'])->name('owner.elektronik.create');
     Route::post('/elektronik/{type}', [ElektronikController::class, 'store'])->name('owner.elektronik.store');
     Route::get('/elektronik/{type}/{id}/edit', [ElektronikController::class, 'edit'])->name('owner.elektronik.edit');
     Route::put('/elektronik/{type}/{id}', [ElektronikController::class, 'update'])->name('owner.elektronik.update');
     Route::delete('/elektronik/{type}/{id}', [ElektronikController::class, 'destroy'])->name('owner.elektronik.destroy');
+});
+
+// Revenue (owner only, per kategori company)
+Route::middleware(['auth', 'role:owner'])->prefix('owner/revenue')->group(function () {
+    Route::get('/', [OwnerRevenueController::class, 'index'])->name('owner.revenue.index');
+    Route::get('/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
+    Route::post('/', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');
+    Route::get('/{invoice}', [OwnerRevenueController::class, 'show'])->name('owner.revenue.show');
+    Route::delete('/{invoice}', [OwnerRevenueController::class, 'destroy'])->name('owner.revenue.destroy');
 });
 
 // Vehicles (Mobil) Routes
@@ -183,7 +188,7 @@ Route::middleware('auth')->prefix('bookings')->group(function () {
     Route::post('/{booking}/remove-driver', [BookingWebController::class, 'removeDriver'])->name('bookings.remove-driver');
 });
 
-Route::middleware(['auth', 'role:superadmin,owner'])->prefix('drivers')->group(function () {
+Route::middleware(['auth', 'role:superadmin,owner,admin'])->prefix('drivers')->group(function () {
 Route::get('/', [DriverWebController::class, 'index'])->name('drivers.index');
 Route::get('/create', [DriverWebController::class, 'create'])->name('drivers.create');
 Route::post('/', [DriverWebController::class, 'store'])->name('drivers.store');
@@ -191,6 +196,16 @@ Route::get('/{driver}', [DriverWebController::class, 'show'])->name('drivers.sho
 Route::get('/{driver}/edit', [DriverWebController::class, 'edit'])->name('drivers.edit');
 Route::put('/{driver}', [DriverWebController::class, 'update'])->name('drivers.update');
 Route::delete('/{driver}', [DriverWebController::class, 'destroy'])->name('drivers.destroy');
+});
+
+// Inspector Account Routes
+Route::middleware(['auth', 'role:superadmin,owner'])->prefix('inspectors')->group(function () {
+    Route::get('/', [InspectorWebController::class, 'index'])->name('inspectors.index');
+    Route::get('/create', [InspectorWebController::class, 'create'])->name('inspectors.create');
+    Route::post('/', [InspectorWebController::class, 'store'])->name('inspectors.store');
+    Route::get('/{inspector}/edit', [InspectorWebController::class, 'edit'])->name('inspectors.edit');
+    Route::put('/{inspector}', [InspectorWebController::class, 'update'])->name('inspectors.update');
+    Route::delete('/{inspector}', [InspectorWebController::class, 'destroy'])->name('inspectors.destroy');
 });
 
 // Attendance Routes
@@ -257,6 +272,7 @@ Route::middleware('auth')->prefix('item-replacements')->group(function () {
     Route::get('/', [ItemReplacementWebController::class, 'index'])->name('item-replacements.index');
     Route::get('/create', [ItemReplacementWebController::class, 'create'])->name('item-replacements.create');
     Route::post('/', [ItemReplacementWebController::class, 'store'])->name('item-replacements.store');
+    Route::get('/{replacement}', [ItemReplacementWebController::class, 'show'])->name('item-replacements.show');
     Route::post('/{replacement}/approve', [ItemReplacementWebController::class, 'approve'])->name('item-replacements.approve');
     Route::post('/{replacement}/reject', [ItemReplacementWebController::class, 'reject'])->name('item-replacements.reject');
     Route::post('/{replacement}/return', [ItemReplacementWebController::class, 'returnItem'])->name('item-replacements.return');

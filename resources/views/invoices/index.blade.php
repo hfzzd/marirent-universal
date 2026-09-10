@@ -195,6 +195,11 @@
                         @elseif($inv->status == 'sent') <span class="badge badge-blue">Terkirim</span>
                         @else <span class="badge badge-gray">Draft</span>
                         @endif
+                        @if(!$isUser && $inv->payments->isNotEmpty())
+                        <div class="mt-1">
+                            <span class="badge badge-yellow"><i class="fas fa-hourglass-half text-[10px] mr-0.5"></i> Menunggu Verifikasi</span>
+                        </div>
+                        @endif
                     </td>
                     <td class="py-3 px-5 text-[12px] {{ $inv->due_date && $inv->isOverdue() ? 'text-red-500 font-semibold' : 'text-navy-500' }}">
                         <div class="flex items-center gap-1.5">
@@ -207,6 +212,15 @@
                             <a href="{{ route('invoices.show', $inv) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
                                 <i class="fas fa-eye text-[10px]"></i> Detail
                             </a>
+                            @if(!$isUser && $inv->payments->isNotEmpty())
+                            @php $pendingPayment = $inv->payments->first(); @endphp
+                            <form method="POST" action="{{ route('invoices.verify-payment', $pendingPayment) }}" class="inline" onsubmit="return confirm('Verifikasi pembayaran Rp {{ number_format($pendingPayment->amount,0,',','.') }} untuk {{ $inv->invoice_number }}?')">
+                                @csrf
+                                <button type="submit" class="text-green-600 hover:text-green-700 text-[12px] font-medium transition inline-flex items-center gap-1">
+                                    <i class="fas fa-check-circle text-[10px]"></i> Verifikasi
+                                </button>
+                            </form>
+                            @endif
                             @if(!$isUser && $inv->status !== 'paid')
                             <form method="POST" action="{{ route('invoices.send', $inv) }}" class="inline">
                                 @csrf

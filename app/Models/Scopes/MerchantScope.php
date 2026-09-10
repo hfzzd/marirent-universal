@@ -43,7 +43,7 @@ class MerchantScope implements Scope
 
         // Cegah recursion: scope pada model Driver yang sedang di-query oleh
         // user driver itu sendiri (merchantIdForIsolation perlu data driver-nya).
-        if ($model instanceof \App\Models\Driver && $user->isDriver()) {
+        if ($model instanceof \App\Models\Driver && ($user->isDriver() || $user->isEmployee())) {
             return;
         }
         if ($user->isPlatformAdmin()) {

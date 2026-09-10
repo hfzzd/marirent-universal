@@ -57,9 +57,7 @@
                     @endif
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Tanggal</th>
                     <th class="text-center py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Status</th>
-                    @if(!$isUser)
                     <th class="text-center py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Pembayaran</th>
-                    @endif
                     <th class="text-right py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Total</th>
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Aksi</th>
                 </tr>
@@ -108,14 +106,12 @@
                         @else <span class="badge badge-gray">{{ ucfirst($b->status) }}</span>
                         @endif
                     </td>
-                    @if(!$isUser)
                     <td class="py-3 px-5 text-center">
                         @if($b->payment_status == 'paid') <span class="badge badge-green">Lunas</span>
                         @elseif($b->payment_status == 'partial') <span class="badge badge-yellow">Sebagian</span>
                         @else <span class="badge badge-red">Belum Bayar</span>
                         @endif
                     </td>
-                    @endif
                     <td class="py-3 px-5 text-right font-medium text-navy-700">Rp {{ number_format($b->final_price,0,',','.') }}</td>
                     <td class="py-3 px-5">
                         <a href="{{ route('bookings.show', $b) }}" class="text-sky-600 text-[12px] font-medium hover:text-sky-700 transition inline-flex items-center gap-1">
@@ -125,7 +121,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ $isUser ? '6' : '8' }}" class="py-14 text-center">
+                    <td colspan="{{ $isUser ? '7' : '8' }}" class="py-14 text-center">
                         <div class="flex flex-col items-center gap-3">
                             <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center">
                                 <i class="fas fa-calendar-times text-sky-300 text-2xl"></i>
@@ -183,11 +179,9 @@
             </div>
             <div class="flex items-center justify-between gap-2 text-[11px] text-gray-500 mb-2">
                 <span>{{ $b->start_date->format('d M Y') }} &rarr; {{ $b->end_date->format('d M Y') }}</span>
-                @if(!$isUser)
                 @if($b->payment_status == 'paid') <span class="badge badge-green">Lunas</span>
                 @elseif($b->payment_status == 'partial') <span class="badge badge-yellow">Sebagian</span>
                 @else <span class="badge badge-red">Belum Bayar</span>
-                @endif
                 @endif
             </div>
             <div class="flex items-center justify-between">
