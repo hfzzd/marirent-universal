@@ -1,5 +1,5 @@
 ﻿@extends('layouts.dashboard')
-@section('page-title', 'Absen Driver')
+@section('page-title', 'Absensi Driver & Staff')
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between mb-5 gap-3">

@@ -226,9 +226,10 @@ class InvoiceWebController extends Controller
             abort_unless((int) $invoice->user_id === (int) $user->id, 403);
             return;
         }
-        if ($user->role === 'driver') {
+        if ($user->isDriverOrStaff()) {
             $driver = \App\Models\Driver::where('user_id', $user->id)->first();
-            if (!$driver || (int) $invoice->owner_id !== (int) $driver->owner_id) {
+            $ownerId = $driver?->owner_id ?? $user->owner_id;
+            if (!$ownerId || (int) $invoice->owner_id !== (int) $ownerId) {
                 abort(403);
             }
             return;

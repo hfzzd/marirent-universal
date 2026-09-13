@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        \DB::statement("ALTER TABLE users MODIFY role ENUM('superadmin', 'admin', 'owner', 'user', 'driver', 'inspector') NOT NULL DEFAULT 'user'");
+        \DB::statement("ALTER TABLE users MODIFY role ENUM('superadmin', 'admin', 'owner', 'user', 'driver', 'staff', 'inspector') NOT NULL DEFAULT 'user'");
 
         Schema::table('users', function (Blueprint $table) {
             $table->unsignedBigInteger('owner_id')->nullable()->after('role');
@@ -23,6 +23,6 @@ return new class extends Migration
             $table->dropColumn('owner_id');
         });
 
-        \DB::statement("ALTER TABLE users MODIFY role ENUM('superadmin', 'owner', 'user', 'driver', 'inspector') NOT NULL DEFAULT 'user'");
+        \DB::statement("ALTER TABLE users MODIFY role ENUM('superadmin', 'owner', 'user', 'driver', 'staff', 'inspector') NOT NULL DEFAULT 'user'");
     }
 };

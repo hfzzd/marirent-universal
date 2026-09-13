@@ -33,6 +33,9 @@ class User extends Authenticatable
     public function isOwner(): bool { return $this->role === 'owner'; }
     public function isUser(): bool { return $this->role === 'user'; }
     public function isDriver(): bool { return $this->role === 'driver'; }
+    public function isStaff(): bool { return $this->role === 'staff'; }
+    /** Sopir maupun staff operasional (akses operasional setara driver). */
+    public function isDriverOrStaff(): bool { return in_array($this->role, ['driver', 'staff'], true); }
     public function isEmployee(): bool { return $this->role === 'employee'; }
     public function isInspector(): bool { return $this->role === 'inspector'; }
     public function isMerchantStaff(): bool { return in_array($this->role, ['admin', 'owner']); }
@@ -40,7 +43,7 @@ class User extends Authenticatable
     public static function roleForPosition(?string $position, ?int $categoryId = null): string
     {
         if ($categoryId && !Category::whereKey($categoryId)->whereIn('slug', ['mobil', 'motor'])->exists()) {
-            return 'employee';
+            return 'staff';
         }
 
         $position = strtolower(trim((string) $position));
@@ -50,12 +53,12 @@ class User extends Authenticatable
         }
 
         if (preg_match('/\b(non[- ]driver|bukan\s+driver)\b/', $position)) {
-            return 'employee';
+            return 'staff';
         }
 
         return preg_match('/\b(driver|supir|pengemudi)\b/', $position) === 1
             ? 'driver'
-            : 'employee';
+            : 'staff';
     }
 
     /**
@@ -124,10 +127,17 @@ class User extends Authenticatable
             return $this->merchantId();
         }
 
-        if ($this->isDriver() || $this->isEmployee()) {
+        if ($this->isDriver() || $this->isEmployee() || $this->isStaff()) {
             $ownerId = \App\Models\Driver::withoutGlobalScopes()
                 ->where('user_id', $this->id)
                 ->value('owner_id');
+            if ($ownerId) {
+                return (int) $ownerId;
+            }
+            // Staff tanpa baris driver: ikut merchant via owner_id akunnya.
+            if ($this->isStaff() && $this->owner_id) {
+                return (int) $this->owner_id;
+            }
             return $ownerId ? (int) $ownerId : null;
         }
 
@@ -140,11 +150,11 @@ class User extends Authenticatable
 
     /**
      * Kategori produk yang dikelola admin/owner (null = seluruh merchant).
-     * Hanya berlaku untuk role admin & owner.
+     * Hanya berlaku untuk role admin, owner, employee & staff.
      */
     public function merchantCategoryId(): ?int
     {
-        if (!$this->isMerchantStaff() && !$this->isEmployee()) {
+        if (!$this->isMerchantStaff() && !$this->isEmployee() && !$this->isStaff()) {
             return null;
         }
 

@@ -18,7 +18,7 @@ class BookingController extends Controller
 
         if ($user->role === 'user') {
             $query->where('user_id', $user->id);
-        } elseif ($user->role === 'driver') {
+        } elseif (in_array($user->role, ['driver', 'staff'], true)) {
             $driver = Driver::where('user_id', $user->id)->first();
             if ($driver) {
                 $query->where('driver_id', $driver->id);

@@ -39,6 +39,8 @@ Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('
 Route::get('/brands', [PublicController::class, 'brands'])->name('public.brands');
 Route::get('/brand/{type}/{brand}', [PublicController::class, 'brand'])->name('public.brand');
 Route::get('/store/{slug}', [PublicController::class, 'store'])->name('public.store');
+Route::get('/jadwal-demo', [PublicController::class, 'demo'])->name('demo');
+Route::post('/jadwal-demo', [PublicController::class, 'storeDemo'])->name('demo.store');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -104,6 +106,8 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::post('/merchants/{id}/suspend', [SuperadminController::class, 'merchantSuspend'])->name('superadmin.merchants.suspend');
     Route::post('/merchants/{id}/activate', [SuperadminController::class, 'merchantActivate'])->name('superadmin.merchants.activate');
     Route::put('/merchants/{id}', [SuperadminController::class, 'merchantUpdate'])->name('superadmin.merchants.update');
+    Route::get('/demo-requests', [SuperadminController::class, 'demoRequests'])->name('superadmin.demo-requests');
+    Route::put('/demo-requests/{id}', [SuperadminController::class, 'demoRequestUpdate'])->name('superadmin.demo-requests.update');
     Route::get('/absen', [SuperadminController::class, 'absen'])->name('superadmin.absen');
     Route::get('/monitoring-vehicle', [SuperadminController::class, 'monitoringVehicle'])->name('superadmin.monitoring-vehicle');
     Route::get('/motor', [SuperadminController::class, 'motor'])->name('superadmin.motor');
@@ -167,21 +171,21 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('motors')->gr
     Route::get('/', [VehicleWebController::class, 'motor'])->name('motors.index');
 });
 
-Route::middleware('auth')->prefix('bookings')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user'])->prefix('bookings')->group(function () {
     Route::get('/', [BookingWebController::class, 'index'])->name('bookings.index');
     Route::get('/create', [BookingWebController::class, 'create'])->name('bookings.create');
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
     Route::get('/create-item/{type}/{item}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
     Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
     Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
+    Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
+    Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel');
+    Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
     Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
     Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
     Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');
     Route::post('/{booking}/reschedule', [BookingWebController::class, 'reschedule'])->name('bookings.reschedule');
-    Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
-    Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm');
-    Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel');
     Route::post('/{booking}/start-trip', [BookingWebController::class, 'startTrip'])->name('bookings.start');
     Route::post('/{booking}/complete', [BookingWebController::class, 'complete'])->name('bookings.complete');
     Route::post('/{booking}/assign-driver', [BookingWebController::class, 'assignDriver'])->name('bookings.assign-driver');
@@ -236,7 +240,7 @@ Route::middleware('auth')->prefix('inspections')->group(function () {
     Route::get('/{inspection}', [InspectionWebController::class, 'show'])->name('inspections.show');
 });
 
-Route::middleware(['auth', 'role:driver'])->prefix('driver-report')->group(function () {
+Route::middleware(['auth', 'role:driver,staff'])->prefix('driver-report')->group(function () {
     Route::get('/', [InspectionWebController::class, 'reportForm'])->name('driver.report');
     Route::post('/', [InspectionWebController::class, 'reportStore'])->name('driver.report.store');
 });

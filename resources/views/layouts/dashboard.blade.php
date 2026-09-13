@@ -108,6 +108,11 @@
                 <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding-usd w-5 mr-2.5 text-sm"></i> Komisi Platform
                 </a>
+                <a href="{{ route('superadmin.demo-requests') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.demo-requests*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Jadwal Demo
+                    @php $__demoPending = \App\Models\DemoRequest::where('status', 'pending')->count(); @endphp
+                    @if($__demoPending > 0)<span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $__demoPending }}</span>@endif
+                </a>
 
                 <div class="sidebar-group-title mt-4">Keuangan</div>
                 <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
@@ -119,13 +124,13 @@
 
                 <div class="sidebar-group-title mt-4">Tim</div>
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
-                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
+                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver & Staff
                 </a>
                 <a href="{{ route('inspectors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspectors.*') ? 'active' : '' }}">
                     <i class="fas fa-user-shield w-5 mr-2.5 text-sm"></i> Inspektur
                 </a>
                 <a href="{{ route('superadmin.absen') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.absen') ? 'active' : '' }}">
-                    <i class="fas fa-clipboard-list w-5 mr-2.5 text-sm"></i> Absen Driver
+                    <i class="fas fa-clipboard-list w-5 mr-2.5 text-sm"></i> Absensi Tim
                 </a>
                 <a href="{{ route('salaries.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('salaries.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave w-5 mr-2.5 text-sm"></i> Penggajian
@@ -178,7 +183,7 @@
                     <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
                 </a>
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
-                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
+                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver & Staff
                 </a>
                 <a href="{{ route('inspectors.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspectors.*') ? 'active' : '' }}">
                     <i class="fas fa-user-shield w-5 mr-2.5 text-sm"></i> Inspektur
@@ -235,7 +240,7 @@
                     <i class="fas fa-images w-5 mr-2.5 text-sm"></i> Katalog Brand
                 </a>
                 <a href="{{ route('drivers.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
-                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver
+                    <i class="fas fa-id-card w-5 mr-2.5 text-sm"></i> Driver & Staff
                 </a>
                 <a href="{{ route('salaries.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('salaries.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave w-5 mr-2.5 text-sm"></i> Penggajian
@@ -264,7 +269,7 @@
                     <i class="fas fa-sync-alt w-5 mr-2.5 text-sm"></i> Penggantian Unit
                 </a>
 
-                @elseif($role === 'driver')
+                @elseif($role === 'driver' || $role === 'staff')
                 <div class="sidebar-group-title mt-4">Absensi</div>
                 <a href="{{ route('attendance.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
                     <i class="fas fa-fingerprint w-5 mr-2.5 text-sm"></i> Absen
@@ -332,6 +337,12 @@
                 </a>
                 <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice Saya
+                </a>
+                <a href="{{ route('chat.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('chat.*') ? 'active' : '' }}">
+                    <i class="fas fa-comments w-5 mr-2.5 text-sm"></i> Chat
+                </a>
+                <a href="{{ route('mail.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('mail.*') ? 'active' : '' }}">
+                    <i class="fas fa-envelope w-5 mr-2.5 text-sm"></i> Pesan
                 </a>
                 <a href="{{ route('item-replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('item-replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-sync-alt w-5 mr-2.5 text-sm"></i> Penggantian Unit
@@ -531,7 +542,6 @@
                 fetch('{{ route("notifications.index") }}', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
                 }).then(r => r.text()).then(html => {
-                    // Parse and extract notification items from the HTML
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const cards = doc.querySelectorAll('.glass-card');
@@ -541,7 +551,7 @@
                     }
                     notifList.innerHTML = '';
                     cards.forEach((card, i) => {
-                        if (i >= 5) return; // Show max 5 in dropdown
+                        if (i >= 5) return;
                         const title = card.querySelector('h4')?.textContent || '';
                         const msg = card.querySelector('p')?.textContent || '';
                         const time = card.querySelector('.whitespace-nowrap')?.textContent || '';

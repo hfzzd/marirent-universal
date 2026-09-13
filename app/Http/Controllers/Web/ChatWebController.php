@@ -15,14 +15,26 @@ class ChatWebController extends Controller
     {
         $userId = Auth::id();
 
-        // Get all conversations for current user
         $conversations = Conversation::where('user_one_id', $userId)
             ->orWhere('user_two_id', $userId)
             ->with(['userOne', 'userTwo', 'latestMessage'])
             ->orderByDesc('last_message_at')
-            ->get();
+            ->get()
+            ->map(function ($conv) use ($userId) {
+                $other = $conv->otherUser($userId);
+                $unread = $conv->messages()->where('sender_id', '!=', $userId)->where('is_read', false)->count();
+                return [
+                    'id' => $conv->id,
+                    'other_user' => $other ? ['name' => $other->name] : null,
+                    'latest_message' => $conv->latestMessage ? ['message' => $conv->latestMessage->message] : null,
+                    'unread_count' => $unread,
+                ];
+            });
 
-        // Check if a specific conversation or user is requested
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['conversations' => $conversations]);
+        }
+
         $activeConversation = null;
         if ($request->conversation_id) {
             $activeConversation = Conversation::where('id', $request->conversation_id)
@@ -36,11 +48,11 @@ class ChatWebController extends Controller
                 $activeConversation->load(['userOne', 'userTwo', 'messages.sender']);
             }
         } elseif ($conversations->isNotEmpty()) {
-            $activeConversation = $conversations->first();
-            $activeConversation->load(['userOne', 'userTwo', 'messages.sender']);
+            $activeConversation = Conversation::where('id', $conversations->first()['id'])
+                ->with(['userOne', 'userTwo', 'messages.sender'])
+                ->first();
         }
 
-        // Mark messages in active conversation as read
         if ($activeConversation) {
             ChatMessage::where('conversation_id', $activeConversation->id)
                 ->where('sender_id', '!=', $userId)
@@ -48,10 +60,7 @@ class ChatWebController extends Controller
                 ->update(['is_read' => true, 'read_at' => now()]);
         }
 
-        // Available contacts to start new chat
-        $contacts = User::where('id', '!=', $userId)
-            ->orderBy('name')
-            ->get();
+        $contacts = User::where('id', '!=', $userId)->orderBy('name')->get();
 
         return view('chat.index', compact('conversations', 'activeConversation', 'contacts'));
     }

@@ -15,10 +15,15 @@ class TripReportWebController extends Controller
     {
         $query = TripReport::with(['booking', 'driver.user', 'vehicle']);
 
-        if (Auth::user()->role === 'driver') {
+        if (Auth::user()->isDriverOrStaff()) {
             $driver = Driver::where('user_id', Auth::id())->first();
             if ($driver) {
                 $query->where('driver_id', $driver->id);
+            } else {
+                $query->whereHas('booking', fn($q) => $q->forMerchantCategory(
+                    Auth::user()->merchantIdForIsolation(),
+                    Auth::user()->merchantCategoryId()
+                ));
             }
         } elseif (Auth::user()->isMerchantStaff()) {
             $query->whereHas('booking', fn($q) => $q->forMerchantCategory(
@@ -55,9 +60,13 @@ class TripReportWebController extends Controller
     public function create(Request $request)
     {
         $bookings = Booking::whereIn('status', ['ongoing']);
-        if (Auth::user()->role === 'driver') {
+        if (Auth::user()->isDriverOrStaff()) {
             $driverId = Driver::where('user_id', Auth::id())->value('id');
-            $bookings->where('driver_id', $driverId);
+            if ($driverId) {
+                $bookings->where('driver_id', $driverId);
+            } else {
+                $bookings->forMerchantCategory(Auth::user()->merchantIdForIsolation(), Auth::user()->merchantCategoryId());
+            }
         } elseif (Auth::user()->isMerchantStaff()) {
             $bookings->forMerchantCategory(Auth::user()->merchantId(), Auth::user()->merchantCategoryId());
         } elseif (Auth::user()->role === 'user') {
@@ -137,9 +146,15 @@ class TripReportWebController extends Controller
         if ($user->isSuperAdmin()) {
             return;
         }
-        if ($user->role === 'driver') {
+        if ($user->isDriverOrStaff()) {
             $driverId = Driver::where('user_id', $user->id)->value('id');
-            abort_unless($driverId && (int) $booking->driver_id === (int) $driverId, 403);
+            if ($driverId) {
+                abort_unless((int) $booking->driver_id === (int) $driverId, 403);
+            } else {
+                // Staff tanpa penugasan sopir: hanya booking merchant-nya.
+                $merchantId = $user->merchantIdForIsolation();
+                abort_unless($merchantId && $booking->forMerchantCategory($merchantId, $user->merchantCategoryId())->exists(), 403);
+            }
             return;
         }
         if ($user->isMerchantStaff()) {

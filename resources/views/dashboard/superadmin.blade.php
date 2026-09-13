@@ -285,7 +285,7 @@
 
         <div class="space-y-3 flex-1">
             <a href="{{ route('drivers.index') }}" class="flex items-center justify-between bg-blue-50/60 hover:bg-blue-50 rounded-xl px-4 py-3 transition group">
-                <span class="flex items-center gap-2.5 text-[12px] font-bold text-navy-800"><i class="fas fa-id-card text-blue-500"></i> Driver</span>
+                <span class="flex items-center gap-2.5 text-[12px] font-bold text-navy-800"><i class="fas fa-id-card text-blue-500"></i> Driver & Staff</span>
                 <span class="text-[12px] font-black text-navy-800">{{ $activeDrivers }}<span class="text-gray-400 font-medium">/{{ $totalDrivers }} tugas</span></span>
             </a>
             <a href="{{ route('inspections.index') }}" class="flex items-center justify-between bg-emerald-50/60 hover:bg-emerald-50 rounded-xl px-4 py-3 transition group">
@@ -346,7 +346,7 @@
                 <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-base shadow-md shadow-emerald-500/20 group-hover:scale-110 transition">
                     <i class="fas fa-id-card"></i>
                 </div>
-                <span class="text-xs font-bold text-navy-800 mt-2">Driver</span>
+                <span class="text-xs font-bold text-navy-800 mt-2">Driver & Staff</span>
                 <span class="text-[10px] text-gray-400">{{ $totalDrivers }} personil</span>
             </a>
 

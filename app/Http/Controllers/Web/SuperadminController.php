@@ -446,4 +446,38 @@ class SuperadminController extends Controller
         }
         return $slug;
     }
+
+    /**
+     * Daftar permintaan jadwal demo dari halaman publik.
+     */
+    public function demoRequests(Request $request)
+    {
+        $status = $request->input('status', 'all');
+
+        $query = \App\Models\DemoRequest::query();
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $demos = $query->latest()->paginate(15)->withQueryString();
+        $pendingCount = \App\Models\DemoRequest::where('status', 'pending')->count();
+
+        return view('superadmin.demo-requests.index', compact('demos', 'status', 'pendingCount'));
+    }
+
+    /**
+     * Ubah status permintaan demo (pending/contacted/scheduled/done/cancelled).
+     */
+    public function demoRequestUpdate(Request $request, int $id)
+    {
+        $demo = \App\Models\DemoRequest::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => 'required|in:pending,contacted,scheduled,done,cancelled',
+        ]);
+
+        $demo->update($validated);
+
+        return back()->with('success', 'Status demo "' . $demo->name . '" diubah menjadi ' . $validated['status'] . '.');
+    }
 }

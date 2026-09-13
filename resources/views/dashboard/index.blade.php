@@ -162,69 +162,15 @@
         </div>
     </div>
 
-@elseif($role === 'user')
-    {{-- User Dashboard --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+@else
+    {{-- Default Dashboard for other roles --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="text-center py-8">
+            <div class="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-info-circle text-2xl text-sky-600"></i>
             </div>
-            <h3 class="text-2xl font-bold text-secondary">3</h3>
-            <p class="text-gray-500 text-sm">Rental Aktif</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-4">
-                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
-            </div>
-            <h3 class="text-2xl font-bold text-secondary">2</h3>
-            <p class="text-gray-500 text-sm">Invoice Pending</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
-                <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <h3 class="text-2xl font-bold text-secondary">12</h3>
-            <p class="text-gray-500 text-sm">Total Sewa</p>
-        </div>
-    </div>
-
-    {{-- Quick Actions --}}
-    <div class="bg-gradient-to-r from-primary to-blue-700 rounded-2xl p-6 mb-8 text-white">
-        <div class="flex flex-col sm:flex-row items-center justify-between">
-            <div>
-                <h3 class="text-xl font-bold mb-1">Butuh Kendaraan?</h3>
-                <p class="text-blue-100">Sewa kendaraan impian Anda sekarang juga!</p>
-            </div>
-            <a href="{{ route('vehicles.index') }}" class="mt-4 sm:mt-0 bg-white text-primary hover:bg-gray-100 px-6 py-3 rounded-xl font-bold transition-colors">
-                Mulai Sewa
-            </a>
-        </div>
-    </div>
-
-    {{-- Active Rentals --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-        <h3 class="font-bold text-secondary text-lg mb-4">Rental Aktif Saya</h3>
-        <div class="space-y-4">
-            @php
-                $myRentals = [
-                    ['code' => 'R001', 'vehicle' => 'Toyota Avanza', 'period' => '15-17 Agu 2026', 'status' => 'Aktif'],
-                    ['code' => 'R004', 'vehicle' => 'iPhone 15 Pro', 'period' => '15-16 Agu 2026', 'status' => 'Aktif'],
-                ];
-            @endphp
-            @foreach($myRentals as $rental)
-                <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        </div>
-                        <div>
-                            <p class="font-semibold text-secondary">{{ $rental['code'] }} - {{ $rental['vehicle'] }}</p>
-                            <p class="text-sm text-gray-500">{{ $rental['period'] }}</p>
-                        </div>
-                    </div>
-                    <span class="bg-green-50 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg">{{ $rental['status'] }}</span>
-                </div>
-            @endforeach
+            <h3 class="text-lg font-bold text-navy-800 mb-2">Dashboard tidak tersedia</h3>
+            <p class="text-gray-500">Silakan gunakan menu di sidebar untuk navigasi.</p>
         </div>
     </div>
 

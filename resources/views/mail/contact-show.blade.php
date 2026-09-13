@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+@extends(auth()->user()->role === 'user' ? 'layouts.user' : 'layouts.dashboard')
 @section('page-title', 'Pesan Kontak - ' . $contactMessage->subject)
 
 @section('content')

@@ -17,10 +17,14 @@ class ReplacementWebController extends Controller
 
         $role = Auth::user()->role;
 
-        if ($role === 'driver') {
+        if (in_array($role, ['driver', 'staff'], true)) {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             if ($driver) {
                 $query->whereHas('booking', fn($q) => $q->where('driver_id', $driver->id));
+            } else {
+                // Staff tanpa penugasan sopir: lingkup merchant-nya.
+                $merchantId = Auth::user()->merchantIdForIsolation();
+                $query->whereHas('originalVehicle', fn($q) => $q->where('owner_id', $merchantId ?? 0));
             }
         } elseif ($role === 'user') {
             $query->where('requested_by', Auth::id());
@@ -41,7 +45,7 @@ class ReplacementWebController extends Controller
         $modalBookings = [];
         $modalVehicles = [];
 
-        if (in_array($role, ['driver', 'user', 'owner', 'superadmin'])) {
+        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin'])) {
             $formData = $this->getFormData();
             $modalBookings = $formData['bookings'];
             $modalVehicles = $formData['vehicles'];
@@ -99,11 +103,11 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
                     ->when(Auth::user()->merchantCategoryId(), fn($q, $categoryId) => $q->where('category_id', $categoryId));
             }
             $vehicles = $vehicleQuery->get();
-        } elseif ($role === 'driver') {
+        } elseif (in_array($role, ['driver', 'staff'], true)) {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             $bookings = $driver
                 ? Booking::where('driver_id', $driver->id)->where('status', 'ongoing')->whereNotNull('vehicle_id')->where('actual_start_date', '!=', null)->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values()
-                : collect();
+                : Booking::where('status', 'ongoing')->whereNotNull('vehicle_id')->whereHas('vehicle', fn($q) => $q->where('owner_id', Auth::user()->merchantIdForIsolation() ?? 0))->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values();
         } else {
             $bookings = Booking::where('user_id', Auth::id())->where('status', 'ongoing')->where('with_driver', false)->whereNotNull('vehicle_id')->where('actual_start_date', '!=', null)->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values();
         }
@@ -137,16 +141,23 @@ if (!isset($vehicles)) {
         if ($user->role === 'user' && (int) $replacement->booking?->user_id !== (int) $user->id) {
             abort(403);
         }
-        if ($user->role === 'driver') {
+        if (in_array($user->role, ['driver', 'staff'], true)) {
             $driverId = \App\Models\Driver::where('user_id', $user->id)->value('id');
-            if (!$driverId || (int) $replacement->booking?->driver_id !== (int) $driverId) {
-                abort(403);
+            if ($driverId) {
+                if ((int) $replacement->booking?->driver_id !== (int) $driverId) {
+                    abort(403);
+                }
+            } else {
+                $merchantId = $user->merchantIdForIsolation();
+                if (!$merchantId || (int) $replacement->originalVehicle?->owner_id !== $merchantId) {
+                    abort(403);
+                }
             }
         }
         if (in_array($user->role, ['owner', 'admin'])) {
             $this->guardCompanyReplacement($replacement);
         }
-        if (!in_array($user->role, ['superadmin', 'owner', 'admin', 'driver', 'user'], true)) {
+        if (!in_array($user->role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user'], true)) {
             abort(403);
         }
 
@@ -157,7 +168,7 @@ if (!isset($vehicles)) {
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
@@ -172,21 +183,36 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
             }
 
             $bookings = $query->get();
-        } elseif ($role === 'driver') {
+        } elseif (in_array($role, ['driver', 'staff'], true)) {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
-            if (!$driver) {
+            if (!$driver && $role === 'driver') {
                 abort(403, 'Profil driver tidak ditemukan');
             }
-            $bookings = Booking::where('driver_id', $driver->id)
-                ->where('status', 'ongoing')
-                ->whereNotNull('vehicle_id')
-                ->where('actual_start_date', '!=', null)
-                ->with(['vehicle.category', 'user'])
-                ->get()
-                ->filter(function ($booking) {
-                    return $this->isHalfPeriodElapsed($booking);
-                })
-                ->values();
+            if ($driver) {
+                $bookings = Booking::where('driver_id', $driver->id)
+                    ->where('status', 'ongoing')
+                    ->whereNotNull('vehicle_id')
+                    ->where('actual_start_date', '!=', null)
+                    ->with(['vehicle.category', 'user'])
+                    ->get()
+                    ->filter(function ($booking) {
+                        return $this->isHalfPeriodElapsed($booking);
+                    })
+                    ->values();
+            } else {
+                // Staff operasional: booking ongoing milik merchant-nya.
+                $merchantId = Auth::user()->merchantIdForIsolation();
+                $bookings = Booking::where('status', 'ongoing')
+                    ->whereNotNull('vehicle_id')
+                    ->where('actual_start_date', '!=', null)
+                    ->whereHas('vehicle', fn($q) => $q->where('owner_id', $merchantId ?? 0))
+                    ->with(['vehicle.category', 'user'])
+                    ->get()
+                    ->filter(function ($booking) {
+                        return $this->isHalfPeriodElapsed($booking);
+                    })
+                    ->values();
+            }
         } else {
             $bookings = Booking::where('user_id', Auth::id())
                 ->where('status', 'ongoing')
@@ -224,7 +250,7 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
@@ -244,7 +270,7 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
             return back()->with('error', 'Booking ini tidak memiliki kendaraan');
         }
 
-        if (in_array($role, ['driver', 'user'])) {
+        if (in_array($role, ['driver', 'staff', 'user'])) {
             if ($booking->status !== 'ongoing') {
                 return back()->with('error', 'Hanya booking dengan status ongoing yang dapat diajukan penggantian');
             }
@@ -253,10 +279,18 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
                 return back()->with('error', 'Penggantian kendaraan hanya dapat diajukan setelah setengah masa sewa berlalu');
             }
 
-            if ($role === 'driver') {
+            if (in_array($role, ['driver', 'staff'], true)) {
                 $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
-                if (!$driver || $booking->driver_id !== $driver->id) {
-                    abort(403, 'Anda bukan driver untuk booking ini');
+                if ($driver) {
+                    if ($booking->driver_id !== $driver->id) {
+                        abort(403, 'Anda bukan driver untuk booking ini');
+                    }
+                } else {
+                    // Staff operasional: hanya booking milik merchant-nya.
+                    $merchantId = Auth::user()->merchantIdForIsolation();
+                    if (!$merchantId || (int) $booking->vehicle?->owner_id !== $merchantId) {
+                        abort(403, 'Booking ini bukan milik merchant Anda');
+                    }
                 }
             }
 

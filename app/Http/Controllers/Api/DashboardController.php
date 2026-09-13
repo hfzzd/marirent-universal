@@ -20,6 +20,7 @@ class DashboardController extends Controller
             'superadmin' => $this->superAdminDashboard(),
             'owner' => $this->ownerDashboard($user),
             'driver' => $this->driverDashboard($user),
+            'staff' => $this->driverDashboard($user),
             default => $this->userDashboard($user),
         };
     }

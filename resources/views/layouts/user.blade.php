@@ -8,7 +8,7 @@
     @vite(['resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: { extend: { colors: {
@@ -18,7 +18,7 @@
         }
     </script>
     <style>
-        * { font-family: 'Inter', sans-serif; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        * { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -40,6 +40,12 @@
     <nav class="bg-white/80 backdrop-blur-xl border-b border-sky-100/50 sticky top-0 z-50">
         <div class="max-w-5xl mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-between h-16">
+                @php
+                    $__uid = auth()->id();
+                    $__convIds = \App\Models\Conversation::where('user_one_id', $__uid)->orWhere('user_two_id', $__uid)->pluck('id');
+                    $__unreadChat = $__convIds->isNotEmpty() ? \App\Models\ChatMessage::whereIn('conversation_id', $__convIds)->where('sender_id', '!=', $__uid)->where('is_read', false)->count() : 0;
+                    $__unreadMail = \App\Models\InboxMessage::where('receiver_id', $__uid)->where('is_read', false)->where('is_trash_receiver', false)->count();
+                @endphp
                 {{-- Logo --}}
                 <a href="{{ route('home') }}" class="flex items-center gap-2.5">
                     <div class="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -64,9 +70,14 @@
                     </a>
                     <a href="{{ route('chat.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('chat.*') ? 'active text-sky-600' : '' }}">
                         <i class="fas fa-comments mr-1.5 text-[11px]"></i> Chat
+                        @if($__unreadChat > 0)<span class="ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $__unreadChat > 99 ? '99+' : $__unreadChat }}</span>@endif
                     </a>
                     <a href="{{ route('mail.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('mail.*') ? 'active text-sky-600' : '' }}">
                         <i class="fas fa-envelope mr-1.5 text-[11px]"></i> Pesan
+                        @if($__unreadMail > 0)<span class="ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $__unreadMail > 99 ? '99+' : $__unreadMail }}</span>@endif
+                    </a>
+                    <a href="{{ route('item-replacements.index') }}" class="nav-link px-3.5 py-2 text-[13px] font-semibold text-gray-500 rounded-lg {{ request()->routeIs('item-replacements.*') ? 'active text-sky-600' : '' }}">
+                        <i class="fas fa-exchange-alt mr-1.5 text-[11px]"></i> Penggantian Unit
                     </a>
                 </div>
 
@@ -103,6 +114,17 @@
                             <a href="{{ route('invoices.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-navy-600 hover:bg-sky-50 transition">
                                 <i class="fas fa-file-invoice-dollar text-sm w-4 text-gray-400"></i> Invoice Saya
                             </a>
+                            <a href="{{ route('chat.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-navy-600 hover:bg-sky-50 transition">
+                                <i class="fas fa-comments text-sm w-4 text-gray-400"></i> Chat
+                                @if($__unreadChat > 0)<span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $__unreadChat > 99 ? '99+' : $__unreadChat }}</span>@endif
+                            </a>
+                            <a href="{{ route('mail.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-navy-600 hover:bg-sky-50 transition">
+                                <i class="fas fa-envelope text-sm w-4 text-gray-400"></i> Pesan
+                                @if($__unreadMail > 0)<span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $__unreadMail > 99 ? '99+' : $__unreadMail }}</span>@endif
+                            </a>
+                            <a href="{{ route('item-replacements.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-navy-600 hover:bg-sky-50 transition">
+                                <i class="fas fa-exchange-alt text-sm w-4 text-gray-400"></i> Penggantian Unit
+                            </a>
                             <hr class="my-1.5 border-gray-100">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
@@ -125,6 +147,17 @@
                 </a>
                 <a href="{{ route('invoices.index') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all duration-200 {{ request()->routeIs('invoices.*') ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'bg-gray-100 text-gray-500' }}">
                     <i class="fas fa-file-invoice-dollar text-[10px]"></i> Invoice
+                </a>
+                <a href="{{ route('chat.index') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all duration-200 {{ request()->routeIs('chat.*') ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'bg-gray-100 text-gray-500' }}">
+                    <i class="fas fa-comments text-[10px]"></i> Chat
+                    @if($__unreadChat > 0)<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">{{ $__unreadChat > 99 ? '99+' : $__unreadChat }}</span>@endif
+                </a>
+                <a href="{{ route('mail.index') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all duration-200 {{ request()->routeIs('mail.*') ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'bg-gray-100 text-gray-500' }}">
+                    <i class="fas fa-envelope text-[10px]"></i> Pesan
+                    @if($__unreadMail > 0)<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">{{ $__unreadMail > 99 ? '99+' : $__unreadMail }}</span>@endif
+                </a>
+                <a href="{{ route('item-replacements.index') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all duration-200 {{ request()->routeIs('item-replacements.*') ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'bg-gray-100 text-gray-500' }}">
+                    <i class="fas fa-exchange-alt text-[10px]"></i> Penggantian
                 </a>
             </div>
         </div>

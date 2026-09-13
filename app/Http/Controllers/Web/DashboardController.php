@@ -23,6 +23,7 @@ class DashboardController extends Controller
             'owner' => $user->merchantCategoryId() ? $this->merchantDashboard() : view('dashboard.owner'),
             'admin' => $this->merchantDashboard(),
             'driver' => $this->driverDashboard(),
+            'staff' => $this->staffDashboard(),
             'employee' => $this->employeeDashboard(),
             'inspector' => $this->inspectorDashboard(),
             default => redirect()->route('home'),
@@ -267,6 +268,66 @@ class DashboardController extends Controller
         }
 
         return view('dashboard.driver', compact(
+            'totalInspections', 'thisMonthInspections', 'damageFindings',
+            'pendingPre', 'pendingPost', 'preQueue', 'postQueue', 'recentInspections'
+        ));
+    }
+
+    private function staffDashboard()
+    {
+        $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
+
+        $totalInspections = 0;
+        $thisMonthInspections = 0;
+        $damageFindings = 0;
+        $recentInspections = collect();
+        $preQueue = collect();
+        $postQueue = collect();
+        $pendingPre = 0;
+        $pendingPost = 0;
+
+        if ($driver) {
+            $driverId = $driver->id;
+
+            $totalInspections = \App\Models\Inspection::whereHas('booking', fn($bq) => $bq->where('driver_id', $driverId))
+                ->count();
+            $thisMonthInspections = \App\Models\Inspection::whereHas('booking', fn($bq) => $bq->where('driver_id', $driverId))
+                ->whereMonth('created_at', now()->month)
+                ->count();
+            $damageFindings = \App\Models\Inspection::whereHas('booking', fn($bq) => $bq->where('driver_id', $driverId))
+                ->whereNotNull('damage_items')
+                ->where('damage_items', '!=', '[]')
+                ->count();
+
+            $preQueue = \App\Models\Booking::where('driver_id', $driverId)
+                ->where('with_driver', true)
+                ->where('status', 'confirmed')
+                ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'pre_rental'))
+                ->with(['user', 'vehicle', 'category', 'bookingItems'])
+                ->orderBy('start_date')
+                ->limit(10)
+                ->get();
+
+            $postQueue = \App\Models\Booking::where('driver_id', $driverId)
+                ->where('with_driver', true)
+                ->where('status', 'ongoing')
+                ->whereDoesntHave('inspections', fn($q) => $q->where('type', 'post_rental'))
+                ->with(['user', 'vehicle', 'category', 'bookingItems'])
+                ->orderBy('end_date')
+                ->limit(10)
+                ->get();
+
+            $pendingPre = $preQueue->count();
+            $pendingPost = $postQueue->count();
+
+            $recentInspections = \App\Models\Inspection::whereHas('booking', fn($bq) => $bq->where('driver_id', $driverId)->where('with_driver', true))
+                ->with(['booking.user', 'vehicle'])
+                ->latest()
+                ->limit(8)
+                ->get();
+        }
+
+        return view('dashboard.staff', compact(
             'totalInspections', 'thisMonthInspections', 'damageFindings',
             'pendingPre', 'pendingPost', 'preQueue', 'postQueue', 'recentInspections'
         ));

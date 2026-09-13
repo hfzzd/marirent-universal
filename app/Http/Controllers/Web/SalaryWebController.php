@@ -30,10 +30,12 @@ class SalaryWebController extends Controller
             $query->whereIn('owner_id', $allowedOwners);
         }
 
-        if (Auth::user()->role === 'driver') {
+        if (Auth::user()->isDriverOrStaff()) {
             $driver = Driver::where('user_id', Auth::id())->first();
             if ($driver) {
                 $query->where('driver_id', $driver->id);
+            } else {
+                $query->where('owner_id', Auth::user()->merchantIdForIsolation() ?? 0);
             }
         } elseif (Auth::user()->isMerchantStaff()) {
             $query->where('owner_id', Auth::user()->merchantId());

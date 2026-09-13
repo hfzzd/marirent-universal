@@ -14,9 +14,46 @@ use App\Models\Category;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 
 class PublicController extends Controller
 {
+    /**
+     * Slug folder katalog foto di public/images/katalog.
+     */
+    public const KATALOG_SLUGS = ['mobil', 'motor', 'hp', 'kamera', 'tenda', 'ps', 'drone', 'musik'];
+
+    /**
+     * Foto produk & logo brand dari folder public/images/katalog.
+     * Mengembalikan ['foto' => [slug => [url,...]], 'logo' => [url,...]].
+     */
+    public static function katalogGaleri(): array
+    {
+        $foto = [];
+        $logo = [];
+        foreach (self::KATALOG_SLUGS as $slug) {
+            $dir = public_path('images/katalog/' . $slug);
+            $foto[$slug] = [];
+            if (File::isDirectory($dir)) {
+                foreach (File::files($dir) as $file) {
+                    if (in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'])) {
+                        $foto[$slug][] = 'images/katalog/' . $slug . '/' . $file->getFilename();
+                    }
+                }
+                sort($foto[$slug]);
+            }
+            $brandDir = $dir . '/brand';
+            if (File::isDirectory($brandDir)) {
+                foreach (File::files($brandDir) as $file) {
+                    if (in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'])) {
+                        $logo[] = 'images/katalog/' . $slug . '/brand/' . $file->getFilename();
+                    }
+                }
+            }
+        }
+        sort($logo);
+        return ['foto' => $foto, 'logo' => $logo];
+    }
     /**
      * Cache profil merchant (toko) per owner id untuk menghindari query berulang.
      */
@@ -188,13 +225,54 @@ class PublicController extends Controller
 
         $allProducts = $this->getAllProducts($request, 6);
         $featuredVehicles = $allProducts->random(min(6, $allProducts->count()));
+        $galeri = self::katalogGaleri();
 
-        return view('public.index', compact('categories', 'catCounts', 'featuredVehicles'));
+        return view('public.index', compact('categories', 'catCounts', 'featuredVehicles', 'galeri'));
     }
 
     public function about()
     {
-        return view('pages.about');
+        $merchants = \App\Models\Merchant::where('is_active', true)
+            ->where('status', 'active')
+            ->with('owner')
+            ->orderBy('name')
+            ->limit(12)
+            ->get();
+
+        return view('pages.about', compact('merchants'));
+    }
+
+    /**
+     * Halaman Jadwalkan Demo — form permintaan demo aplikasi.
+     */
+    public function demo()
+    {
+        return view('pages.demo');
+    }
+
+    /**
+     * Simpan permintaan jadwal demo + notifikasi ke superadmin.
+     */
+    public function storeDemo(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'business_name' => 'nullable|string|max:255',
+            'preferred_date' => 'required|date|after_or_equal:today',
+            'preferred_time' => 'required|string|max:20',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $demo = \App\Models\DemoRequest::create($validated + ['status' => 'pending']);
+
+        \App\Models\User::where('role', 'superadmin')
+            ->where('is_active', true)
+            ->get()
+            ->each(fn($admin) => $admin->notify(new \App\Notifications\DemoRequested($demo)));
+
+        return back()->with('success', 'Permintaan jadwal demo berhasil dikirim! Tim kami akan menghubungi Anda via WhatsApp maksimal 1x24 jam untuk konfirmasi jadwal.');
     }
 
     public function products(Request $request)

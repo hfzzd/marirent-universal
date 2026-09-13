@@ -144,9 +144,9 @@
     <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Tim Driver</p>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Tim Driver & Staff</p>
                 <h3 class="text-2xl font-black text-navy-800 mt-1">{{ $ownedDriversCount }} Personil</h3>
-                <p class="text-[11px] text-gray-500 mt-2 font-medium">Driver terdaftar di bawah akun</p>
+                <p class="text-[11px] text-gray-500 mt-2 font-medium">Driver & staff terdaftar di bawah akun</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-lg shadow-lg shadow-purple-500/25">
                 <i class="fas fa-id-card"></i>

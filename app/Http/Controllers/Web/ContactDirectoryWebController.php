@@ -13,7 +13,7 @@ class ContactDirectoryWebController extends Controller
         $role = $request->query('role');
         $query = User::query();
 
-        if ($role && in_array($role, ['user', 'driver', 'employee', 'owner', 'superadmin'])) {
+        if ($role && in_array($role, ['user', 'driver', 'staff', 'employee', 'owner', 'superadmin'])) {
             $query->where('role', $role);
         }
 
@@ -32,6 +32,7 @@ class ContactDirectoryWebController extends Controller
             'all' => User::count(),
             'user' => User::where('role', 'user')->count(),
             'driver' => User::where('role', 'driver')->count(),
+            'staff' => User::where('role', 'staff')->count(),
             'employee' => User::where('role', 'employee')->count(),
             'owner' => User::where('role', 'owner')->count(),
             'superadmin' => User::where('role', 'superadmin')->count(),

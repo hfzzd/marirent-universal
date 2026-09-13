@@ -33,36 +33,56 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'read']);
 
-    Route::apiResource('bookings', BookingController::class)->only(['index', 'store']);
+    Route::apiResource('bookings', BookingController::class)->only(['index', 'store'])->names([
+        'index' => 'api.bookings.index',
+        'store' => 'api.bookings.store',
+    ]);
     Route::get('/bookings/{bookingCode}', [BookingController::class, 'show']);
     Route::post('/bookings/{bookingCode}/confirm', [BookingController::class, 'confirm']);
     Route::post('/bookings/{bookingCode}/start', [BookingController::class, 'startTrip']);
     Route::post('/bookings/{bookingCode}/complete', [BookingController::class, 'complete']);
     Route::post('/bookings/{bookingCode}/cancel', [BookingController::class, 'cancel']);
 
-    Route::apiResource('drivers', DriverController::class);
+    Route::apiResource('drivers', DriverController::class)->names([
+        'index' => 'api.drivers.index',
+        'store' => 'api.drivers.store',
+        'show' => 'api.drivers.show',
+        'update' => 'api.drivers.update',
+        'destroy' => 'api.drivers.destroy',
+    ]);
 
-    Route::apiResource('inspections', InspectionController::class)->only(['index', 'store', 'show']);
-    Route::get('/inspections/booking/{bookingCode}', [InspectionController::class, 'byBooking']);
+    Route::apiResource('inspections', InspectionController::class)->only(['index', 'store', 'show'])->names([
+        'index' => 'api.inspections.index',
+        'store' => 'api.inspections.store',
+        'show' => 'api.inspections.show',
+    ]);
 
-    Route::apiResource('trip-reports', TripReportController::class)->only(['index', 'store', 'show']);
-    Route::put('/trip-reports/{tripReport}', [TripReportController::class, 'update']);
+    Route::apiResource('trip-reports', TripReportController::class)->only(['index', 'store', 'show'])->names([
+        'index' => 'api.trip-reports.index',
+        'store' => 'api.trip-reports.store',
+        'show' => 'api.trip-reports.show',
+    ]);
 
-    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show']);
-    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send']);
-    Route::get('/invoices/booking/{bookingCode}', [InvoiceController::class, 'byBooking']);
+    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show'])->names([
+        'index' => 'api.invoices.index',
+        'store' => 'api.invoices.store',
+        'show' => 'api.invoices.show',
+    ]);
 
-    Route::apiResource('rentals', RentalController::class)->only(['index', 'store', 'show']);
-    Route::post('/rentals/{rental}/cancel', [RentalController::class, 'cancel']);
-    Route::post('/rentals/{rental}/confirm', [RentalController::class, 'confirm']);
-    Route::post('/rentals/{rental}/complete', [RentalController::class, 'complete']);
-    Route::post('/rentals/{rental}/replace-vehicle', [RentalController::class, 'replaceVehicle']);
+    Route::apiResource('rentals', RentalController::class)->only(['index', 'store', 'show'])->names([
+        'index' => 'api.rentals.index',
+        'store' => 'api.rentals.store',
+        'show' => 'api.rentals.show',
+    ]);
 
-    Route::apiResource('salaries', SalaryController::class)->only(['index', 'store', 'show']);
-    Route::post('/salaries/{salary}/approve', [SalaryController::class, 'approve']);
-    Route::post('/salaries/{salary}/pay', [SalaryController::class, 'pay']);
+    Route::apiResource('salaries', SalaryController::class)->only(['index', 'store', 'show'])->names([
+        'index' => 'api.salaries.index',
+        'store' => 'api.salaries.store',
+        'show' => 'api.salaries.show',
+    ]);
 
-    Route::apiResource('payments', PaymentController::class)->only(['index', 'store']);
-    Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify']);
-    Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject']);
+    Route::apiResource('payments', PaymentController::class)->only(['index', 'store'])->names([
+        'index' => 'api.payments.index',
+        'store' => 'api.payments.store',
+    ]);
 });

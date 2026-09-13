@@ -28,10 +28,13 @@ class BookingWebController extends Controller
 
         if ($user->role === 'user') {
             $query->where('user_id', Auth::id());
-        } elseif ($user->role === 'driver') {
+        } elseif ($user->isDriverOrStaff()) {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             if ($driver) {
                 $query->where('driver_id', $driver->id);
+            } else {
+                // Staff tanpa penugasan sopir: lingkup merchant-nya.
+                $query->forMerchantCategory($user->merchantIdForIsolation(), $user->merchantCategoryId());
             }
         } elseif ($user->isMerchantStaff()) {
             $query->forMerchantCategory($user->merchantId(), $user->merchantCategoryId());
@@ -113,6 +116,8 @@ class BookingWebController extends Controller
 
     public function create(Request $request)
     {
+        abort_unless(auth()->user()->role === 'user', 403, 'Hanya user yang bisa membuat booking');
+
         $vehicle = Vehicle::with(['category', 'owner'])->where('slug', $request->vehicle)->orWhere('id', $request->vehicle)->firstOrFail();
 
         if ($vehicle->status !== 'available') {
@@ -126,6 +131,8 @@ class BookingWebController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()->role === 'user', 403, 'Hanya user yang bisa membuat booking');
+
         $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'rental_type' => 'required|in:hourly,daily,weekly,monthly',
@@ -221,6 +228,8 @@ class BookingWebController extends Controller
 
     public function createItem(Request $request, string $type, string $item)
     {
+        abort_unless(auth()->user()->role === 'user', 403, 'Hanya user yang bisa membuat booking');
+
         $config = $this->getItemConfig($type);
         $item = $this->getItemModel($type)::where('slug', $item)->orWhere('id', $item)->firstOrFail();
 
@@ -236,6 +245,8 @@ class BookingWebController extends Controller
 
     public function storeItem(Request $request, string $type)
     {
+        abort_unless(auth()->user()->role === 'user', 403, 'Hanya user yang bisa membuat booking');
+
         $validated = $request->validate([
             'item_id' => 'required|integer',
             'rental_type' => 'required|in:hourly,daily,weekly,monthly',
@@ -567,6 +578,8 @@ class BookingWebController extends Controller
 
     public function storeMulti(Request $request)
     {
+        abort_unless(auth()->user()->role === 'user', 403, 'Hanya user yang bisa membuat booking');
+
         $validated = $request->validate([
             'rental_type' => 'required|in:hourly,daily,weekly,monthly',
             'start_date' => 'required|date|after:now',
@@ -947,14 +960,23 @@ class BookingWebController extends Controller
             abort(403);
         }
 
-        if ($user->isDriver()) {
+        if ($user->isDriverOrStaff()) {
             $driver = Driver::where('user_id', $user->id)->first();
-            if (!$driver || (int) $booking->driver_id !== (int) $driver->id) {
-                abort(403);
+            if ($driver) {
+                if ((int) $booking->driver_id !== (int) $driver->id) {
+                    abort(403);
+                }
+            } else {
+                // Staff tanpa penugasan sopir: hanya booking merchant-nya.
+                $merchantId = $user->merchantIdForIsolation();
+                if (!$merchantId || !$this->bookingBelongsToMerchant($booking, $merchantId)
+                    || !$booking->belongsToCategory($user->merchantCategoryId())) {
+                    abort(403);
+                }
             }
         }
 
-        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isDriver() && !$user->isInspector() && $user->role !== 'user') {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isDriverOrStaff() && !$user->isInspector() && $user->role !== 'user') {
             abort(403);
         }
 
@@ -1463,7 +1485,7 @@ class BookingWebController extends Controller
     public function startTrip(Booking $booking)
     {
         $user = Auth::user();
-        $isAssignedDriver = $user->role === 'driver' && $booking->driver && (int) $booking->driver->user_id === (int) $user->id;
+        $isAssignedDriver = in_array($user->role, ['driver', 'staff'], true) && $booking->driver && (int) $booking->driver->user_id === (int) $user->id;
         if (!$user->isSuperAdmin() && !$isAssignedDriver) {
             if (!in_array($user->role, ['owner', 'admin']) || !$this->bookingAccessibleByStaff($booking, $user)) {
                 abort(403, 'Akses ditolak.');
@@ -1494,7 +1516,7 @@ class BookingWebController extends Controller
     public function complete(Booking $booking)
     {
         $user = Auth::user();
-        $isAssignedDriver = $user->role === 'driver' && $booking->driver && (int) $booking->driver->user_id === (int) $user->id;
+        $isAssignedDriver = in_array($user->role, ['driver', 'staff'], true) && $booking->driver && (int) $booking->driver->user_id === (int) $user->id;
         if (!$user->isSuperAdmin() && !$isAssignedDriver) {
             if (!in_array($user->role, ['owner', 'admin']) || !$this->bookingAccessibleByStaff($booking, $user)) {
                 abort(403, 'Akses ditolak.');

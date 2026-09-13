@@ -25,7 +25,7 @@
 
     {{-- Fonts & Icons --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     {{-- Vite (Tailwind + Custom CSS + JS bundle) --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -51,28 +51,28 @@
     {{-- NAVBAR --}}
     <nav id="mainNav" class="navbar at-top fixed w-full z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                    <div class="nav-logo-icon w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20 transition-all duration-400">
-                        <i class="fas fa-car-side text-white text-sm"></i>
+            <div class="nav-bar-inner flex justify-between items-center h-20">
+                <a href="{{ route('home') }}" class="flex items-center gap-3">
+                    <div class="nav-logo-icon w-11 h-11 bg-gradient-to-br from-sky-400 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/25 transition-all duration-400">
+                        <i class="fas fa-car-side text-white text-base"></i>
                     </div>
-                    <span class="nav-logo-text text-lg font-bold tracking-tight transition-colors duration-400">Mari<span class="text-sky-500">Rent</span></span>
+                    <span class="nav-logo-text text-xl font-extrabold tracking-tight transition-colors duration-400">Mari<span class="text-sky-500">Rent</span></span>
                 </a>
 
-                <div class="hidden md:flex items-center gap-1">
-                    <a href="{{ route('home') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('home') ? 'active' : '' }}">Beranda</a>
-                    <a href="{{ route('about') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('about') ? 'active' : '' }}">Tentang Kami</a>
-                    <a href="{{ route('public.brands') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('public.brands') || request()->routeIs('public.brand') ? 'active' : '' }}">Brand</a>
-                    <a href="{{ route('products') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('products') ? 'active' : '' }}">Produk</a>
-                    <a href="{{ route('contact') }}" class="nav-link text-[13px] font-medium px-3 py-2 rounded-lg transition-all duration-300 {{ request()->routeIs('contact') ? 'active' : '' }}">Kontak</a>
+                <div class="hidden md:flex items-center gap-1.5">
+                    <a href="{{ route('home') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('home') ? 'active' : '' }}">Beranda</a>
+                    <a href="{{ route('about') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('about') ? 'active' : '' }}">Tentang Kami</a>
+                    <a href="{{ route('public.brands') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('public.brands') || request()->routeIs('public.brand') ? 'active' : '' }}">Brand</a>
+                    <a href="{{ route('products') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('products') ? 'active' : '' }}">Produk</a>
+                    <a href="{{ route('contact') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('contact') ? 'active' : '' }}">Kontak</a>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
                     @auth
                         @if(auth()->user()->isUser())
                             <div x-data="{ open: false }" class="relative">
-                                <button @click="open = !open" class="nav-cta flex items-center gap-2 btn-primary text-white px-3 py-1.5 rounded-xl font-semibold text-[13px] shadow-lg shadow-sky-500/25 transition-all duration-300">
-                                    <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                                <button @click="open = !open" class="nav-cta flex items-center gap-2.5 btn-primary text-white pl-2 pr-4 py-2 rounded-2xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">
+                                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
                                         @if(auth()->user()->avatar)
                                             <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="Avatar" class="w-full h-full object-cover">
                                         @else
@@ -101,42 +101,42 @@
                             </div>
                         @else
                             @if(auth()->user()->role === 'user')
-                            <a href="{{ route('dashboard.profile') }}" class="nav-cta btn-primary text-white px-4 py-2 rounded-xl font-semibold text-[13px] shadow-lg shadow-sky-500/25 transition-all duration-300">
+                            <a href="{{ route('dashboard.profile') }}" class="nav-cta btn-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">
                                 <i class="fas fa-user-circle mr-1.5"></i> Profil Saya
                             </a>
                             @else
-                            <a href="{{ route('dashboard') }}" class="nav-cta btn-primary text-white px-4 py-2 rounded-xl font-semibold text-[13px] shadow-lg shadow-sky-500/25 transition-all duration-300">
+                            <a href="{{ route('dashboard') }}" class="nav-cta btn-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">
                                 <i class="fas fa-tachometer-alt mr-1.5"></i> Dashboard
                             </a>
                             @endif
                         @endif
                     @else
-                        <a href="{{ route('login') }}" class="nav-link text-[13px] font-medium px-3 py-2 transition-all duration-300">Login</a>
-                        <a href="{{ route('register') }}" class="nav-cta btn-primary text-white px-4 py-2 rounded-xl font-semibold text-[13px] shadow-lg shadow-sky-500/25 transition-all duration-300">Daftar</a>
+                        <a href="{{ route('login') }}" class="nav-link text-sm font-semibold px-4 py-2.5 transition-all duration-300">Login</a>
+                        <a href="{{ route('register') }}" class="nav-cta btn-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">Daftar</a>
                     @endauth
-                    <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="mobile-toggle md:hidden text-navy-600 ml-1 transition-colors duration-400">
-                        <i class="fas fa-bars text-lg"></i>
+                    <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="mobile-toggle md:hidden text-navy-600 ml-1 p-2 transition-colors duration-400" aria-label="Menu">
+                        <i class="fas fa-bars text-xl"></i>
                     </button>
                 </div>
             </div>
         </div>
         <div id="mobileMenu" class="mobile-menu hidden md:hidden border-t border-sky-100 bg-white/95 backdrop-blur-md">
             <div class="px-4 py-3 space-y-1">
-                <a href="{{ route('home') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Beranda</a>
-                <a href="{{ route('about') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Tentang Kami</a>
-                <a href="{{ route('public.brands') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Brand</a>
-                <a href="{{ route('products') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Produk</a>
-                <a href="{{ route('contact') }}" class="block text-[13px] font-medium text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition">Kontak</a>
+                <a href="{{ route('home') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Beranda</a>
+                <a href="{{ route('about') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Tentang Kami</a>
+                <a href="{{ route('public.brands') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Brand</a>
+                <a href="{{ route('products') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Produk</a>
+                <a href="{{ route('contact') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Kontak</a>
                 @auth
-                    <div class="border-t border-sky-100 mt-2 pt-2">
-                        <div class="px-3 py-2">
-                            <p class="text-[13px] font-semibold text-navy-800">{{ auth()->user()->name }}</p>
-                            <p class="text-[11px] text-navy-400">{{ auth()->user()->email }}</p>
+                    <div class="border-t border-sky-100 mt-2 pt-3">
+                        <div class="px-4 py-2">
+                            <p class="text-sm font-bold text-navy-800">{{ auth()->user()->name }}</p>
+                            <p class="text-[12px] text-navy-400">{{ auth()->user()->email }}</p>
                         </div>
-                        <a href="{{ route('dashboard.profile') }}" class="block text-[13px] font-medium text-sky-600 hover:bg-sky-50 px-3 py-2.5 rounded-lg transition"><i class="fas fa-user-circle mr-2"></i> Profile Saya</a>
+                        <a href="{{ route('dashboard.profile') }}" class="block text-sm font-semibold text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition"><i class="fas fa-user-circle mr-2"></i> Profile Saya</a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="block text-[13px] font-medium text-red-500 hover:bg-red-50 px-3 py-2.5 rounded-lg transition w-full text-left"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button>
+                            <button type="submit" class="block text-sm font-semibold text-red-500 hover:bg-red-50 px-4 py-3 rounded-xl transition w-full text-left"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button>
                         </form>
                     </div>
                 @endauth
@@ -246,15 +246,18 @@
         const nav = document.getElementById('mainNav');
         const hero = document.querySelector('.hero-section');
         function updateNav() {
-            if (!hero) { nav.classList.remove('at-top'); nav.classList.add('scrolled'); return; }
-            const heroH = hero.offsetHeight;
-            if (window.scrollY < heroH - 80) {
+            if (!hero) { nav.classList.remove('at-top'); nav.classList.add('scrolled'); }
+            // Hero terang (data-nav="solid"): navbar selalu mode solid agar terbaca.
+            else if (hero.dataset.nav === 'solid') { nav.classList.remove('at-top'); nav.classList.add('scrolled'); }
+            else if (window.scrollY < hero.offsetHeight - 80) {
                 nav.classList.add('at-top');
                 nav.classList.remove('scrolled');
             } else {
                 nav.classList.remove('at-top');
                 nav.classList.add('scrolled');
             }
+            // Efek follow: navbar sedikit memendek + berbayang saat discroll.
+            nav.classList.toggle('shrink', window.scrollY > 30);
         }
         window.addEventListener('scroll', updateNav, { passive: true });
         updateNav();

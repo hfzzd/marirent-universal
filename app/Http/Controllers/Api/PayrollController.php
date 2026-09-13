@@ -16,7 +16,7 @@ class PayrollController extends Controller
             $user = $request->user();
             $query = Payroll::with(['driver']);
 
-            if ($user->role === 'driver') {
+            if (in_array($user->role, ['driver', 'staff'], true)) {
                 $query->where('driver_id', $user->id);
             }
 
@@ -66,7 +66,7 @@ class PayrollController extends Controller
             }
 
             $user = auth()->user();
-            if ($user->role === 'driver' && $payroll->driver_id !== $user->id) {
+            if (in_array($user->role, ['driver', 'staff'], true) && $payroll->driver_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized access',

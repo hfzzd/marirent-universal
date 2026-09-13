@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+@extends(auth()->user()->role === 'user' ? 'layouts.user' : 'layouts.dashboard')
 @section('page-title', 'Ajukan Penggantian Unit Elektronik')
 @section('content')
 <div class="max-w-2xl">

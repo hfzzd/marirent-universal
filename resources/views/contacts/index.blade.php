@@ -29,6 +29,9 @@
         <a href="{{ route('contacts.index', ['role' => 'driver']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'driver' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Driver ({{ $counts['driver'] }})
         </a>
+        <a href="{{ route('contacts.index', ['role' => 'staff']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'staff' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+            Staff ({{ $counts['staff'] ?? 0 }})
+        </a>
         <a href="{{ route('contacts.index', ['role' => 'employee']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'employee' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Karyawan ({{ $counts['employee'] }})
         </a>
@@ -69,6 +72,8 @@
                 <span class="badge badge-yellow text-[10px] uppercase">Owner</span>
                 @elseif($c->role === 'driver')
                 <span class="badge badge-teal text-[10px] uppercase">Driver</span>
+                @elseif($c->role === 'staff')
+                <span class="badge badge-teal text-[10px] uppercase">Staff</span>
                 @elseif($c->role === 'employee')
                 <span class="badge badge-blue text-[10px] uppercase">Karyawan</span>
                 @else
