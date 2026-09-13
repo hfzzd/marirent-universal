@@ -217,7 +217,7 @@ class OverhaulTest extends TestCase
         $staff = User::where('email', 'employee_staff@example.test')->firstOrFail();
         $profile = Driver::where('user_id', $staff->id)->firstOrFail();
 
-        $this->assertSame('employee', $staff->role);
+        $this->assertSame('staff', $staff->role);
         $this->assertSame($company->id, $profile->company_id);
         $this->assertSame($owner->id, $profile->owner_id);
     }
@@ -1101,7 +1101,7 @@ class OverhaulTest extends TestCase
         $karyawan = Driver::whereHas('user', fn($q) => $q->where('email', 'siti@example.test'))->first();
         $this->assertNotNull($karyawan);
         $this->assertSame('Karyawan', $karyawan->position);
-        $this->assertSame('employee', $karyawan->user->role);
+        $this->assertSame('staff', $karyawan->user->role);
         $this->assertNull($karyawan->license_number);
 
         $this->actingAs($super)->get('/drivers')->assertSee('Slamet Supir')->assertSee('Siti Admin');

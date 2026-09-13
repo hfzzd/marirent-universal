@@ -33,6 +33,7 @@ class DemoSeeder extends Seeder
         $ownerTenda = User::where('email', 'owner-sewa-tenda@marirent.com')->first() ?? $fleetOwner;
         $customer = User::where('role', 'user')->first();
         $admin = User::where('role', 'superadmin')->first();
+        $inspector = User::where('role', 'inspector')->first();
 
         // ── Extra Drivers ──────────────────────────────────────────
         $driverUsers = [
@@ -160,7 +161,7 @@ class DemoSeeder extends Seeder
                 'vehicle_id' => $v->id,
                 'driver_id' => $bd['driver_idx'] !== null ? $allDrivers[$bd['driver_idx']]?->id : null,
                 'category_id' => $cat->id,
-                'item_type' => 'vehicle',
+                'item_type' => Vehicle::class,
                 'item_id' => $v->id,
                 'rental_type' => $bd['type'],
                 'start_date' => $start,
@@ -279,7 +280,7 @@ class DemoSeeder extends Seeder
             Inspection::create([
                 'booking_id' => $b->id,
                 'vehicle_id' => $b->vehicle_id,
-                'inspector_id' => $admin->id,
+                'inspector_id' => $inspector->id,
                 'type' => 'pre_rental',
                 'exterior_condition' => 9, 'interior_condition' => 8,
                 'engine_condition' => 9, 'tire_condition' => 8,
@@ -292,7 +293,7 @@ class DemoSeeder extends Seeder
             Inspection::create([
                 'booking_id' => $b->id,
                 'vehicle_id' => $b->vehicle_id,
-                'inspector_id' => $admin->id,
+                'inspector_id' => $inspector->id,
                 'type' => 'post_rental',
                 'exterior_condition' => 8, 'interior_condition' => 8,
                 'engine_condition' => 9, 'tire_condition' => 7,

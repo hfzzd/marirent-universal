@@ -20,7 +20,7 @@ class InspectionWebController extends Controller
 
         if ($user->isInspector()) {
             $query->where(fn($q) => $q->where('inspector_id', $user->id)->orWhere('assigned_to', $user->id));
-        } elseif ($user->isMerchantStaff()) {
+        } elseif ($user->isMerchantStaff() || $user->isStaff()) {
             $merchantId = $user->merchantId();
             $categoryId = $user->merchantCategoryId();
             $query->where(function ($inspectionQuery) use ($merchantId, $categoryId) {
@@ -56,7 +56,7 @@ class InspectionWebController extends Controller
         }
 
         // Driver melihat laporannya sendiri, sisanya lihat semua sesuai merchant
-        $inspections = $query->latest()->paginate(15);
+        $inspections = $query->latest()->paginate(15)->withQueryString();
 
         return view('inspections.index', compact('inspections'));
     }
@@ -64,7 +64,7 @@ class InspectionWebController extends Controller
     public function create(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector() && !$user->isDriver()) {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isStaff() && !$user->isInspector() && !$user->isDriver()) {
             abort(403);
         }
 
@@ -77,7 +77,7 @@ class InspectionWebController extends Controller
         } elseif ($user->isDriver()) {
             $driver = Driver::where('user_id', $user->id)->first();
             $bookings = $bookings->where('driver_id', $driver?->id)->where('with_driver', true)->values();
-        } elseif ($user->isMerchantStaff()) {
+        } elseif ($user->isMerchantStaff() || $user->isStaff()) {
             $bookings = fn() => Booking::whereIn('status', ['confirmed', 'ongoing'])
                 ->forMerchantCategory($user->merchantId(), $user->merchantCategoryId())
                 ->with(['user', 'vehicle', 'category', 'bookingItems'])
@@ -87,7 +87,7 @@ class InspectionWebController extends Controller
 
         $booking = $request->booking_id ? Booking::with(['vehicle', 'bookingItems'])->find($request->booking_id) : null;
         if ($booking) {
-            if ($user->isMerchantStaff() && !$this->bookingForMerchant($booking, $user)) {
+            if (($user->isMerchantStaff() || $user->isStaff()) && !$this->bookingForMerchant($booking, $user)) {
                 abort(403);
             }
             if ($user->isInspector() && $booking->with_driver) {
@@ -112,6 +112,10 @@ class InspectionWebController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isStaff() && !$user->isInspector() && !$user->isDriver()) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
@@ -138,7 +142,7 @@ class InspectionWebController extends Controller
 
         $booking = Booking::findOrFail($validated['booking_id']);
 
-        if ($user->isMerchantStaff() && !$this->bookingForMerchant($booking, $user)) {
+        if (($user->isMerchantStaff() || $user->isStaff()) && !$this->bookingForMerchant($booking, $user)) {
             abort(403);
         }
 
@@ -269,7 +273,7 @@ class InspectionWebController extends Controller
         $inspection->load(['booking', 'booking.user', 'booking.vehicle', 'booking.item', 'vehicle', 'inspector', 'reportedBy', 'assignedTo']);
         $user = Auth::user();
 
-        if ($user->isMerchantStaff() && !$this->inspectionForMerchant($inspection, $user)) {
+        if (($user->isMerchantStaff() || $user->isStaff()) && !$this->inspectionForMerchant($inspection, $user)) {
             abort(403);
         }
 
@@ -292,7 +296,7 @@ class InspectionWebController extends Controller
             }
         }
 
-        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector() && !$user->isDriver()) {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isStaff() && !$user->isInspector() && !$user->isDriver()) {
             abort(403);
         }
 
@@ -302,7 +306,7 @@ class InspectionWebController extends Controller
     private function authorizeProcessing(Inspection $inspection): void
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector() && !$user->isDriver()) {
+        if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isStaff() && !$user->isInspector() && !$user->isDriver()) {
             abort(403);
         }
 
@@ -326,7 +330,7 @@ class InspectionWebController extends Controller
             }
         }
 
-        if ($user->isMerchantStaff() && !$this->inspectionForMerchant($inspection, $user)) {
+        if (($user->isMerchantStaff() || $user->isStaff()) && !$this->inspectionForMerchant($inspection, $user)) {
             abort(403);
         }
     }
@@ -465,7 +469,7 @@ class InspectionWebController extends Controller
     private function vehiclesForUser($user)
     {
         $query = Vehicle::where('status', '!=', 'maintenance');
-        if ($user->isMerchantStaff()) {
+        if ($user->isMerchantStaff() || $user->isStaff()) {
             $query->where('owner_id', $user->merchantId());
         }
         if ($categoryId = $user->merchantCategoryId()) {

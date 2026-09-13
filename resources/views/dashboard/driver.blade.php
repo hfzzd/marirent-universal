@@ -32,8 +32,8 @@
                 Halo, {{ auth()->user()->name }}! 🚗
             </h1>
             <p class="text-sky-100/80 text-xs md:text-sm mt-1 max-w-lg">
-                SIM: <span class="font-mono font-bold text-white">{{ $driver->sim_number ?? '-' }}</span> &bull; 
-                No. HP: <span class="font-bold text-white">{{ $driver->phone ?? auth()->user()->phone ?? '-' }}</span>
+                SIM: <span class="font-mono font-bold text-white">{{ $driver->user?->license_number ?? '-' }}</span> &bull; 
+                No. HP: <span class="font-bold text-white">{{ $driver->user?->phone ?? auth()->user()->phone ?? '-' }}</span>
             </p>
         </div>
         <div class="flex items-center gap-3">

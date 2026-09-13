@@ -15,7 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'active' => \App\Http\Middleware\CheckActive::class,
         ]);
+        $middleware->appendToGroup('web', \App\Http\Middleware\CheckActive::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e) {

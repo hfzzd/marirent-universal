@@ -50,6 +50,13 @@ class RentalController extends Controller
                 if ($ownerId) $q->where('owner_id', $ownerId);
                 if ($catId) $q->where('category_id', $catId);
             });
+        } elseif ($user->isInspector()) {
+            $merchantId = $user->merchantIdForIsolation();
+            if ($merchantId) {
+                $query->whereHas('vehicle', function ($q) use ($merchantId) {
+                    $q->where('owner_id', $merchantId);
+                });
+            }
         }
 
         $rentals = $query->latest()->paginate(15)->withQueryString();

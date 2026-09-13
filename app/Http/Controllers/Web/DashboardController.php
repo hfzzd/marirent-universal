@@ -24,7 +24,6 @@ class DashboardController extends Controller
             'admin' => $this->merchantDashboard(),
             'driver' => $this->driverDashboard(),
             'staff' => $this->staffDashboard(),
-            'employee' => $this->employeeDashboard(),
             'inspector' => $this->inspectorDashboard(),
             default => redirect()->route('home'),
         };
@@ -381,14 +380,5 @@ class DashboardController extends Controller
             'totalInspections', 'thisMonthInspections', 'damageFindings',
             'pendingPre', 'pendingPost', 'preQueue', 'postQueue', 'recentInspections'
         ));
-    }
-
-    private function employeeDashboard()
-    {
-        $staff = \App\Models\Driver::where('user_id', Auth::id())
-            ->with('company')
-            ->first();
-
-        return view('dashboard.employee', compact('staff'));
     }
 }

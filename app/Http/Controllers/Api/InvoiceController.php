@@ -17,8 +17,10 @@ class InvoiceController extends Controller
 
         if ($user->role === 'user') {
             $query->where('user_id', $user->id);
-        } elseif ($user->role === 'owner' || $user->role === 'superadmin') {
+        } elseif ($user->role === 'owner') {
             $query->where('owner_id', $user->id);
+        } elseif ($user->role === 'driver' || $user->role === 'staff') {
+            $query->where('owner_id', $user->merchantId());
         }
 
         if ($request->type) {

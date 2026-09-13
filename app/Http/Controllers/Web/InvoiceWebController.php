@@ -31,7 +31,10 @@ class InvoiceWebController extends Controller
                 });
             }
         } elseif ($user->isInspector()) {
-            // Inspectors retain read access to the financial context of their assignments.
+            $merchantId = $user->merchantIdForIsolation();
+            if ($merchantId) {
+                $query->where('owner_id', $merchantId);
+            }
         } elseif (!$user->isSuperAdmin()) {
             $query->whereRaw('1 = 0');
         }
@@ -239,6 +242,13 @@ class InvoiceWebController extends Controller
         }
         if ($user->isMerchantStaff() && !$this->invoiceBelongsToStaffCategory($invoice)) {
             abort(403);
+        }
+        if ($user->isInspector()) {
+            $merchantId = $user->merchantIdForIsolation();
+            if ($merchantId && (int) $invoice->owner_id !== $merchantId) {
+                abort(403, 'Invoice ini bukan milik company Anda');
+            }
+            return;
         }
         if (!$user->isSuperAdmin() && !$user->isMerchantStaff() && !$user->isInspector()) {
             abort(403);

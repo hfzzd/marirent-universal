@@ -295,15 +295,6 @@
                     <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
                 </a>
 
-                @elseif($role === 'employee')
-                <div class="sidebar-group-title mt-4">Karyawan</div>
-                <a href="{{ route('attendance.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
-                    <i class="fas fa-fingerprint w-5 mr-2.5 text-sm"></i> Absen
-                </a>
-                <a href="{{ route('dashboard.profile') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}">
-                    <i class="fas fa-user-circle w-5 mr-2.5 text-sm"></i> Profil Saya
-                </a>
-
                 @elseif($role === 'inspector')
                 <div class="sidebar-group-title mt-4">Tugas Inspeksi</div>
                 <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">

@@ -11,6 +11,37 @@ use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
+    private function canAccessBooking(Booking $booking, $user): bool
+    {
+        if ($user->role === 'superadmin') {
+            return true;
+        }
+
+        if ($user->role === 'user') {
+            return (int) $booking->user_id === (int) $user->id;
+        }
+
+        if (in_array($user->role, ['owner', 'admin'], true)) {
+            $ownerId = (int) ($user->role === 'owner' ? $user->id : $user->merchantId());
+            return $ownerId !== 0
+                && ((int) ($booking->vehicle?->owner_id ?? 0) === $ownerId
+                    || (int) ($booking->item?->owner_id ?? 0) === $ownerId);
+        }
+
+        if (in_array($user->role, ['driver', 'staff'], true)) {
+            $driver = Driver::where('user_id', $user->id)->first();
+            return $driver !== null && (int) $booking->driver_id === (int) $driver->id;
+        }
+
+        if ($user->role === 'inspector') {
+            $merchantId = $user->merchantIdForIsolation();
+            return $merchantId === null
+                || (int) ($booking->vehicle?->owner_id ?? 0) === $merchantId;
+        }
+
+        return false;
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -92,7 +123,7 @@ class BookingController extends Controller
             'with_driver' => $validated['with_driver'] ?? false,
             'base_price' => $totalPrice,
             'driver_price' => $driverPrice,
-            'total_price' => $totalPrice,
+            'total_price' => $finalPrice,
             'final_price' => $finalPrice,
             'status' => 'pending',
             'payment_status' => 'unpaid',
@@ -108,11 +139,13 @@ class BookingController extends Controller
         ], 201);
     }
 
-    public function show(string $bookingCode)
+    public function show(Request $request, string $bookingCode)
     {
         $booking = Booking::with(['vehicle', 'driver.user', 'category', 'invoice', 'tripReport', 'inspection'])
             ->where('booking_code', $bookingCode)
             ->firstOrFail();
+
+        abort_unless($this->canAccessBooking($booking, $request->user()), 403);
 
         return response()->json(['success' => true, 'data' => $booking]);
     }
@@ -120,6 +153,12 @@ class BookingController extends Controller
     public function confirm(Request $request, string $bookingCode)
     {
         $booking = Booking::where('booking_code', $bookingCode)->firstOrFail();
+
+        abort_unless(
+            in_array($request->user()->role, ['superadmin', 'owner', 'admin', 'staff'], true)
+                && $this->canAccessBooking($booking, $request->user()),
+            403
+        );
 
         if ($booking->status !== 'pending') {
             return response()->json(['success' => false, 'message' => 'Booking tidak dapat dikonfirmasi'], 422);
@@ -145,6 +184,12 @@ class BookingController extends Controller
     {
         $booking = Booking::where('booking_code', $bookingCode)->firstOrFail();
 
+        abort_unless(
+            in_array($request->user()->role, ['superadmin', 'owner', 'admin', 'staff', 'driver'], true)
+                && $this->canAccessBooking($booking, $request->user()),
+            403
+        );
+
         if ($booking->status !== 'confirmed') {
             return response()->json(['success' => false, 'message' => 'Booking harus dikonfirmasi dulu'], 422);
         }
@@ -160,9 +205,15 @@ class BookingController extends Controller
         ]);
     }
 
-    public function complete(string $bookingCode)
+    public function complete(Request $request, string $bookingCode)
     {
         $booking = Booking::where('booking_code', $bookingCode)->firstOrFail();
+
+        abort_unless(
+            in_array($request->user()->role, ['superadmin', 'owner', 'admin', 'staff', 'driver'], true)
+                && $this->canAccessBooking($booking, $request->user()),
+            403
+        );
 
         if ($booking->status !== 'ongoing') {
             return response()->json(['success' => false, 'message' => 'Perjalanan belum dimulai'], 422);
@@ -187,13 +238,15 @@ class BookingController extends Controller
     {
         $booking = Booking::where('booking_code', $bookingCode)->firstOrFail();
 
+        abort_unless($this->canAccessBooking($booking, $request->user()), 403);
+
         if (in_array($booking->status, ['completed', 'cancelled'])) {
             return response()->json(['success' => false, 'message' => 'Booking tidak dapat dibatalkan'], 422);
         }
 
         $booking->update([
             'status' => 'cancelled',
-            'cancellation_reason' => $request->get('reason', 'Dibatalkan oleh pengguna'),
+            'cancelled_reason' => $request->get('reason', 'Dibatalkan oleh pengguna'),
         ]);
         $booking->vehicle->update(['status' => 'available']);
 

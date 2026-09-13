@@ -90,7 +90,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Contacts Directory
-    Route::get('/contacts', [ContactDirectoryWebController::class, 'index'])->name('contacts.index');
+    Route::middleware('role:superadmin,admin,owner,driver,staff,inspector')->get('/contacts', [ContactDirectoryWebController::class, 'index'])->name('contacts.index');
 });
 
 // Superadmin Routes
@@ -171,7 +171,7 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('motors')->gr
     Route::get('/', [VehicleWebController::class, 'motor'])->name('motors.index');
 });
 
-Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user'])->prefix('bookings')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user,inspector'])->prefix('bookings')->group(function () {
     Route::get('/', [BookingWebController::class, 'index'])->name('bookings.index');
     Route::get('/create', [BookingWebController::class, 'create'])->name('bookings.create');
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
@@ -180,7 +180,6 @@ Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user'])->pr
     Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
     Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel');
-    Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
     Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
     Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
     Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');
@@ -190,6 +189,7 @@ Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user'])->pr
     Route::post('/{booking}/complete', [BookingWebController::class, 'complete'])->name('bookings.complete');
     Route::post('/{booking}/assign-driver', [BookingWebController::class, 'assignDriver'])->name('bookings.assign-driver');
     Route::post('/{booking}/remove-driver', [BookingWebController::class, 'removeDriver'])->name('bookings.remove-driver');
+    Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
 });
 
 Route::middleware(['auth', 'role:superadmin,owner,admin'])->prefix('drivers')->group(function () {

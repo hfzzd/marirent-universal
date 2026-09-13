@@ -578,7 +578,12 @@ class BookingWebController extends Controller
 
     public function storeMulti(Request $request)
     {
-        abort_unless(auth()->user()->role === 'user', 403, 'Hanya user yang bisa membuat booking');
+        $role = auth()->user()->role;
+        abort_unless(
+            $role === 'user' || $role === 'superadmin' || auth()->user()->isMerchantStaff(),
+            403,
+            'Hanya user yang bisa membuat booking'
+        );
 
         $validated = $request->validate([
             'rental_type' => 'required|in:hourly,daily,weekly,monthly',
@@ -739,6 +744,8 @@ class BookingWebController extends Controller
 
     public function manualCreate()
     {
+        abort_unless(Auth::user()->isSuperAdmin() || Auth::user()->isMerchantStaff(), 403, 'Hanya superadmin, owner, atau admin yang dapat membuat booking manual');
+
         [$merchantId, $categoryId] = $this->staffProductScope();
 
         $customers = \App\Models\User::where('role', 'user')->orderBy('name')->get();
@@ -779,6 +786,8 @@ class BookingWebController extends Controller
 
     public function manualStore(Request $request)
     {
+        abort_unless(Auth::user()->isSuperAdmin() || Auth::user()->isMerchantStaff(), 403, 'Hanya superadmin, owner, atau admin yang dapat membuat booking manual');
+
         $validated = $request->validate([
             'customer_mode' => 'required|in:existing,new',
             'user_id' => 'required_if:customer_mode,existing|nullable|exists:users,id',
@@ -819,24 +828,6 @@ class BookingWebController extends Controller
         $startDate = \Carbon\Carbon::parse($validated['start_date']);
         $endDate = \Carbon\Carbon::parse($validated['end_date']);
 
-        if ($validated['rental_type'] === 'hourly') {
-            $duration = max(1, $startDate->diffInHours($endDate));
-            $basePrice = $item->hourly_price ?? 0;
-            $realDays = 1;
-        } elseif ($validated['rental_type'] === 'weekly') {
-            $duration = $request->filled('duration_weeks') ? max(1, (int) $request->duration_weeks) : max(1, (int) round($startDate->diffInDays($endDate) / 7));
-            $basePrice = $item->weekly_price ?? ($item->daily_price * 7);
-            $realDays = $duration * 7;
-        } elseif ($validated['rental_type'] === 'monthly') {
-            $duration = $request->filled('duration_months') ? max(1, (int) $request->duration_months) : max(1, (int) round($startDate->diffInDays($endDate) / 30));
-            $basePrice = $item->monthly_price ?? ($item->daily_price * 30);
-            $realDays = $duration * 30;
-        } else {
-            $duration = max(1, $startDate->diffInDays($endDate));
-            $basePrice = $item->daily_price;
-            $realDays = $duration;
-        }
-
         $itemId = $validated['item_id'];
         $itemKind = $validated['item_kind'];
         $itemModel = null;
@@ -865,6 +856,24 @@ class BookingWebController extends Controller
         } elseif ($itemKind === 'musik') {
             $item = MusicalInstrument::findOrFail($itemId);
             $itemType = MusicalInstrument::class;
+        }
+
+        if ($validated['rental_type'] === 'hourly') {
+            $duration = max(1, $startDate->diffInHours($endDate));
+            $basePrice = $item->hourly_price ?? 0;
+            $realDays = 1;
+        } elseif ($validated['rental_type'] === 'weekly') {
+            $duration = $request->filled('duration_weeks') ? max(1, (int) $request->duration_weeks) : max(1, (int) round($startDate->diffInDays($endDate) / 7));
+            $basePrice = $item->weekly_price ?? ($item->daily_price * 7);
+            $realDays = $duration * 7;
+        } elseif ($validated['rental_type'] === 'monthly') {
+            $duration = $request->filled('duration_months') ? max(1, (int) $request->duration_months) : max(1, (int) round($startDate->diffInDays($endDate) / 30));
+            $basePrice = $item->monthly_price ?? ($item->daily_price * 30);
+            $realDays = $duration * 30;
+        } else {
+            $duration = max(1, $startDate->diffInDays($endDate));
+            $basePrice = $item->daily_price;
+            $realDays = $duration;
         }
 
         [$merchantId, $categoryId] = $this->staffProductScope();

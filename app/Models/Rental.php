@@ -146,22 +146,6 @@ class Rental extends Model
         return $this->hasMany(VehicleReplacement::class);
     }
 
-    /**
-     * Get the HP rental detail for the rental.
-     */
-    public function hpRental(): HasOne
-    {
-        return $this->hasOne(HpRental::class);
-    }
-
-    /**
-     * Get the camera rental detail for the rental.
-     */
-    public function cameraRental(): HasOne
-    {
-        return $this->hasOne(CameraRental::class);
-    }
-
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);

@@ -105,7 +105,7 @@ class User extends Authenticatable
         if ($this->role === 'owner') {
             return $this;
         }
-        if ($this->role === 'admin' && $this->owner_id) {
+        if (in_array($this->role, ['admin', 'staff', 'employee'], true) && $this->owner_id) {
             return $this->merchant;
         }
         return null;
@@ -142,7 +142,7 @@ class User extends Authenticatable
         }
 
         if ($this->isInspector()) {
-            return $this->merchantId();
+            return $this->owner_id ? (int) $this->owner_id : null;
         }
 
         return null;

@@ -28,6 +28,11 @@ class ReplacementWebController extends Controller
             }
         } elseif ($role === 'user') {
             $query->where('requested_by', Auth::id());
+        } elseif ($role === 'inspector') {
+            $merchantId = Auth::user()->merchantIdForIsolation();
+            if ($merchantId) {
+                $query->whereHas('originalVehicle', fn($q) => $q->where('owner_id', $merchantId));
+            }
         } elseif (in_array($role, ['owner', 'admin'])) {
             $ownerId = $role === 'owner' ? Auth::id() : Auth::user()->merchantId();
             $query->whereHas('originalVehicle', function ($q) use ($ownerId) {
@@ -157,7 +162,13 @@ if (!isset($vehicles)) {
         if (in_array($user->role, ['owner', 'admin'])) {
             $this->guardCompanyReplacement($replacement);
         }
-        if (!in_array($user->role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user'], true)) {
+        if ($user->role === 'inspector') {
+            $merchantId = $user->merchantIdForIsolation();
+            if ($merchantId && (int) $replacement->originalVehicle?->owner_id !== $merchantId) {
+                abort(403, 'Penggantian ini bukan milik company Anda');
+            }
+        }
+        if (!in_array($user->role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user', 'inspector'], true)) {
             abort(403);
         }
 
@@ -168,7 +179,7 @@ if (!isset($vehicles)) {
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 

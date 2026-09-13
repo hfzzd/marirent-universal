@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'store' => 'api.rentals.store',
         'show' => 'api.rentals.show',
     ]);
+    Route::post('/rentals/{rental}/replace-vehicle', [RentalController::class, 'replaceVehicle'])->name('api.rentals.replace-vehicle');
 
     Route::apiResource('salaries', SalaryController::class)->only(['index', 'store', 'show'])->names([
         'index' => 'api.salaries.index',

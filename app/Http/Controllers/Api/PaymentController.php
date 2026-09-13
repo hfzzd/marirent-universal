@@ -102,11 +102,20 @@ class PaymentController extends Controller
 
     private function finalizeInvoice(Invoice $invoice, Payment $payment): void
     {
+        $total = (float) $invoice->total_amount;
+        $paid = (float) $invoice->payments()->where('status', 'verified')->sum('amount');
+        $due = max(0, $total - $paid);
+
         $invoice->update([
             'payment_method' => $payment->method,
             'payment_reference' => $payment->reference_number,
-            'paid_at' => $invoice->paid_amount >= $invoice->total_amount ? now() : $invoice->paid_at,
+            'paid_amount' => $paid,
+            'due_amount' => $due,
+            'paid_at' => $paid >= $total && $total > 0 ? ($invoice->paid_at ?? now()) : $invoice->paid_at,
+            'status' => $paid >= $total && $total > 0 ? 'paid' : ($paid > 0 ? 'partial' : 'sent'),
         ]);
+
+        $invoice->refresh();
 
         $bookings = collect();
         if ($invoice->booking) {
@@ -114,8 +123,11 @@ class PaymentController extends Controller
         }
         $invoice->bookings()->each(fn($b) => $bookings->push($b));
 
-        $statusMap = ['paid' => 'paid', 'partial' => 'partial'];
-        $bookingStatus = $statusMap[$invoice->status] ?? 'unpaid';
+        $bookingStatus = match($invoice->status) {
+            'paid' => 'paid',
+            'partial' => 'partial',
+            default => 'unpaid',
+        };
         $bookings->unique('id')->each(fn($b) => $b->update(['payment_status' => $bookingStatus]));
     }
 }

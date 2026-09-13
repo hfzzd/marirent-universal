@@ -20,6 +20,11 @@ class MaintenanceController extends Controller
             $merchantId = $user->merchantId();
             $categoryId = $user->merchantCategoryId();
             $query->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId)->when($categoryId, fn($q) => $q->where('category_id', $categoryId)));
+        } elseif ($user->isInspector()) {
+            $merchantId = $user->merchantIdForIsolation();
+            if ($merchantId) {
+                $query->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId));
+            }
         }
 
         if ($request->status) {
@@ -62,6 +67,14 @@ class MaintenanceController extends Controller
 
         $user = Auth::user();
 
+        if ($user->isInspector()) {
+            $merchantId = $user->merchantIdForIsolation();
+            if ($merchantId === null) {
+                return true;
+            }
+            return $vehicle && (int) $vehicle->owner_id === $merchantId;
+        }
+
         if ($user->isMerchantStaff() && (int) $vehicle->owner_id !== $user->merchantId()) {
             return false;
         }
@@ -94,7 +107,7 @@ class MaintenanceController extends Controller
         $vehicle = Vehicle::find($validated['vehicle_id']);
         $user = Auth::user();
 
-        if ($user->isMerchantStaff() && !$this->staffCanAccessVehicle($vehicle)) {
+        if (($user->isMerchantStaff() || $user->isInspector()) && !$this->staffCanAccessVehicle($vehicle)) {
             abort(403);
         }
 
@@ -116,7 +129,7 @@ class MaintenanceController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->isMerchantStaff() && !$this->staffCanAccessVehicle($maintenance->vehicle)) {
+        if (($user->isMerchantStaff() || $user->isInspector()) && !$this->staffCanAccessVehicle($maintenance->vehicle)) {
             abort(403);
         }
 

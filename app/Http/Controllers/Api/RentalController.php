@@ -66,7 +66,7 @@ class RentalController extends Controller
                 'pickup_location' => 'nullable|string|max:255',
                 'dropoff_location' => 'nullable|string|max:255',
                 'notes' => 'nullable|string|max:1000',
-                'driver_id' => 'nullable|exists:users,id',
+                'driver_id' => 'nullable|exists:drivers,id',
             ]);
 
             if ($validator->fails()) {
@@ -213,7 +213,7 @@ class RentalController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'cancellation_reason' => 'nullable|string|max:500',
+                'cancelled_reason' => 'nullable|string|max:500',
             ]);
 
             if ($validator->fails()) {
@@ -226,7 +226,7 @@ class RentalController extends Controller
 
             $rental->update([
                 'status' => 'cancelled',
-                'cancellation_reason' => $request->cancellation_reason,
+                'cancelled_reason' => $request->cancelled_reason,
             ]);
 
             $rental->invoices()->where('status', 'pending')->update(['status' => 'cancelled']);
