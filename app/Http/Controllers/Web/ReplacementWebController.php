@@ -50,7 +50,7 @@ class ReplacementWebController extends Controller
         $modalBookings = [];
         $modalVehicles = [];
 
-        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin'])) {
+        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin', 'inspector'])) {
             $formData = $this->getFormData();
             $modalBookings = $formData['bookings'];
             $modalVehicles = $formData['vehicles'];
@@ -87,39 +87,8 @@ class ReplacementWebController extends Controller
 
     protected function getFormData(): array
     {
-        $role = Auth::user()->role;
-
-if (in_array($role, ['superadmin', 'owner', 'admin'])) {
-            $query = Booking::whereIn('status', ['confirmed', 'ongoing'])
-                ->whereNotNull('vehicle_id')
-                ->with(['vehicle.category', 'user']);
-
-            $ownerId = $this->companyOwnerId();
-            if ($ownerId) {
-                $query->whereHas('vehicle', fn($q) => $q->where('owner_id', $ownerId)
-                    ->when(Auth::user()->merchantCategoryId(), fn($categoryQuery, $categoryId) => $categoryQuery->where('category_id', $categoryId)));
-            }
-
-            $bookings = $query->get();
-
-            $vehicleQuery = Vehicle::where('status', 'available')->where('is_active', true)->with('category');
-            if ($ownerId) {
-                $vehicleQuery->where('owner_id', $ownerId)
-                    ->when(Auth::user()->merchantCategoryId(), fn($q, $categoryId) => $q->where('category_id', $categoryId));
-            }
-            $vehicles = $vehicleQuery->get();
-        } elseif (in_array($role, ['driver', 'staff'], true)) {
-            $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
-            $bookings = $driver
-                ? Booking::where('driver_id', $driver->id)->where('status', 'ongoing')->whereNotNull('vehicle_id')->where('actual_start_date', '!=', null)->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values()
-                : Booking::where('status', 'ongoing')->whereNotNull('vehicle_id')->whereHas('vehicle', fn($q) => $q->where('owner_id', Auth::user()->merchantIdForIsolation() ?? 0))->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values();
-        } else {
-            $bookings = Booking::where('user_id', Auth::id())->where('status', 'ongoing')->where('with_driver', false)->whereNotNull('vehicle_id')->where('actual_start_date', '!=', null)->with(['vehicle.category', 'user'])->get()->filter(fn($b) => $this->isHalfPeriodElapsed($b))->values();
-        }
-
-if (!isset($vehicles)) {
-            $vehicles = Vehicle::where('status', 'available')->where('is_active', true)->with('category')->get();
-        }
+        $bookings = $this->requestableBookings();
+        $vehicles = $this->requestableVehicles(null);
 
         return [
             'bookings' => $bookings->map(fn($b) => [
@@ -131,6 +100,135 @@ if (!isset($vehicles)) {
                 'label' => $v->name . ' (' . ($v->category?->name ?? '-') . ') - Rp ' . number_format($v->daily_price, 0, ',', '.') . '/hari',
             ]),
         ];
+    }
+
+    /**
+     * Daftar booking yang dapat diajukan penggantian untuk role aktif.
+     * Aturan 50% masa sewa dihapus: cukup booking berstatus ongoing (proses berjalan).
+     */
+    protected function requestableBookings(): \Illuminate\Support\Collection
+    {
+        $user = Auth::user();
+        $role = $user->role;
+
+        if ($role === 'superadmin') {
+            return Booking::whereIn('status', ['confirmed', 'ongoing'])
+                ->whereNotNull('vehicle_id')
+                ->with(['vehicle.category', 'user'])
+                ->get();
+        }
+
+        if ($user->isMerchantStaff()) {
+            $query = Booking::whereIn('status', ['confirmed', 'ongoing'])
+                ->whereNotNull('vehicle_id')
+                ->with(['vehicle.category', 'user']);
+
+            $ownerId = $this->companyOwnerId();
+            if ($ownerId) {
+                $query->whereHas('vehicle', fn($q) => $q->where('owner_id', $ownerId)
+                    ->when($user->merchantCategoryId(), fn($categoryQuery, $categoryId) => $categoryQuery->where('category_id', $categoryId)));
+            }
+
+            return $query->get();
+        }
+
+        if (in_array($role, ['driver', 'staff'], true)) {
+            $driver = \App\Models\Driver::where('user_id', $user->id)->first();
+            if ($driver) {
+                return Booking::where('driver_id', $driver->id)
+                    ->where('status', 'ongoing')
+                    ->whereNotNull('vehicle_id')
+                    ->with(['vehicle.category', 'user'])
+                    ->get();
+            }
+
+            $merchantId = $user->merchantIdForIsolation();
+            return Booking::where('status', 'ongoing')
+                ->whereNotNull('vehicle_id')
+                ->whereHas('vehicle', fn($q) => $q->where('owner_id', $merchantId ?? 0))
+                ->with(['vehicle.category', 'user'])
+                ->get();
+        }
+
+        if ($role === 'inspector') {
+            $merchantId = $user->merchantIdForIsolation();
+            return Booking::where('status', 'ongoing')
+                ->whereNotNull('vehicle_id')
+                ->when($merchantId, fn($q) => $q->whereHas('vehicle', fn($vq) => $vq->where('owner_id', $merchantId)))
+                ->with(['vehicle.category', 'user'])
+                ->get();
+        }
+
+        // user (penyewa): hanya booking miliknya yang lepas kunci
+        return Booking::where('user_id', $user->id)
+            ->where('status', 'ongoing')
+            ->where('with_driver', false)
+            ->whereNotNull('vehicle_id')
+            ->with(['vehicle.category', 'user'])
+            ->get();
+    }
+
+    /**
+     * Unit kendaraan pengganti yang dapat dipilih, dibatasi satu company (owner) dengan booking.
+     */
+    protected function requestableVehicles(?Booking $booking = null): \Illuminate\Support\Collection
+    {
+        $user = Auth::user();
+
+        $query = Vehicle::where('status', 'available')
+            ->where('is_active', true)
+            ->with('category');
+
+        if ($booking && $booking->vehicle_id) {
+            $query->where('category_id', $booking->vehicle->category_id)
+                ->where('id', '!=', $booking->vehicle_id)
+                ->when(!$user->isSuperAdmin(), fn($q) => $q->where('owner_id', $booking->vehicle->owner_id));
+        }
+
+        if ($user->isMerchantStaff()) {
+            $ownerId = $this->companyOwnerId();
+            $query->when($ownerId, fn($q) => $q->where('owner_id', $ownerId));
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Pengecekan otorisasi role terhadap booking untuk pengajuan penggantian.
+     */
+    protected function canRequestForBooking(Booking $booking): bool
+    {
+        $user = Auth::user();
+        $role = $user->role;
+
+        if ($role === 'superadmin') {
+            return true;
+        }
+
+        if ($user->isMerchantStaff()) {
+            $ownerId = $this->companyOwnerId();
+            return $ownerId === null || (int) $booking->vehicle?->owner_id === $ownerId;
+        }
+
+        if (in_array($role, ['driver', 'staff'], true)) {
+            $driver = \App\Models\Driver::where('user_id', $user->id)->first();
+            if ($driver) {
+                return (int) $booking->driver_id === (int) $driver->id;
+            }
+            $merchantId = $user->merchantIdForIsolation();
+            return $merchantId !== null && (int) $booking->vehicle?->owner_id === $merchantId;
+        }
+
+        if ($role === 'inspector') {
+            $merchantId = $user->merchantIdForIsolation();
+            return $merchantId !== null && (int) $booking->vehicle?->owner_id === $merchantId;
+        }
+
+        if ($role === 'user') {
+            return (int) $booking->user_id === (int) $user->id && !$booking->with_driver;
+        }
+
+        return false;
     }
 
     public function show(VehicleReplacement $replacement)
@@ -179,91 +277,36 @@ if (!isset($vehicles)) {
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user', 'inspector'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
-if (in_array($role, ['superadmin', 'owner', 'admin'])) {
-            $query = Booking::whereIn('status', ['confirmed', 'ongoing'])
-                ->whereNotNull('vehicle_id')
-                ->with(['vehicle.category', 'user']);
-
-            $ownerId = $this->companyOwnerId();
-            if ($ownerId) {
-                $query->whereHas('vehicle', fn($q) => $q->where('owner_id', $ownerId));
-            }
-
-            $bookings = $query->get();
-        } elseif (in_array($role, ['driver', 'staff'], true)) {
-            $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
-            if (!$driver && $role === 'driver') {
-                abort(403, 'Profil driver tidak ditemukan');
-            }
-            if ($driver) {
-                $bookings = Booking::where('driver_id', $driver->id)
-                    ->where('status', 'ongoing')
-                    ->whereNotNull('vehicle_id')
-                    ->where('actual_start_date', '!=', null)
-                    ->with(['vehicle.category', 'user'])
-                    ->get()
-                    ->filter(function ($booking) {
-                        return $this->isHalfPeriodElapsed($booking);
-                    })
-                    ->values();
-            } else {
-                // Staff operasional: booking ongoing milik merchant-nya.
-                $merchantId = Auth::user()->merchantIdForIsolation();
-                $bookings = Booking::where('status', 'ongoing')
-                    ->whereNotNull('vehicle_id')
-                    ->where('actual_start_date', '!=', null)
-                    ->whereHas('vehicle', fn($q) => $q->where('owner_id', $merchantId ?? 0))
-                    ->with(['vehicle.category', 'user'])
-                    ->get()
-                    ->filter(function ($booking) {
-                        return $this->isHalfPeriodElapsed($booking);
-                    })
-                    ->values();
-            }
-        } else {
-            $bookings = Booking::where('user_id', Auth::id())
-                ->where('status', 'ongoing')
-                ->where('with_driver', false)
-                ->whereNotNull('vehicle_id')
-                ->where('actual_start_date', '!=', null)
-                ->with(['vehicle.category', 'user'])
-                ->get()
-                ->filter(function ($booking) {
-                    return $this->isHalfPeriodElapsed($booking);
-                })
-                ->values();
-        }
-
-        $vehicles = Vehicle::where('status', 'available')
-            ->where('is_active', true)
-            ->with('category')
-            ->when(($ownerId = $this->companyOwnerId()), fn($q) => $q->where('owner_id', $ownerId))
-            ->get();
+        $bookings = $this->requestableBookings();
 
         $preselectedBookingId = $request->query('booking_id') ?: old('booking_id');
 
-        return view('replacements.create', compact('bookings', 'vehicles', 'preselectedBookingId'));
-    }
-
-    protected function isHalfPeriodElapsed(Booking $booking): bool
-    {
-        if (!$booking->actual_start_date || !$booking->end_date) {
-            return false;
+        // Selalu sertakan booking yang sedang dibuka di detail booking, selama masih ongoing & milik role ini.
+        if ($preselectedBookingId) {
+            $target = Booking::with(['vehicle.category', 'user'])->find((int) $preselectedBookingId);
+            if ($target && $target->vehicle_id && in_array($target->status, ['ongoing', 'confirmed']) && $this->canRequestForBooking($target)) {
+                if (!$bookings->contains('id', $target->id)) {
+                    $bookings = $bookings->push($target);
+                }
+            }
         }
-        $totalDuration = $booking->actual_start_date->diffInSeconds($booking->end_date);
-        $elapsed = $booking->actual_start_date->diffInSeconds(now());
-        return $elapsed >= ($totalDuration / 2);
+
+        $preselectedBooking = $preselectedBookingId ? $bookings->firstWhere('id', (int) $preselectedBookingId) : null;
+
+        $vehicles = $this->requestableVehicles($preselectedBooking);
+
+        return view('replacements.create', compact('bookings', 'vehicles', 'preselectedBookingId'));
     }
 
     public function store(Request $request)
     {
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user', 'inspector'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
@@ -283,50 +326,22 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
             return back()->with('error', 'Booking ini tidak memiliki kendaraan');
         }
 
-        if (in_array($role, ['driver', 'staff', 'user'])) {
-            if ($booking->status !== 'ongoing') {
-                return back()->with('error', 'Hanya booking dengan status ongoing yang dapat diajukan penggantian');
-            }
-
-            if (!$this->isHalfPeriodElapsed($booking)) {
-                return back()->with('error', 'Penggantian kendaraan hanya dapat diajukan setelah setengah masa sewa berlalu');
-            }
-
-            if (in_array($role, ['driver', 'staff'], true)) {
-                $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
-                if ($driver) {
-                    if ($booking->driver_id !== $driver->id) {
-                        abort(403, 'Anda bukan driver untuk booking ini');
-                    }
-                } else {
-                    // Staff operasional: hanya booking milik merchant-nya.
-                    $merchantId = Auth::user()->merchantIdForIsolation();
-                    if (!$merchantId || (int) $booking->vehicle?->owner_id !== $merchantId) {
-                        abort(403, 'Booking ini bukan milik merchant Anda');
-                    }
-                }
-            }
-
-            if ($role === 'user') {
-                if ($booking->user_id !== Auth::id() || $booking->with_driver) {
-                    abort(403, 'Anda tidak memiliki akses untuk booking ini');
-                }
-            }
-        } else {
-            $ownerId = $this->companyOwnerId();
-            if ($ownerId !== null && (int) $booking->vehicle?->owner_id !== $ownerId) {
-                abort(403, 'Booking ini bukan milik company Anda');
-            }
+        if (!$this->canRequestForBooking($booking)) {
+            abort(403, 'Anda tidak memiliki akses untuk booking ini');
         }
-$replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
+
+        if (!in_array($role, ['superadmin', 'owner', 'admin']) && $booking->status !== 'ongoing') {
+            return back()->with('error', 'Hanya booking dengan status ongoing yang dapat diajukan penggantian');
+        }
+
+        $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
 
         if (($replacementVehicle->status ?? '') !== 'available' || !($replacementVehicle->is_active ?? true)) {
             return back()->with('error', 'Kendaraan pengganti sedang tidak tersedia')->withInput();
         }
 
-        $ownerId = $this->companyOwnerId();
-        if (in_array($role, ['owner', 'admin']) && (int) $replacementVehicle->owner_id !== $ownerId) {
-            abort(403, 'Kendaraan pengganti bukan milik company Anda');
+        if ($role !== 'superadmin' && (int) $replacementVehicle->owner_id !== (int) $booking->vehicle->owner_id) {
+            return back()->with('error', 'Kendaraan pengganti harus dari company yang sama')->withInput();
         }
 
         if ($replacementVehicle->category_id !== $booking->vehicle->category_id) {
@@ -346,7 +361,7 @@ $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
             $finalPhoto = $request->file('final_vehicle_photo')->store('vehicle-replacements', 'public');
         }
 
-        VehicleReplacement::create([
+        $replacement = VehicleReplacement::create([
             'booking_id' => $booking->id,
             'original_vehicle_id' => $booking->vehicle_id,
             'replacement_vehicle_id' => $replacementVehicle->id,
@@ -359,7 +374,30 @@ $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
             'final_vehicle_photo' => $finalPhoto,
         ]);
 
+        $this->notifyReplacementApprovers($replacement);
+
         return redirect()->route('replacements.index')->with('success', 'Permintaan penggantian kendaraan dibuat');
+    }
+
+    /**
+     * Beri tahu superadmin serta owner/admin company terkait bahwa ada permintaan pending.
+     */
+    private function notifyReplacementApprovers(VehicleReplacement $replacement): void
+    {
+        $ownerId = $replacement->originalVehicle?->owner_id;
+
+        $recipientIds = \App\Models\User::where('role', 'superadmin')->pluck('id');
+
+        if ($ownerId) {
+            $staffIds = \App\Models\User::whereIn('role', ['owner', 'admin'])
+                ->where(fn($q) => $q->where('id', $ownerId)->orWhere('owner_id', $ownerId))
+                ->pluck('id');
+            $recipientIds = $recipientIds->merge($staffIds);
+        }
+
+        \App\Models\User::whereIn('id', $recipientIds->unique())
+            ->get()
+            ->each(fn($user) => $user->notify(new \App\Notifications\VehicleReplacementRequested($replacement)));
     }
 
     public function approve(VehicleReplacement $replacement)

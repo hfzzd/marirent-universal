@@ -997,13 +997,16 @@ class BookingWebController extends Controller
         $replacements = $booking->replacements()->with(['originalVehicle', 'replacementVehicle', 'requestedBy'])->get();
 
         $isMerchantStaff = Auth::user()->isSuperAdmin() || Auth::user()->isMerchantStaff();
+        $canApproveReplacement = in_array(Auth::user()->role, ['superadmin', 'owner', 'admin']);
 
         $swappableVehicles = collect();
-        if ($booking->vehicle && in_array($booking->status, ['confirmed', 'ongoing']) && $isMerchantStaff) {
+        if ($booking->vehicle && in_array($booking->status, ['confirmed', 'ongoing'])) {
+            $ownerFilter = Auth::user()->isSuperAdmin() ? null : $booking->vehicle->owner_id;
             $swappableVehicles = Vehicle::where('status', 'available')
                 ->where('is_active', true)
                 ->where('category_id', $booking->vehicle->category_id)
                 ->where('id', '!=', $booking->vehicle_id)
+                ->when($ownerFilter, fn($q) => $q->where('owner_id', $ownerFilter))
                 ->get();
         }
 
@@ -1027,7 +1030,7 @@ class BookingWebController extends Controller
             $availableDrivers = $query->orderBy('status')->orderBy('id')->get();
         }
 
-        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles', 'availableDrivers', 'isMerchantStaff'));
+        return view('bookings.show', compact('booking', 'replacements', 'swappableVehicles', 'availableDrivers', 'isMerchantStaff', 'canApproveReplacement'));
     }
 
     public function assignDriver(Request $request, Booking $booking)
@@ -1390,6 +1393,9 @@ class BookingWebController extends Controller
         $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
         if ($replacementVehicle->category_id !== $booking->vehicle->category_id) {
             return back()->with('error', 'Kendaraan pengganti harus dalam kategori yang sama');
+        }
+        if (Auth::user()->role !== 'superadmin' && (int) $replacementVehicle->owner_id !== (int) $booking->vehicle->owner_id) {
+            return back()->with('error', 'Kendaraan pengganti harus dari company yang sama');
         }
         if (($replacementVehicle->status ?? '') !== 'available' || !($replacementVehicle->is_active ?? true)) {
             return back()->with('error', 'Kendaraan pengganti sedang tidak tersedia');

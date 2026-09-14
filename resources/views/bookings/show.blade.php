@@ -373,13 +373,13 @@
                 </div>
                 @endif
 
-                {{-- Ajukan Penggantian (Driver/Staff): selalu bisa ke form --}}
-                @if($booking->vehicle && $booking->status == 'ongoing' && in_array(auth()->user()->role, ['driver','staff']))
+                {{-- Ajukan Penggantian (Driver/Staff/User/Inspector): perlu persetujuan admin/owner --}}
+                @if($booking->vehicle && $booking->status == 'ongoing' && in_array(auth()->user()->role, ['driver','staff','user','inspector']) && (!$booking->with_driver || in_array(auth()->user()->role, ['driver','staff'])))
                 <div class="mt-4 border-t border-gray-100 pt-4">
                     <div class="bg-sky-50/70 border border-sky-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
                         <div>
                             <p class="text-[12px] font-bold text-navy-800 flex items-center gap-2"><i class="fas fa-right-left text-sky-500"></i> Kendaraan Bermasalah?</p>
-                            <p class="text-[11px] text-gray-500 mt-0.5">Ajukan penggantian unit. Syarat: booking ongoing & sudah melewati setengah masa sewa.</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">Ajukan penggantian unit. Permintaan akan diverifikasi dan disetujui oleh admin/owner/superadmin.</p>
                         </div>
                         <a href="{{ route('replacements.create', ['booking_id' => $booking->id]) }}" class="btn-primary text-white px-5 py-2.5 rounded-xl text-[12px] font-bold shadow-md shadow-sky-500/20 transition inline-flex items-center gap-1.5 justify-center whitespace-nowrap">
                             <i class="fas fa-paper-plane text-[10px]"></i> Ajukan Penggantian
@@ -427,6 +427,29 @@
                                     &bull; <span class="text-amber-600">Unit lama di-maintenance</span>
                                 @endif
                             </p>
+                            @php
+                                $statusBadge = match($r->status) {
+                                    'pending' => ['text' => 'Menunggu Persetujuan', 'class' => 'bg-amber-100 text-amber-700 border-amber-200'],
+                                    'approved' => ['text' => 'Disetujui', 'class' => 'bg-emerald-100 text-emerald-700 border-emerald-200'],
+                                    'rejected' => ['text' => 'Ditolak', 'class' => 'bg-red-100 text-red-600 border-red-200'],
+                                    default => ['text' => ucfirst($r->status), 'class' => 'bg-gray-100 text-gray-600 border-gray-200'],
+                                };
+                            @endphp
+                            <div class="flex items-center gap-2 flex-wrap mt-1.5">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border {{ $statusBadge['class'] }}">
+                                    <i class="fas fa-{{ $r->status === 'pending' ? 'clock' : ($r->status === 'approved' ? 'check-circle' : 'times-circle') }} text-[9px]"></i> {{ $statusBadge['text'] }}
+                                </span>
+                                @if($canApproveReplacement ?? false && $r->status === 'pending')
+                                <span class="flex items-center gap-1.5">
+                                    <form method="POST" action="{{ route('replacements.approve', $r) }}" onsubmit="return confirm('Setujui penggantian kendaraan ini?')">@csrf
+                                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[11px] font-bold transition"><i class="fas fa-check mr-1 text-[9px]"></i> Setujui</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('replacements.reject', $r) }}" onsubmit="return confirm('Tolak permintaan penggantian ini?')">@csrf
+                                        <button type="submit" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-3 py-1 rounded-lg text-[11px] font-bold transition"><i class="fas fa-times mr-1 text-[9px]"></i> Tolak</button>
+                                    </form>
+                                </span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     @endforeach

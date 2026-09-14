@@ -3,7 +3,7 @@
 @section('content')
 @php
     $role = auth()->user()->role;
-    $canRequest = in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin']);
+    $canRequest = in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin', 'inspector']);
     $hasEligibleBookings = isset($modalBookings) && count($modalBookings) > 0;
 @endphp
 
@@ -41,7 +41,7 @@
             {{-- Alert Info --}}
             <div class="mx-5 mt-4 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2.5 rounded-xl text-[12px] flex items-start gap-2">
                 <i class="fas fa-info-circle mt-0.5"></i>
-                <span>Penggantian hanya dapat diajukan untuk booking yang sedang berjalan (ongoing) dan setelah <strong>setengah masa sewa</strong> telah berlalu.</span>
+                <span>Penggantian dapat diajukan untuk booking yang sedang berjalan (ongoing). Permintaan menunggu persetujuan admin/owner/superadmin.</span>
             </div>
 
             {{-- Modal Body --}}
@@ -205,7 +205,7 @@
         </a>
     </div>
     @if(!$hasEligibleBookings)
-    <p class="text-[11px] text-gray-400 w-full sm:text-right mt-1">Belum ada booking ongoing yang melewati setengah masa sewa. Cek syarat di form.</p>
+    <p class="text-[11px] text-gray-400 w-full sm:text-right mt-1">Belum ada booking ongoing yang dapat diajukan. Cek syarat di form.</p>
     @endif
     @endif
 </div>

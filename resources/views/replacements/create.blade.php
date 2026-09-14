@@ -25,10 +25,10 @@
         </div>
     </div>
 
-    @if(in_array($role, ['driver', 'user']))
+    @if(in_array($role, ['driver', 'staff', 'user', 'inspector']))
     <div class="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl mb-5 text-[13px] flex items-start gap-2">
         <i class="fas fa-info-circle mt-0.5"></i>
-        <span>Penggantian kendaraan hanya dapat diajukan untuk booking yang sedang berjalan (ongoing) dan setelah <strong>setengah masa sewa</strong> telah berlalu.</span>
+        <span>Penggantian kendaraan dapat diajukan untuk booking yang sedang berjalan (ongoing). Permintaan akan menunggu <strong>persetujuan admin/owner/superadmin</strong>.</span>
     </div>
     @endif
 
@@ -48,7 +48,7 @@
                     @endforeach
                 </select>
                 @if($bookings->isEmpty())
-                <p class="text-amber-600 text-[12px] mt-2"><i class="fas fa-info-circle mr-1"></i> Belum ada booking ongoing yang memenuhi syarat (status ongoing & sudah melewati setengah masa sewa).</p>
+                <p class="text-amber-600 text-[12px] mt-2"><i class="fas fa-info-circle mr-1"></i> Belum ada booking ongoing yang dapat diajukan penggantian.</p>
                 @endif
                 @error('booking_id')
                     <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p>
