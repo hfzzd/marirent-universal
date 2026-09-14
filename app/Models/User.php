@@ -134,8 +134,8 @@ class User extends Authenticatable
             if ($ownerId) {
                 return (int) $ownerId;
             }
-            // Staff tanpa baris driver: ikut merchant via owner_id akunnya.
-            if ($this->isStaff() && $this->owner_id) {
+            // Staff/employee tanpa baris driver: ikut merchant via owner_id akunnya.
+            if (($this->isStaff() || $this->isEmployee()) && $this->owner_id) {
                 return (int) $this->owner_id;
             }
             return $ownerId ? (int) $ownerId : null;

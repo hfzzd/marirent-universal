@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -54,6 +55,15 @@ class AuthController extends Controller
 
         if (!$user->is_active) {
             return response()->json(['success' => false, 'message' => 'Akun anda tidak aktif'], 403);
+        }
+
+        if (app(SubscriptionService::class)->isOverdueForUser($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun diblokir karena tagihan subscription belum dibayar. Silakan selesaikan pembayaran billing.',
+                'error_code' => 'subscription_overdue',
+                'redirect_to' => '/api/subscriptions/due',
+            ], 403);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;

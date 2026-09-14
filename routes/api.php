@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\RentalController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\TripReportController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,4 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'index' => 'api.payments.index',
         'store' => 'api.payments.store',
     ]);
+
+    Route::get('/subscriptions/due', [SubscriptionController::class, 'due'])->name('api.subscriptions.due');
+    Route::post('/subscriptions/pay', [SubscriptionController::class, 'pay'])->name('api.subscriptions.pay');
 });

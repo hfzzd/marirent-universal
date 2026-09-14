@@ -33,6 +33,10 @@
                 'vehicle_replaced' => ['icon' => 'fa-exchange-alt', 'color' => 'amber', 'bg' => 'bg-amber-50', 'border' => 'border-amber-200'],
                 'vehicle_replacement_requested' => ['icon' => 'fa-truck-pickup', 'color' => 'sky', 'bg' => 'bg-sky-50', 'border' => 'border-sky-200'],
                 'demo_requested' => ['icon' => 'fa-calendar-check', 'color' => 'violet', 'bg' => 'bg-violet-50', 'border' => 'border-violet-200'],
+                'subscription_due_reminder' => ['icon' => 'fa-credit-card', 'color' => 'amber', 'bg' => 'bg-amber-50', 'border' => 'border-amber-200'],
+                'subscription_overdue' => ['icon' => 'fa-credit-card', 'color' => 'red', 'bg' => 'bg-red-50', 'border' => 'border-red-200'],
+                'subscription_paid' => ['icon' => 'fa-check-circle', 'color' => 'emerald', 'bg' => 'bg-emerald-50', 'border' => 'border-emerald-200'],
+                'subscription_payment_awaiting_verification' => ['icon' => 'fa-money-bill-wave', 'color' => 'amber', 'bg' => 'bg-amber-50', 'border' => 'border-amber-200'],
                 default => ['icon' => 'fa-bell', 'color' => 'gray', 'bg' => 'bg-gray-50', 'border' => 'border-gray-200'],
             };
         @endphp

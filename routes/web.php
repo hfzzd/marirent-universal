@@ -28,6 +28,8 @@ use App\Http\Controllers\Web\NotificationWebController;
 use App\Http\Controllers\Web\BrandCatalogPhotoController;
 use App\Http\Controllers\Web\RentalController;
 use App\Http\Controllers\Web\InspectorWebController;
+use App\Http\Controllers\Web\SubscriptionWebController;
+use App\Http\Controllers\Web\SubscriptionsController;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
@@ -110,6 +112,14 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(func
     Route::get('/demo-requests', [SuperadminController::class, 'demoRequests'])->name('superadmin.demo-requests');
     Route::put('/demo-requests/{id}', [SuperadminController::class, 'demoRequestUpdate'])->name('superadmin.demo-requests.update');
     Route::get('/absen', [SuperadminController::class, 'absen'])->name('superadmin.absen');
+
+    // Subscription (billing bulanan merchant)
+    Route::get('/subscriptions', [SubscriptionsController::class, 'index'])->name('superadmin.subscriptions');
+    Route::get('/subscriptions/{merchant}', [SubscriptionsController::class, 'show'])->name('superadmin.subscriptions.show');
+    Route::post('/subscriptions/{merchant}/plan', [SubscriptionsController::class, 'storePlan'])->name('superadmin.subscriptions.plan');
+    Route::post('/subscriptions/{merchant}/bills', [SubscriptionsController::class, 'storeBill'])->name('superadmin.subscriptions.bills');
+    Route::post('/subscriptions-bill/{subscription}/verify', [SubscriptionsController::class, 'verify'])->name('superadmin.subscriptions.verify');
+    Route::post('/subscriptions-bill/{subscription}/reject', [SubscriptionsController::class, 'reject'])->name('superadmin.subscriptions.reject');
     Route::get('/monitoring-vehicle', [SuperadminController::class, 'monitoringVehicle'])->name('superadmin.monitoring-vehicle');
     Route::get('/motor', [SuperadminController::class, 'motor'])->name('superadmin.motor');
     Route::get('/elektronik', [SuperadminController::class, 'elektronik'])->name('superadmin.elektronik');
@@ -272,6 +282,13 @@ Route::middleware('auth')->prefix('replacements')->group(function () {
     Route::post('/{replacement}/approve', [ReplacementWebController::class, 'approve'])->name('replacements.approve');
     Route::post('/{replacement}/reject', [ReplacementWebController::class, 'reject'])->name('replacements.reject');
     Route::post('/{replacement}/update-status', [ReplacementWebController::class, 'updateStatus'])->name('replacements.update-status');
+});
+
+// Subscription Routes (merchant billing & pembayaran)
+Route::middleware('auth')->prefix('subscriptions')->group(function () {
+    Route::get('/', [SubscriptionWebController::class, 'index'])->name('subscriptions.index');
+    Route::get('/due', [SubscriptionWebController::class, 'due'])->name('subscriptions.due');
+    Route::post('/pay', [SubscriptionWebController::class, 'pay'])->name('subscriptions.pay');
 });
 
 // Item Replacement Routes (Electronics)

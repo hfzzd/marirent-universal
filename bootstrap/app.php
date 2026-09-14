@@ -16,8 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'active' => \App\Http\Middleware\CheckActive::class,
+            'subpaid' => \App\Http\Middleware\EnsureSubscriptionPaid::class,
         ]);
         $middleware->appendToGroup('web', \App\Http\Middleware\CheckActive::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureSubscriptionPaid::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\EnsureSubscriptionPaid::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e) {

@@ -16,13 +16,15 @@ class Merchant extends Model
         'phone', 'company_email', 'website', 'instagram',
         'address', 'city', 'pickup_address', 'operational_hours',
         'commission_rate', 'is_active', 'status',
-        'verified_at',
+        'verified_at', 'billing_plan', 'subscription_fee', 'subscription_until',
     ];
 
     protected function casts(): array
     {
         return [
             'commission_rate' => 'decimal:2',
+            'subscription_fee' => 'decimal:2',
+            'subscription_until' => 'datetime',
             'is_active' => 'boolean',
             'verified_at' => 'datetime',
         ];
@@ -31,6 +33,16 @@ class Merchant extends Model
     public function isVerified(): bool
     {
         return $this->is_active && $this->status === 'active';
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(MerchantSubscription::class)->orderByDesc('period_start');
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOne(MerchantSubscription::class)->whereNot('status', 'paid')->latestOfMany('period_start');
     }
 
     protected static function booted(): void

@@ -7,6 +7,8 @@ use App\Models\Category;
 use App\Models\Company;
 use App\Models\Merchant;
 use App\Models\User;
+use App\Notifications\SubscriptionOverdue;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,10 +41,33 @@ class AuthController extends Controller
                 return back()->withErrors(['email' => 'Akun tidak aktif']);
             }
 
+            if (app(SubscriptionService::class)->isOverdueForUser($user)) {
+                $this->sendOverdueLoginNotice($user);
+                return redirect()->route('subscriptions.due')
+                    ->with('error', 'Akun Anda diblokir karena tagihan subscription belum dibayar. Silakan selesaikan pembayaran billing untuk mengaktifkan kembali akses.');
+            }
+
             return redirect()->intended($this->dashboardRedirect());
         }
 
         return back()->withErrors(['email' => 'Email atau password salah'])->onlyInput('email');
+    }
+
+    private function sendOverdueLoginNotice(User $user): void
+    {
+        $merchant = app(SubscriptionService::class)->merchantForUser($user);
+        if (!$merchant) {
+            return;
+        }
+
+        $already = $user->notifications()
+            ->where('data->type', 'subscription_overdue')
+            ->whereDate('created_at', today())
+            ->exists();
+
+        if (!$already) {
+            $user->notify(new SubscriptionOverdue($merchant));
+        }
     }
 
     public function showRegister()

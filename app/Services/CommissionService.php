@@ -51,6 +51,12 @@ class CommissionService
             return false;
         }
 
+        // Merchant dengan plan subscription (bayar flat bulanan) bebas komisi transaksi.
+        $plan = Merchant::where('user_id', $invoice->owner_id)->value('billing_plan');
+        if ($plan === 'subscription') {
+            return false;
+        }
+
         // Jenis invoice yang merupakan pemasukan rental (source merchant).
         return in_array($invoice->type, ['rental', 'manual_income', 'damage', 'replacement'], true);
     }

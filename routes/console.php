@@ -36,6 +36,15 @@ Schedule::command('booking:update-expired')
     ->appendOutputTo(storage_path('logs/scheduler.log'));
 
 /**
+ * Proses billing subscription merchant (buat tagihan, tandai overdue, kirim reminder).
+ */
+Schedule::command('subscription:process')
+    ->dailyAt('00:10')
+    ->name('process-subscription-billing')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/scheduler.log'));
+
+/**
  * Bersihkan file log lama (lebih dari 30 hari) setiap minggu pada hari Minggu.
  */
 Schedule::command('logs:clean --days=30')

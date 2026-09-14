@@ -105,6 +105,14 @@
                 <a href="{{ route('superadmin.merchants') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.merchants*') ? 'active' : '' }}">
                     <i class="fas fa-store w-5 mr-2.5 text-sm"></i> Merchant / Toko
                 </a>
+                @php
+                    $__subOverdue = \App\Models\Merchant::where('billing_plan', 'subscription')->where(fn($q) => $q->whereNull('subscription_until')->orWhere('subscription_until', '<', now()))->count();
+                    $__subVerify = \App\Models\MerchantSubscription::whereIn('status', ['pending', 'overdue'])->whereNotNull('proof_photo')->count();
+                @endphp
+                <a href="{{ route('superadmin.subscriptions') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.subscriptions*') ? 'active' : '' }}">
+                    <i class="fas fa-credit-card w-5 mr-2.5 text-sm"></i> Subscription
+                    @if($__subOverdue + $__subVerify > 0)<span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $__subOverdue + $__subVerify }}</span>@endif
+                </a>
                 <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding-usd w-5 mr-2.5 text-sm"></i> Komisi & Keuangan
                 </a>
@@ -192,6 +200,11 @@
                 <a href="{{ route('owner.revenue.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('owner.revenue*') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding-dollar w-5 mr-2.5 text-sm"></i> Pendapatan
                 </a>
+                @if($ownerVerified)
+                <a href="{{ route('subscriptions.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}">
+                    <i class="fas fa-credit-card w-5 mr-2.5 text-sm"></i> Subscription
+                </a>
+                @endif
                 <div class="sidebar-group-title mt-4">Operasional</div>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Booking
@@ -245,6 +258,9 @@
                 <div class="sidebar-group-title mt-4">Keuangan</div>
                 <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice
+                </a>
+                <a href="{{ route('subscriptions.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}">
+                    <i class="fas fa-credit-card w-5 mr-2.5 text-sm"></i> Subscription
                 </a>
                 <div class="sidebar-group-title mt-4">Operasional</div>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
@@ -451,6 +467,19 @@
                 <div class="mb-4 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-[13px] flex items-center gap-2 animate-slide-up shadow-sm">
                     <i class="fas fa-clock text-amber-500"></i>
                     Toko Anda sedang <strong>menunggu verifikasi admin</strong>. Anda belum bisa mengelola produk & transaksi hingga toko disetujui.
+                </div>
+            @endif
+
+            @php
+                $__subOverdueBanner = in_array(auth()->user()->role, ['owner', 'admin', 'driver', 'staff', 'employee', 'inspector'])
+                    ? app(\App\Services\SubscriptionService::class)->isOverdueForUser(auth()->user())
+                    : false;
+            @endphp
+            @if($__subOverdueBanner)
+                <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-[13px] flex items-center gap-2 animate-slide-up shadow-sm">
+                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                    Tagihan subscription belum dibayar — akun sedang diblokir.
+                    <a href="{{ route('subscriptions.due') }}" class="ml-auto text-red-700 font-bold underline whitespace-nowrap">Bayar Sekarang <i class="fas fa-arrow-right text-[11px]"></i></a>
                 </div>
             @endif
 
