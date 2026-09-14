@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Company;
 use App\Models\Driver;
 use App\Models\Merchant;
+use App\Models\MerchantSubscription;
 use App\Models\User;
 use App\Services\SubscriptionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -179,6 +180,26 @@ class SubscriptionTest extends TestCase
         $this->assertSame('subscription', $merchant->billing_plan);
         $this->assertNotNull($merchant->subscription_until);
         $this->assertTrue($merchant->subscription_until->isFuture());
+        $this->assertDatabaseHas('merchant_subscriptions', [
+            'merchant_id' => $merchant->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_due_page_renders_and_creates_bill_when_missing(): void
+    {
+        $owner = $this->makeOwner('due_page_owner@example.test');
+        $merchant = $this->makeMerchant($owner);
+        $svc = app(SubscriptionService::class);
+        $svc->pivotToSubscription($merchant, 500000);
+        DB::table('merchants')->where('id', $merchant->id)->update([
+            'subscription_until' => now()->subDay(),
+        ]);
+        MerchantSubscription::where('merchant_id', $merchant->id)->update(['status' => 'paid']);
+
+        $this->actingAs($owner)->get(route('subscriptions.due'))
+            ->assertOk()
+            ->assertSee('Tagihan');
         $this->assertDatabaseHas('merchant_subscriptions', [
             'merchant_id' => $merchant->id,
             'status' => 'pending',

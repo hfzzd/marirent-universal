@@ -101,6 +101,23 @@ class SubscriptionService
             ->first();
     }
 
+    /**
+     * Pastikan merchant subscription selalu punya tagihan yang harus dibayar.
+     * Jika belum ada tagihan unpaid, buat tagihan baru.
+     */
+    public function ensureCurrentBill(Merchant $merchant): ?MerchantSubscription
+    {
+        if ($merchant->billing_plan !== 'subscription') {
+            return null;
+        }
+
+        if ($bill = $this->currentBill($merchant)) {
+            return $bill;
+        }
+
+        return $this->generateNextBill($merchant);
+    }
+
     public function generateNextBill(Merchant $merchant, ?Carbon $periodStart = null): MerchantSubscription
     {
         $start = $periodStart ?? now()->startOfDay();
