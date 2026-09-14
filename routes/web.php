@@ -41,6 +41,7 @@ Route::get('/brand/{type}/{brand}', [PublicController::class, 'brand'])->name('p
 Route::get('/store/{slug}', [PublicController::class, 'store'])->name('public.store');
 Route::get('/jadwal-demo', [PublicController::class, 'demo'])->name('demo');
 Route::post('/jadwal-demo', [PublicController::class, 'storeDemo'])->name('demo.store');
+Route::post('/newsletter/subscribe', [PublicController::class, 'subscribeNewsletter'])->name('newsletter.subscribe');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -153,6 +154,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('owner/revenue')->group(functi
     Route::get('/create', [OwnerRevenueController::class, 'create'])->name('owner.revenue.create');
     Route::post('/', [OwnerRevenueController::class, 'store'])->name('owner.revenue.store');
     Route::get('/{invoice}', [OwnerRevenueController::class, 'show'])->name('owner.revenue.show');
+    Route::post('/{invoice}/mark-paid', [OwnerRevenueController::class, 'markPaid'])->name('owner.revenue.mark-paid');
     Route::delete('/{invoice}', [OwnerRevenueController::class, 'destroy'])->name('owner.revenue.destroy');
 });
 
@@ -177,6 +179,7 @@ Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user,inspec
     Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
     Route::get('/create-item/{type}/{item}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
     Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
+    Route::get('/create-multi', [BookingWebController::class, 'createMulti'])->name('bookings.create-multi');
     Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
     Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
     Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel');

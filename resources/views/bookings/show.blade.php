@@ -111,16 +111,22 @@
                         <form method="POST" action="{{ route('bookings.reschedule', $booking) }}" x-show="rescheduleOpen" x-transition class="mt-3 space-y-2.5">
                             @csrf
                             <div>
-                                <label class="block text-[11px] font-semibold text-navy-700 mb-1">Mulai Baru</label>
-                                <input type="datetime-local" name="start_date" value="{{ $booking->start_date->format('Y-m-d\TH:i') }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500">
+                                <label class="block text-[11px] font-semibold text-navy-700 mb-1">Mulai Baru @if($booking->status === 'ongoing')<span class="text-gray-400 font-normal">(dikunci - sewa sudah berjalan)</span>@endif</label>
+                                <input type="datetime-local" name="start_date" value="{{ $booking->start_date->format('Y-m-d\TH:i') }}" required {{ $booking->status === 'ongoing' ? 'disabled' : '' }} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 {{ $booking->status === 'ongoing' ? 'bg-gray-100 text-gray-400' : '' }}">
+                                @if($booking->status === 'ongoing')
+                                <input type="hidden" name="start_date" value="{{ $booking->start_date->format('Y-m-d\TH:i') }}">
+                                @endif
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-navy-700 mb-1">Selesai Baru</label>
                                 <input type="datetime-local" name="end_date" value="{{ $booking->end_date->format('Y-m-d\TH:i') }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500">
                             </div>
-                            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[11px] font-bold transition">
-                                <i class="fas fa-refresh text-[10px] mr-1"></i> Simpan Ubah Jadwal & Hitung Ulang
-                            </button>
+                            <div class="flex gap-2">
+                                <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[11px] font-bold transition">
+                                    <i class="fas fa-refresh text-[10px] mr-1"></i> Simpan Ubah Jadwal & Hitung Ulang
+                                </button>
+                                <button type="button" @click="rescheduleOpen = false" class="bg-gray-100 hover:bg-gray-200 text-navy-700 px-4 py-2 rounded-lg text-[11px] font-medium transition">Batal</button>
+                            </div>
                         </form>
                         @endif
                     </div>
@@ -203,6 +209,7 @@
                                 <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold transition" {{ $availableDrivers->isEmpty() ? 'disabled' : '' }}>
                                     <i class="fas fa-check text-[10px] mr-1"></i> Simpan Driver
                                 </button>
+                                <button type="button" @click="open = false" class="bg-gray-100 hover:bg-gray-200 text-navy-700 px-4 py-2 rounded-lg text-[11px] font-medium transition">Batal</button>
                                 @if($booking->driver)
                                 <button type="submit" formaction="{{ route('bookings.remove-driver', $booking) }}" onclick="return confirm('Lepas driver dari booking ini?')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-[11px] font-medium transition">
                                     <i class="fas fa-user-minus text-[10px] mr-1"></i> Lepas
@@ -277,8 +284,37 @@
                 </div>
                 @endif
 
-                {{-- Aksi Inspector --}}
-                @if(auth()->user()->role === 'inspector' && in_array($booking->status, ['confirmed','ongoing']) && !$booking->with_driver)
+                {{-- Aksi User: batalkan booking pending milik sendiri --}}
+                @if(auth()->user()->role === 'user' && (int) $booking->user_id === (int) auth()->id() && $booking->status === 'pending')
+                <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+                    <form method="POST" action="{{ route('bookings.cancel', $booking) }}" onsubmit="return confirm('Yakin batalkan booking ini?')">@csrf
+                        <button class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2"><i class="fas fa-times"></i> Batalkan Booking</button>
+                    </form>
+                </div>
+                @endif
+
+                {{-- Aksi Driver yang ditugaskan: mulai & selesaikan --}}
+                @php
+                    $myDriverId = \App\Models\Driver::where('user_id', auth()->id())->value('id');
+                    $isAssignedDriver = $myDriverId && (int) $booking->driver_id === (int) $myDriverId;
+                @endphp
+                @if($isAssignedDriver && in_array(auth()->user()->role, ['driver','staff']))
+                <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+                    @if($booking->status === 'confirmed')
+                    <form method="POST" action="{{ route('bookings.start', $booking) }}">@csrf
+                        <button class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2"><i class="fas fa-play"></i> Mulai Perjalanan</button>
+                    </form>
+                    @endif
+                    @if($booking->status === 'ongoing')
+                    <form method="POST" action="{{ route('bookings.complete', $booking) }}">@csrf
+                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition flex items-center gap-2"><i class="fas fa-check-double"></i> Selesai Perjalanan</button>
+                    </form>
+                    @endif
+                </div>
+                @endif
+
+                {{-- Aksi Inspector (khusus booking kendaraan lepas kunci) --}}
+                @if(auth()->user()->role === 'inspector' && $booking->vehicle && in_array($booking->status, ['confirmed','ongoing']) && !$booking->with_driver)
                 <div class="border-t border-gray-100 pt-4 mt-4">
                     <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-3 rounded-xl text-[13px] font-bold transition-all duration-200 shadow-md shadow-emerald-500/20 active:scale-[0.97]">
                         <i class="fas fa-clipboard-check"></i> Inspeksi Unit Booking Ini
@@ -328,11 +364,27 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <button type="submit" onclick="return confirm('Tukar kendaraan untuk booking ini sekarang?')" class="btn-primary text-white px-5 py-2 rounded-lg text-[12px] font-bold shadow-md shadow-sky-500/20 transition"><i class="fas fa-arrows-rotate mr-1"></i> Konfirmasi Tukar Unit</button>
+                            <button type="button" @click="open = false" class="bg-white border border-gray-200 hover:border-gray-300 text-gray-500 px-5 py-2 rounded-lg text-[12px] font-medium transition">Batal</button>
                             <span class="text-[10px] text-gray-400">Penyewa otomatis mendapat notifikasi penggantian.</span>
                         </div>
                     </form>
+                </div>
+                @endif
+
+                {{-- Ajukan Penggantian (Driver/Staff): selalu bisa ke form --}}
+                @if($booking->vehicle && $booking->status == 'ongoing' && in_array(auth()->user()->role, ['driver','staff']))
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <div class="bg-sky-50/70 border border-sky-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                        <div>
+                            <p class="text-[12px] font-bold text-navy-800 flex items-center gap-2"><i class="fas fa-right-left text-sky-500"></i> Kendaraan Bermasalah?</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">Ajukan penggantian unit. Syarat: booking ongoing & sudah melewati setengah masa sewa.</p>
+                        </div>
+                        <a href="{{ route('replacements.create', ['booking_id' => $booking->id]) }}" class="btn-primary text-white px-5 py-2.5 rounded-xl text-[12px] font-bold shadow-md shadow-sky-500/20 transition inline-flex items-center gap-1.5 justify-center whitespace-nowrap">
+                            <i class="fas fa-paper-plane text-[10px]"></i> Ajukan Penggantian
+                        </a>
+                    </div>
                 </div>
                 @endif
             </div>

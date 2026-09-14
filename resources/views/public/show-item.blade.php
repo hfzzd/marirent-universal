@@ -10,7 +10,11 @@
         <i class="fas fa-chevron-right text-[9px]"></i>
         <a href="{{ route('products') }}" class="hover:text-sky-600 transition">Produk</a>
         <i class="fas fa-chevron-right text-[9px]"></i>
-        <a href="{{ route('products', ['category' => $item->category->slug ?? '']) }}" class="hover:text-sky-600 transition">{{ $config['label'] }}</a>
+        @if(!empty($item->category?->slug))
+        <a href="{{ route('products', ['category' => $item->category->slug]) }}" class="hover:text-sky-600 transition">{{ $config['label'] }}</a>
+        @else
+        <span class="text-navy-700 font-medium">{{ $config['label'] }}</span>
+        @endif
         <i class="fas fa-chevron-right text-[9px]"></i>
         <span class="text-navy-700 font-medium">{{ $item->name }}</span>
     </nav>

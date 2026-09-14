@@ -68,7 +68,7 @@
                     <td class="py-3 px-5">
                         @if($r->item_type === 'hp')
                             <span class="bg-blue-100 text-blue-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-mobile-alt mr-1"></i>HP</span>
-                        @elseif($r->item_type === 'camera')
+                        @elseif(in_array($r->item_type, ['camera', 'kamera']))
                             <span class="bg-violet-100 text-violet-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-camera mr-1"></i>Kamera</span>
                         @elseif($r->item_type === 'tenda')
                             <span class="bg-emerald-100 text-emerald-700" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;"><i class="fas fa-campground mr-1"></i>Alat Camping</span>
@@ -88,17 +88,15 @@
                         {{ $r->price_difference > 0 ? '+' : '' }} Rp {{ number_format($r->price_difference,0,',','.') }}
                     </td>
                     <td class="py-3 px-5 text-center"><span class="{{ $r->status == 'approved' ? 'badge-green' : ($r->status == 'rejected' ? 'badge-red' : 'badge-blue') }} capitalize" style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;display:inline-block;">{{ $r->status }}</span></td>
-                    <td class="py-3 px-5">
+                     <td class="py-3 px-5">
                          @if($r->status == 'pending' && in_array(auth()->user()->role, ['superadmin','owner','admin']))
                          <div class="flex items-center gap-2">
                          <form method="POST" action="{{ route('item-replacements.approve', $r) }}" class="inline">@csrf
                              <button class="text-emerald-600 text-[11px] font-semibold hover:text-emerald-700"><i class="fas fa-check mr-1"></i>Setuju</button>
                          </form>
-                         @if(in_array(auth()->user()->role, ['superadmin','owner']))
-                         <form method="POST" action="{{ route('item-replacements.reject', $r) }}" class="inline">@csrf
+                         <form method="POST" action="{{ route('item-replacements.reject', $r) }}" class="inline" onsubmit="return confirm('Tolak permintaan ini?')">@csrf
                              <button class="text-red-500 text-[11px] font-semibold hover:text-red-600"><i class="fas fa-times mr-1"></i>Tolak</button>
                          </form>
-                         @endif
                          </div>
                          @endif
                         @if($r->status == 'approved' && !$r->is_returned && in_array(auth()->user()->role, ['superadmin','owner']))

@@ -138,20 +138,12 @@
                             </button>
                         </div>
                         {{-- Password strength --}}
-                        <div class="mt-2 flex gap-1" x-data="{ strength: 0 }"
-                             x-init="$watch('$root', () => {
-                                 const p = document.querySelector('input[name=password]').value;
-                                 let s = 0;
-                                 if(p.length >= 6) s++;
-                                 if(p.length >= 8) s++;
-                                 if(/[A-Z]/.test(p)) s++;
-                                 if(/[0-9]/.test(p)) s++;
-                                 if(/[^A-Za-z0-9]/.test(p)) s++;
-                                 strength = s;
-                             })" @input.window="const p = $el.closest('form').querySelector('input[name=password]').value; let s=0; if(p.length>=6)s++; if(p.length>=8)s++; if(/[A-Z]/.test(p))s++; if(/[0-9]/.test(p))s++; if(/[^A-Za-z0-9]/.test(p))s++; strength=s">
-                            <template x-for="i in 5">
-                                <div class="h-1 flex-1 rounded-full transition-all duration-300" :class="i <= strength ? (strength <= 2 ? 'bg-red-400' : strength <= 3 ? 'bg-amber-400' : 'bg-emerald-400') : 'bg-gray-100'"></div>
-                            </template>
+                        <div class="mt-2 flex gap-1" id="pwd-strength">
+                            <div class="h-1 flex-1 rounded-full bg-gray-100 transition-all duration-300" data-bar="1"></div>
+                            <div class="h-1 flex-1 rounded-full bg-gray-100 transition-all duration-300" data-bar="2"></div>
+                            <div class="h-1 flex-1 rounded-full bg-gray-100 transition-all duration-300" data-bar="3"></div>
+                            <div class="h-1 flex-1 rounded-full bg-gray-100 transition-all duration-300" data-bar="4"></div>
+                            <div class="h-1 flex-1 rounded-full bg-gray-100 transition-all duration-300" data-bar="5"></div>
                         </div>
                     </div>
 
@@ -194,6 +186,25 @@
         btn.classList.add('is-loading');
         btn.innerHTML = '<span class="btn-loading flex items-center justify-center gap-2"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Memproses...</span>';
     });
+    // Password strength (vanilla, reaktif)
+    (function() {
+        const pwd = document.querySelector('input[name=password]');
+        const bars = document.querySelectorAll('#pwd-strength [data-bar]');
+        if (!pwd || !bars.length) return;
+        pwd.addEventListener('input', () => {
+            const p = pwd.value || '';
+            let s = 0;
+            if (p.length >= 6) s++;
+            if (p.length >= 8) s++;
+            if (/[A-Z]/.test(p)) s++;
+            if (/[0-9]/.test(p)) s++;
+            if (/[^A-Za-z0-9]/.test(p)) s++;
+            bars.forEach(b => {
+                const i = parseInt(b.getAttribute('data-bar'));
+                b.className = 'h-1 flex-1 rounded-full transition-all duration-300 ' + (i <= s ? (s <= 2 ? 'bg-red-400' : s <= 3 ? 'bg-amber-400' : 'bg-emerald-400') : 'bg-gray-100');
+            });
+        });
+    })();
 </script>
 @endpush
 @endsection

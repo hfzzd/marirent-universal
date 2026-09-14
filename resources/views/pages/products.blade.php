@@ -24,7 +24,7 @@
 </style>
 
 @php
-    $filterParams = array_filter(['search' => request('search'), 'category' => request('category'), 'max_price' => request('max_price')]);
+    $filterParams = array_filter(['search' => request('search'), 'category' => request('category'), 'max_price' => request('max_price'), 'sort' => request('sort'), 'brand' => request('brand'), 'model' => request('model')]);
     $filterQs = $filterParams ? '?' . http_build_query($filterParams) : '';
     $noPageQs = $filterParams ? '?' . http_build_query($filterParams) : '';
 @endphp
@@ -74,7 +74,7 @@
         $catList = \App\Models\Category::where('is_active', true)->get();
     @endphp
     <div class="flex flex-wrap gap-2 mb-6 reveal">
-        <a href="{{ route('products') }}{{ $noPageQs ? '&' . ltrim($noPageQs, '?') : '' }}"
+        <a href="{{ route('products', array_merge(request()->except('page','category'), [])) }}"
            class="filter-chip px-4 py-2 rounded-full text-[12px] font-semibold border border-gray-200 bg-white {{ !request('category') ? 'active border-transparent' : 'text-gray-500 hover:border-sky-300 hover:text-sky-600' }}">
             <i class="fas fa-grip-horizontal mr-1.5 text-[10px]"></i> Semua
         </a>
@@ -87,10 +87,11 @@
     </div>
 
     {{-- SEARCH & FILTER BAR --}}
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/80 mb-8 reveal" style="box-shadow: 0 4px 24px rgba(0,0,0,0.03);" x-data="{ searchQuery: '{{ request('search') }}', loading: false }" x-init="$watch('searchQuery', () => { clearTimeout(window._searchTimer); window._searchTimer = setTimeout(() => { $refs.searchForm.submit(); }, 500); })">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/80 mb-8 reveal" style="box-shadow: 0 4px 24px rgba(0,0,0,0.03);" x-data="{ searchQuery: @js(request('search')), loading: false }" x-init="$watch('searchQuery', () => { loading = true; clearTimeout(window._searchTimer); window._searchTimer = setTimeout(() => { $refs.searchForm.submit(); }, 500); })">
         <form action="{{ route('products') }}" method="GET" x-ref="searchForm" class="flex flex-col md:flex-row gap-3 items-end">
-            <input type="hidden" name="category" value="{{ request('category') }}">
             <input type="hidden" name="sort" value="{{ request('sort') }}">
+            <input type="hidden" name="brand" value="{{ request('brand') }}">
+            <input type="hidden" name="model" value="{{ request('model') }}">
             <div class="flex-1 w-full">
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Cari Produk</label>
                 <div class="relative">
@@ -120,7 +121,7 @@
                 <button type="submit" class="btn-primary text-white px-6 py-3 rounded-2xl text-[13px] font-semibold shadow-lg shadow-sky-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-sky-500/30">
                     <i class="fas fa-filter mr-1.5"></i> Filter
                 </button>
-                @if(request()->hasAny(['search','category','max_price']))
+                @if(request()->hasAny(['search','category','max_price','sort','brand','model']))
                 <a href="{{ route('products') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-4 py-3 rounded-2xl text-[13px] font-medium transition-all duration-200 flex items-center gap-1.5 border border-red-100">
                     <i class="fas fa-times text-[10px]"></i> Reset
                 </a>
@@ -157,23 +158,23 @@
         <div class="flex items-center gap-2">
             {{-- Sort Dropdown --}}
             <div class="relative" x-data="{ sortOpen: false }">
-                <button @click="sortOpen = !sortOpen" class="flex items-center gap-1.5 text-[11px] text-gray-500 bg-white px-3 py-1.5 rounded-xl border border-gray-100 hover:border-sky-200 transition">
+                <button type="button" @click="sortOpen = !sortOpen" class="flex items-center gap-1.5 text-[11px] text-gray-500 bg-white px-3 py-1.5 rounded-xl border border-gray-100 hover:border-sky-200 transition">
                     <i class="fas fa-sort text-sky-400"></i>
-                    <span x-text="sortOpen ? 'Urutkan' : '{{ match(request('sort', 'newest')) { 'price_asc' => 'Harga Terendah', 'price_desc' => 'Harga Tertinggi', 'name' => 'Nama A-Z', default => 'Terbaru' } }}'"></span>
+                    <span>{{ match(request('sort', 'newest')) { 'price_asc' => 'Harga Terendah', 'price_desc' => 'Harga Tertinggi', 'name' => 'Nama A-Z', default => 'Terbaru' } }}</span>
                     <i class="fas fa-chevron-down text-[8px]"></i>
                 </button>
-                <div x-show="sortOpen" @click.away="sortOpen = false" x-transition class="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                <div x-show="sortOpen" @click.away="sortOpen = false" x-transition class="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50" x-cloak>
                     @php $currentSort = request('sort', 'newest'); @endphp
-                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'newest'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'newest' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                    <a href="{{ route('products', array_merge(request()->except('page','sort'), ['sort' => 'newest'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'newest' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
                         <i class="fas fa-clock mr-2 w-4"></i> Terbaru
                     </a>
-                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'price_asc'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'price_asc' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                    <a href="{{ route('products', array_merge(request()->except('page','sort'), ['sort' => 'price_asc'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'price_asc' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
                         <i class="fas fa-arrow-up mr-2 w-4"></i> Harga Terendah
                     </a>
-                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'price_desc'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'price_desc' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                    <a href="{{ route('products', array_merge(request()->except('page','sort'), ['sort' => 'price_desc'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'price_desc' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
                         <i class="fas fa-arrow-down mr-2 w-4"></i> Harga Tertinggi
                     </a>
-                    <a href="?{{ http_build_query(array_merge(request()->except('page','sort'), ['sort' => 'name'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'name' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
+                    <a href="{{ route('products', array_merge(request()->except('page','sort'), ['sort' => 'name'])) }}" class="block px-4 py-2 text-[12px] {{ $currentSort === 'name' ? 'text-sky-600 bg-sky-50 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} transition">
                         <i class="fas fa-font mr-2 w-4"></i> Nama A-Z
                     </a>
                 </div>
@@ -211,8 +212,8 @@
                 </span>
 
                 @if($p['type'] == 'vehicle')
-                    @php $v = \App\Models\Vehicle::find($p['id']); @endphp
-                    @if($v && $v->with_driver)
+                    @php $vWithDriver = $p['with_driver'] ?? (\App\Models\Vehicle::find($p['id'])?->with_driver); @endphp
+                    @if($vWithDriver)
                     <span class="absolute top-3 right-3 bg-amber-500 text-white px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md"><i class="fas fa-user-tie mr-1"></i> Driver</span>
                     @endif
                 @endif

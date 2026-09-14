@@ -132,7 +132,7 @@
                             <input type="checkbox" name="remember" class="mr-2.5 rounded-lg border-gray-300 text-sky-500 focus:ring-sky-500/30">
                             <span class="group-hover:text-sky-600 transition">Ingat saya</span>
                         </label>
-                        <a href="#" class="text-[12px] text-sky-600 font-medium hover:text-sky-700 hover:underline transition">Lupa password?</a>
+                        <span class="text-[12px] text-gray-400 font-medium" title="Fitur reset password segera hadir. Hubungi admin jika lupa password.">Lupa password? <span class="text-gray-300">Hubungi admin</span></span>
                     </div>
 
                     <button type="submit" id="loginBtn" class="btn-hover w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3.5 rounded-xl font-bold text-[14px] shadow-lg shadow-sky-500/25">
@@ -147,7 +147,8 @@
                     </p>
                 </div>
 
-                {{-- Demo --}}
+                {{-- Demo (hanya di environment local/demo) --}}
+                @if(app()->environment('local', 'development'))
                 <div class="mt-5 pt-5 border-t border-gray-100">
                     <p class="text-[10px] text-gray-300 text-center uppercase tracking-wider font-semibold mb-3">Demo Accounts</p>
                     <div class="grid grid-cols-2 gap-2" x-data>
@@ -161,6 +162,7 @@
                     </div>
                     <p class="text-[10px] text-gray-300 text-center mt-2">Password: <span class="font-semibold text-gray-400">password</span></p>
                 </div>
+                @endif
             </div>
         </div>
     </div>

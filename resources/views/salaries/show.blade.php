@@ -35,7 +35,7 @@
         <div class="flex gap-3 border-t pt-6">
             @if($salary->status == 'draft')
             <form method="POST" action="{{ route('salaries.approve', $salary) }}">@csrf
-                <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold"><i class="fas fa-check mr-1"></i> Setujui & Buat Invoice</button>
+                <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold"><i class="fas fa-check mr-1"></i> Setujui</button>
             </form>
             @endif
             @if($salary->status == 'approved')

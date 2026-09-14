@@ -75,6 +75,12 @@
                         <i class="fas fa-check"></i> Verifikasi
                     </button>
                 </form>
+                <form action="{{ route('superadmin.merchants.suspend', $m->id) }}" method="POST" class="inline" onsubmit="return confirm('Tolak pengajuan toko ini?')">
+                    @csrf
+                    <button class="px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[11px] font-semibold transition inline-flex items-center gap-1" title="Tolak pengajuan">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>
+                </form>
                 @endif
                 @if($m->status === 'active')
                 <form action="{{ route('superadmin.merchants.suspend', $m->id) }}" method="POST" class="inline">

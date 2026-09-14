@@ -36,7 +36,7 @@
                 </span>
                 <span class="stat-glass text-white px-4 py-2.5 rounded-2xl text-[12px] font-semibold flex items-center gap-2">
                     <span class="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><i class="fas fa-tags text-sky-300 text-sm"></i></span>
-                    <div><span class="text-sky-300 font-bold text-sm">Rp {{ number_format($products->min('daily_price'), 0, ',', '.') }}</span><br><span class="text-sky-200/60 text-[10px]">Mulai /hari</span></div>
+                    <div><span class="text-sky-300 font-bold text-sm">{{ $products->isNotEmpty() ? 'Rp ' . number_format($products->min('daily_price'), 0, ',', '.') : '-' }}</span><br><span class="text-sky-200/60 text-[10px]">Mulai /hari</span></div>
                 </span>
             </div>
         </div>

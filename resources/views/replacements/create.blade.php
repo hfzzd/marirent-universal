@@ -44,9 +44,12 @@
                 <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all duration-300 hover:border-gray-300 cursor-pointer">
                     <option value="">Pilih Booking</option>
                     @foreach($bookings as $b)
-                    <option value="{{ $b->id }}" data-vehicle-id="{{ $b->vehicle_id }}">{{ $b->booking_code }} - {{ $b->vehicle?->name ?? '-' }} @if($b->status === 'ongoing')(sedang berjalan)@endif</option>
+                    <option value="{{ $b->id }}" data-vehicle-id="{{ $b->vehicle_id }}" {{ (string) old('booking_id', $preselectedBookingId ?? request('booking_id')) === (string) $b->id ? 'selected' : '' }}>{{ $b->booking_code }} - {{ $b->vehicle?->name ?? '-' }} @if($b->status === 'ongoing')(sedang berjalan)@endif</option>
                     @endforeach
                 </select>
+                @if($bookings->isEmpty())
+                <p class="text-amber-600 text-[12px] mt-2"><i class="fas fa-info-circle mr-1"></i> Belum ada booking ongoing yang memenuhi syarat (status ongoing & sudah melewati setengah masa sewa).</p>
+                @endif
                 @error('booking_id')
                     <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p>
                 @enderror

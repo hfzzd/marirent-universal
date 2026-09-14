@@ -126,9 +126,19 @@
                                 <input type="hidden" name="status" value="cancelled">
                                 <button type="submit" class="text-red-500 text-[11px] font-semibold hover:text-red-600" onclick="return confirm('Batalkan jadwal ini?')"><i class="fas fa-times mr-1"></i>Batal</button>
                             </form>
+                            <form method="POST" action="{{ route('maintenances.destroy', $m) }}" class="inline" onsubmit="return confirm('Hapus jadwal maintenance ini?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-gray-400 hover:text-red-600 text-[11px] font-semibold" title="Hapus"><i class="fas fa-trash"></i></button>
+                            </form>
                         </div>
                         @else
-                        <span class="text-gray-400 text-[11px]">-</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-[11px]">-</span>
+                            <form method="POST" action="{{ route('maintenances.destroy', $m) }}" class="inline" onsubmit="return confirm('Hapus riwayat maintenance ini?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-gray-400 hover:text-red-600 text-[11px]" title="Hapus"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
                         @endif
                     </td>
                 </tr>

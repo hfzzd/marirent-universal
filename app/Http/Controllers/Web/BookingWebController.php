@@ -621,6 +621,9 @@ class BookingWebController extends Controller
         [$merchantId, $categoryId] = $this->staffProductScope();
         foreach ($validated['items'] as $itemData) {
             $item = $this->getItemModel($itemData['type'])::findOrFail($itemData['id']);
+            if (($item->status ?? 'available') !== 'available') {
+                return back()->with('error', 'Salah satu item (' . ($item->name ?? '#' . $item->id) . ') sedang tidak tersedia')->withInput();
+            }
             if ($merchantId !== null && (int) $item->owner_id !== $merchantId) {
                 return back()->with('error', 'Salah satu item tidak termasuk merchant Anda')->withInput();
             }
@@ -1079,22 +1082,7 @@ class BookingWebController extends Controller
 
         Driver::where('id', $driver->id)->update(['status' => 'on_duty']);
 
-        $invoice = $booking->invoice ?? $booking->invoices()->first();
-        if ($invoice) {
-            $paidSoFar = (float) $invoice->paid_amount;
-            $invoice->update([
-                'subtotal' => $newFinal,
-                'total_amount' => $newFinal,
-                'due_amount' => max(0, $newFinal - $paidSoFar),
-                'status' => $paidSoFar >= $newFinal && $newFinal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
-            ]);
-            foreach ($invoice->items as $item) {
-                $item->update([
-                    'unit_price' => $newFinal,
-                    'total_price' => $newFinal,
-                ]);
-            }
-        }
+        $this->syncBookingInvoiceTotal($booking);
 
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
         if ($driver->user_id) {
@@ -1139,22 +1127,7 @@ class BookingWebController extends Controller
 
         $booking->setDpAmountFromPlan();
 
-        $invoice = $booking->invoice ?? $booking->invoices()->first();
-        if ($invoice) {
-            $paidSoFar = (float) $invoice->paid_amount;
-            $invoice->update([
-                'subtotal' => $newFinal,
-                'total_amount' => $newFinal,
-                'due_amount' => max(0, $newFinal - $paidSoFar),
-                'status' => $paidSoFar >= $newFinal && $newFinal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
-            ]);
-            foreach ($invoice->items as $item) {
-                $item->update([
-                    'unit_price' => $newFinal,
-                    'total_price' => $newFinal,
-                ]);
-            }
-        }
+        $this->syncBookingInvoiceTotal($booking);
 
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
 
@@ -1209,41 +1182,18 @@ class BookingWebController extends Controller
 
         $booking->setDpAmountFromPlan();
 
-        // Sinkronkan invoice yang terhubung
+        // Sinkronkan invoice yang terhubung (aman untuk multi-item)
         $invoice = $booking->invoice;
         if (!$invoice && $booking->invoices()->exists()) {
             $invoice = $booking->invoices()->first();
         }
 
         if ($invoice) {
-            $days = max(1, $startDate->diffInDays($endDate));
-            $newTotal = (float) $booking->final_price;
-
-            $oldTotal = (float) $invoice->total_amount;
-            $paidSoFar = (float) $invoice->paid_amount;
-
+            $note = 'Jadwal diubah: ' . $oldStart->format('d M Y H:i') . ' -> ' . ($booking->status === 'ongoing' ? ($booking->actual_start_date?->format('d M Y H:i') ?? $startDate->format('d M Y H:i')) : $startDate->format('d M Y H:i')) . ' s/d ' . $endDate->format('d M Y H:i');
             $invoice->update([
-                'subtotal' => $newTotal,
-                'total_amount' => $newTotal,
-                'discount_amount' => $oldTotal - $newTotal > 0 ? ($oldTotal - $newTotal) + (float) $invoice->discount_amount : $invoice->discount_amount,
-                'due_amount' => max(0, $newTotal - $paidSoFar),
-                'status' => $paidSoFar >= $newTotal && $newTotal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
-                'notes' => trim(($invoice->notes ?? '') . ' | Jadwal diubah: ' . $oldStart->format('d M Y H:i') . ' -> ' . ($booking->status === 'ongoing' ? $booking->actual_start_date?->format('d M Y H:i') : $startDate->format('d M Y H:i')) . ' s/d ' . $endDate->format('d M Y H:i')),
+                'notes' => trim(($invoice->notes ?? '') . ' | ' . $note),
             ]);
-
-            foreach ($invoice->items as $item) {
-                $item->update([
-                    'unit_price' => (float) $booking->final_price,
-                    'total_price' => (float) $booking->final_price,
-                ]);
-            }
-
-            $bookingPaymentStatus = match($invoice->status) {
-                'paid' => 'paid',
-                'partial' => 'partial',
-                default => 'unpaid',
-            };
-            $booking->update(['payment_status' => $bookingPaymentStatus]);
+            $this->syncBookingInvoiceTotal($booking);
         }
 
         $booking->user->notify(new \App\Notifications\BookingStatusChanged($booking, $booking->status, $booking->status));
@@ -1346,6 +1296,72 @@ class BookingWebController extends Controller
         };
     }
 
+    /**
+     * Sinkronkan total invoice dari booking secara aman untuk single & multi-item.
+     * - Total dihitung dari booking terkait (pivot invoice_bookings jika ada).
+     * - Jika invoice 1 baris: update baris tersebut.
+     * - Jika multi-baris: update hanya baris milik booking ini (cocok booking_code), total = sum baris.
+     */
+    private function syncBookingInvoiceTotal(Booking $booking): void
+    {
+        $booking->refresh();
+        $invoice = $booking->invoice ?? $booking->invoices()->first();
+        if (!$invoice) {
+            return;
+        }
+        $invoice->loadMissing(['items', 'bookings']);
+
+        $relatedIds = $invoice->bookings->isNotEmpty()
+            ? $invoice->bookings->pluck('id')
+            : collect([$booking->id]);
+        // Pastikan booking saat ini termasuk
+        if (!$relatedIds->contains($booking->id)) {
+            $relatedIds->push($booking->id);
+        }
+        $relatedBookings = Booking::whereIn('id', $relatedIds)->get();
+        $newTotal = (float) $relatedBookings->sum('final_price');
+
+        // Update baris invoice secara aman
+        $items = $invoice->items;
+        if ($items->count() === 1) {
+            $items->first()->update([
+                'unit_price' => $newTotal,
+                'total_price' => $newTotal,
+            ]);
+        } elseif ($items->count() > 1) {
+            $matched = null;
+            foreach ($items as $it) {
+                if (str_contains($it->description ?? '', $booking->booking_code)) {
+                    $matched = $it;
+                    break;
+                }
+            }
+            if ($matched) {
+                $matched->update([
+                    'unit_price' => (float) $booking->final_price,
+                    'total_price' => (float) $booking->final_price,
+                ]);
+                $newTotal = (float) $invoice->items()->sum('total_price');
+            }
+            // Jika tidak ketemu baris cocok: hanya update total invoice, jangan korup baris lain.
+        }
+
+        $paidSoFar = (float) $invoice->paid_amount;
+        $invoice->update([
+            'subtotal' => $newTotal,
+            'total_amount' => $newTotal,
+            'due_amount' => max(0, $newTotal - $paidSoFar),
+            'status' => $paidSoFar >= $newTotal && $newTotal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
+        ]);
+
+        $bookingPaymentStatus = match($invoice->status) {
+            'paid' => 'paid',
+            'partial' => 'partial',
+            default => 'unpaid',
+        };
+        $booking->update(['payment_status' => $bookingPaymentStatus]);
+    }
+
     public function replaceVehicle(Request $request, Booking $booking)
     {
         if (!in_array(Auth::user()->role, ['superadmin', 'owner', 'admin'])) {
@@ -1375,6 +1391,9 @@ class BookingWebController extends Controller
         if ($replacementVehicle->category_id !== $booking->vehicle->category_id) {
             return back()->with('error', 'Kendaraan pengganti harus dalam kategori yang sama');
         }
+        if (($replacementVehicle->status ?? '') !== 'available' || !($replacementVehicle->is_active ?? true)) {
+            return back()->with('error', 'Kendaraan pengganti sedang tidak tersedia');
+        }
 
         $originalVehicle = $booking->vehicle;
 
@@ -1393,7 +1412,8 @@ class BookingWebController extends Controller
 
         $booking->update(['vehicle_id' => $replacementVehicle->id]);
 
-        $replacementVehicle->update(['status' => 'reserved']);
+        $newVehicleStatus = $booking->status === 'ongoing' ? 'rented' : 'reserved';
+        $replacementVehicle->update(['status' => $newVehicleStatus]);
         $originalVehicle->update(['status' => ($validated['mark_maintenance'] ?? '1') === '1' ? 'maintenance' : 'available']);
 
         $priceDiff = (float) ($validated['price_difference'] ?? 0);
@@ -1402,6 +1422,8 @@ class BookingWebController extends Controller
                 'total_price' => $booking->total_price + $priceDiff,
                 'final_price' => $booking->final_price + $priceDiff,
             ]);
+            $booking->refresh();
+            $this->syncBookingInvoiceTotal($booking);
         }
 
         return back()->with('success', 'Kendaraan berhasil diganti');

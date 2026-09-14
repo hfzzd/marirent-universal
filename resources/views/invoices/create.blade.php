@@ -44,7 +44,7 @@
         {{-- Pilih Sewa --}}
         <div class="glass-card rounded-2xl p-6 border border-sky-100/50 shadow-sm mb-5" x-ref="rows">
             <h3 class="text-[13px] font-extrabold text-navy-800 mb-1 flex items-center gap-2"><i class="fas fa-layer-group text-violet-500"></i> Pilih Sewa <span class="text-red-500">*</span></h3>
-            <p class="text-[11px] text-gray-400 mb-4">Centang dua atau lebih booking untuk digabung dalam satu invoice.</p>
+            <p class="text-[11px] text-gray-400 mb-4">Centang minimal dua booking untuk digabung dalam satu invoice.</p>
 
             <div class="space-y-2">
                 @forelse($eligible as $e)

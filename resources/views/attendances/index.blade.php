@@ -57,7 +57,7 @@
             </div>
             <h3 class="text-lg font-bold text-navy-800 mb-2">Absen Masuk</h3>
             <p class="text-[13px] text-gray-400 mb-5">Klik tombol di bawah untuk melakukan absen masuk</p>
-            <form method="POST" action="{{ route('attendance.check-in') }}" x-data="{ confirm: false }">
+            <form method="POST" action="{{ route('attendance.check-in') }}">
                 @csrf
                 <div class="max-w-sm mx-auto mb-4">
                     <input type="text" name="notes" placeholder="Catatan (opsional)" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">

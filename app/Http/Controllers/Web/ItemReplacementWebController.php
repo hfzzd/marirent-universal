@@ -18,6 +18,7 @@ class ItemReplacementWebController extends Controller
 {
     private function getModel(string $type)
     {
+        $type = $type === 'kamera' ? 'camera' : $type;
         return match ($type) {
             'hp' => new Phone(),
             'camera' => new Camera(),
@@ -27,6 +28,11 @@ class ItemReplacementWebController extends Controller
             'musik' => new MusicalInstrument(),
             default => null,
         };
+    }
+
+    private function normalizeItemType(string $type): string
+    {
+        return $type === 'kamera' ? 'camera' : $type;
     }
 
     public function index(Request $request)
@@ -81,7 +87,7 @@ class ItemReplacementWebController extends Controller
             abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 
-        $type = $request->type ?? 'hp';
+        $type = $this->normalizeItemType($request->type ?? 'hp');
         if (!in_array($type, ['hp', 'camera', 'tenda', 'ps', 'drone', 'musik'])) {
             abort(404);
         }
@@ -181,7 +187,7 @@ class ItemReplacementWebController extends Controller
 
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            'item_type' => 'required|in:hp,camera,tenda,ps,drone,musik',
+            'item_type' => 'required|in:hp,kamera,camera,tenda,ps,drone,musik',
             'original_item_id' => 'required|integer',
             'replacement_item_id' => 'required|integer',
             'reason' => 'required|string|max:2000',
@@ -190,6 +196,7 @@ class ItemReplacementWebController extends Controller
             'mark_maintenance' => 'nullable|in:0,1',
             'damage_notes' => 'nullable|string|max:2000',
         ]);
+        $validated['item_type'] = $this->normalizeItemType($validated['item_type']);
 
         $booking = Booking::findOrFail($validated['booking_id']);
 
@@ -298,7 +305,10 @@ class ItemReplacementWebController extends Controller
 
         $replacementItem = $modelClass::find($replacement->replacement_item_id);
         if ($replacementItem) {
-            $replacementItem->update(['status' => 'reserved']);
+            if (($replacementItem->status ?? '') !== 'available' || !($replacementItem->is_active ?? true)) {
+                return back()->with('error', 'Unit pengganti sudah tidak tersedia');
+            }
+            $replacementItem->update(['status' => ($booking?->status === 'ongoing') ? 'rented' : 'reserved']);
         }
 
         $booking = $replacement->booking;
@@ -307,6 +317,7 @@ class ItemReplacementWebController extends Controller
             'item_id' => $replacement->replacement_item_id,
             'final_price' => $booking->final_price + $replacement->price_difference,
         ]);
+        $this->syncItemReplacementInvoice($booking);
 
         return back()->with('success', 'Penggantian unit disetujui');
     }
@@ -365,5 +376,43 @@ class ItemReplacementWebController extends Controller
         }
 
         return back()->with('success', 'Pengembalian unit berhasil dicatat');
+    }
+
+    private function syncItemReplacementInvoice(Booking $booking): void
+    {
+        if (!$booking) {
+            return;
+        }
+        $booking->refresh();
+        $invoice = $booking->invoice ?? $booking->invoices()->first();
+        if (!$invoice) {
+            return;
+        }
+        $invoice->loadMissing(['bookings', 'items']);
+        $newTotal = (float) $booking->final_price;
+        if ($invoice->bookings->isNotEmpty()) {
+            $ids = $invoice->bookings->pluck('id');
+            if (!$ids->contains($booking->id)) {
+                $ids->push($booking->id);
+            }
+            $newTotal = (float) Booking::whereIn('id', $ids)->sum('final_price');
+        }
+        $paidSoFar = (float) $invoice->paid_amount;
+        $invoice->update([
+            'subtotal' => $newTotal,
+            'total_amount' => $newTotal,
+            'due_amount' => max(0, $newTotal - $paidSoFar),
+            'status' => $paidSoFar >= $newTotal && $newTotal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
+        ]);
+        if ($invoice->items->count() === 1) {
+            $invoice->items->first()->update(['unit_price' => $newTotal, 'total_price' => $newTotal]);
+        } else {
+            foreach ($invoice->items as $it) {
+                if (str_contains($it->description ?? '', $booking->booking_code)) {
+                    $it->update(['unit_price' => (float) $booking->final_price, 'total_price' => (float) $booking->final_price]);
+                    break;
+                }
+            }
+        }
     }
 }

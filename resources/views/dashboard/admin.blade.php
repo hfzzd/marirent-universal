@@ -91,7 +91,7 @@
             <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
                 <i class="fas fa-hourglass-half text-amber-500"></i> Payment Menunggu Verifikasi
             </h3>
-            <a href="{{ route('invoices.index') }}" class="text-xs font-bold text-sky-600 hover:text-sky-700">Verifikasi &rarr;</a>
+            <a href="{{ route('invoices.index', ['status' => 'sent']) }}" class="text-xs font-bold text-sky-600 hover:text-sky-700">Verifikasi &rarr;</a>
         </div>
         <div class="divide-y divide-gray-100 max-h-80 overflow-y-auto">
             @forelse($pendingPayments as $p)
@@ -113,7 +113,7 @@
             <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
                 <i class="fas fa-wrench text-amber-600"></i> Jadwal Maintenance Aktif
             </h3>
-            <a href="{{ route('maintenances.index') }}" class="text-xs font-bold text-sky-600 hover:text-sky-700">Kelola &rarr;</a>
+            <a href="{{ route('maintenances.index', ['status' => 'scheduled']) }}" class="text-xs font-bold text-sky-600 hover:text-sky-700">Kelola &rarr;</a>
         </div>
         <div class="divide-y divide-gray-100 max-h-80 overflow-y-auto">
             @forelse($maintenances as $m)

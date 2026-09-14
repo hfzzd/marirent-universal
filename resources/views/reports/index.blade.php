@@ -6,10 +6,22 @@
     $role = auth()->user()->role;
     $isDriver = $role === 'driver';
     $totalReports = $reports->total();
-    $completedCount = $reports->where('status', 'completed')->count();
-    $issuesCount = $reports->where('status', 'has_issues')->count();
-    $totalDistance = $reports->sum('total_distance');
-    $totalCost = $reports->sum('total_operational_cost');
+    // Hitung ringkasan dari query dasar (tanpa paginasi) agar akurat
+    $summaryQuery = \App\Models\TripReport::query();
+    if ($isDriver) {
+        $dId = \App\Models\Driver::where('user_id', auth()->id())->value('id');
+        // Sesuaikan dengan scope controller jika ada; fallback ke semua milik driver via booking
+        if ($dId) {
+            $summaryQuery->whereHas('booking', fn($q) => $q->where('driver_id', $dId));
+        }
+    }
+    if (request('status')) {
+        // ringkasan global, bukan filter aktif — tetap hitung semua agar konsisten
+    }
+    $completedCount = (clone $summaryQuery)->where('status', 'completed')->count();
+    $issuesCount = (clone $summaryQuery)->where('status', 'has_issues')->count();
+    $totalDistance = (clone $summaryQuery)->sum('total_distance');
+    $totalCost = (clone $summaryQuery)->sum('total_operational_cost');
 @endphp
 
 {{-- SUMMARY CARDS --}}

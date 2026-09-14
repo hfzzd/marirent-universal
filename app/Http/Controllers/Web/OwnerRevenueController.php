@@ -28,6 +28,14 @@ class OwnerRevenueController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->search) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', $search)
+                  ->orWhereHas('items', fn($iq) => $iq->where('description', 'like', $search));
+            });
+        }
+
         $invoices = $query->latest()->paginate(15);
 
         $revenuePerCategory = [];
@@ -131,5 +139,21 @@ class OwnerRevenueController extends Controller
 
         $invoice->delete();
         return redirect()->route('owner.revenue.index')->with('success', 'Pendapatan berhasil dihapus.');
+    }
+
+    public function markPaid(Invoice $invoice)
+    {
+        abort_unless((int) $invoice->owner_id === (int) Auth::id(), 403);
+        abort_unless($invoice->type === 'manual_income', 403);
+        abort_unless(in_array($invoice->status, ['sent', 'partial', 'draft']), 403);
+
+        $invoice->update([
+            'paid_amount' => (float) $invoice->total_amount,
+            'due_amount' => 0,
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        return back()->with('success', 'Pendapatan ditandai sudah diterima.');
     }
 }

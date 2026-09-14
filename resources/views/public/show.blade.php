@@ -19,7 +19,11 @@
         <i class="fas fa-chevron-right text-[9px]"></i>
         <a href="{{ route('products') }}" class="hover:text-sky-600 transition">Produk</a>
         <i class="fas fa-chevron-right text-[9px]"></i>
-        <a href="{{ route('products', ['category' => $vehicle->category->slug ?? '']) }}" class="hover:text-sky-600 transition">{{ $vehicle->category->name ?? '-' }}</a>
+        @if(!empty($vehicle->category?->slug))
+        <a href="{{ route('products', ['category' => $vehicle->category->slug]) }}" class="hover:text-sky-600 transition">{{ $vehicle->category->name ?? '-' }}</a>
+        @else
+        <span class="text-navy-700 font-medium">{{ $vehicle->category->name ?? '-' }}</span>
+        @endif
         <i class="fas fa-chevron-right text-[9px]"></i>
         <span class="text-navy-700 font-medium">{{ $vehicle->name }}</span>
     </nav>
@@ -34,21 +38,22 @@
                         <img :src="mainImage" alt="{{ $vehicle->name }}" class="w-full h-full object-cover transition-all duration-500">
                     @else
                         <div class="text-center">
-                            @if($vehicle->category->slug == 'mobil')
+                            @php $catSlug = $vehicle->category?->slug; @endphp
+                            @if($catSlug == 'mobil')
                                 <i class="fas fa-car text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'motor')
+                            @elseif($catSlug == 'motor')
                                 <i class="fas fa-motorcycle text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'sewa-hp')
+                            @elseif($catSlug == 'sewa-hp')
                                 <i class="fas fa-mobile-alt text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'sewa-kamera')
+                            @elseif($catSlug == 'sewa-kamera')
                                 <i class="fas fa-camera text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'sewa-tenda')
+                            @elseif($catSlug == 'sewa-tenda')
                                 <i class="fas fa-campground text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'sewa-ps')
+                            @elseif($catSlug == 'sewa-ps')
                                 <i class="fas fa-gamepad text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'sewa-drone')
+                            @elseif($catSlug == 'sewa-drone')
                                 <i class="fas fa-drone text-sky-300 text-8xl"></i>
-                            @elseif($vehicle->category->slug == 'sewa-alat-musik')
+                            @elseif($catSlug == 'sewa-alat-musik')
                                 <i class="fas fa-guitar text-sky-300 text-8xl"></i>
                             @else
                                 <i class="fas fa-box text-sky-300 text-8xl"></i>
@@ -57,7 +62,7 @@
                     @endif
 
                     {{-- Wishlist --}}
-                    <button onclick="toggleWishlistShow(this)" class="wishlist-btn absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition shadow-lg">
+                    <button type="button" onclick="toggleWishlistShow(this, '{{ $vehicle->slug }}')" class="wishlist-btn absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition shadow-lg" aria-label="Simpan ke wishlist">
                         <i class="far fa-heart text-lg"></i>
                     </button>
 
@@ -67,16 +72,14 @@
                     </button>
                 </div>
 
-                {{-- Thumbnails --}}
+                {{-- Thumbnails (hanya tampil jika ada gambar utama) --}}
+                @if($vehicle->image)
                 <div class="p-3 flex gap-2 overflow-x-auto">
-                    <button @click="activeThumb = 0; mainImage = '{{ $vehicle->image ? asset('storage/' . $vehicle->image) : '' }}'" :class="activeThumb === 0 ? 'ring-2 ring-sky-500' : ''" class="flex-shrink-0 w-20 h-16 rounded-xl overflow-hidden bg-sky-50 border-2 border-transparent hover:border-sky-300 transition">
-                        @if($vehicle->image)
-                            <img src="{{ asset('storage/' . $vehicle->image) }}" class="w-full h-full object-cover">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center"><i class="fas fa-image text-sky-300"></i></div>
-                        @endif
+                    <button type="button" @click="activeThumb = 0; mainImage = '{{ $vehicle->image ? asset('storage/' . $vehicle->image) : '' }}'" :class="activeThumb === 0 ? 'ring-2 ring-sky-500' : ''" class="flex-shrink-0 w-20 h-16 rounded-xl overflow-hidden bg-sky-50 border-2 border-transparent hover:border-sky-300 transition">
+                        <img src="{{ asset('storage/' . $vehicle->image) }}" class="w-full h-full object-cover" alt="{{ $vehicle->name }}">
                     </button>
                 </div>
+                @endif
             </div>
 
             {{-- VEHICLE INFO --}}
@@ -224,9 +227,21 @@
                 @endif
 
                 @auth
-                <a href="{{ route('bookings.create', ['vehicle' => $vehicle->slug]) }}" class="btn-primary text-white w-full py-3 rounded-xl font-semibold text-center block">
-                    <i class="fas fa-calendar-plus mr-2"></i> Booking Sekarang
-                </a>
+                @if(auth()->user()->role === 'user')
+                    @if($vehicle->status === 'available')
+                    <a href="{{ route('bookings.create', ['vehicle' => $vehicle->slug]) }}" class="btn-primary text-white w-full py-3 rounded-xl font-semibold text-center block">
+                        <i class="fas fa-calendar-plus mr-2"></i> Booking Sekarang
+                    </a>
+                    @else
+                    <button disabled class="bg-gray-100 text-gray-400 w-full py-3 rounded-xl font-semibold text-center block cursor-not-allowed">
+                        <i class="fas fa-ban mr-2"></i> Tidak Tersedia
+                    </button>
+                    @endif
+                @else
+                    <div class="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-[12px]">
+                        <i class="fas fa-info-circle mr-1"></i> Booking hanya dapat dilakukan oleh akun User. Silakan login sebagai user untuk menyewa.
+                    </div>
+                @endif
                 @else
                 <a href="{{ route('login') }}" class="btn-primary text-white w-full py-3 rounded-xl font-semibold text-center block">
                     <i class="fas fa-sign-in-alt mr-2"></i> Login untuk Booking
@@ -258,21 +273,21 @@
                 <div class="h-40 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center overflow-hidden">
                     @if($rv->image)
                         <img src="{{ asset('storage/' . $rv->image) }}" alt="{{ $rv->name }}" loading="lazy" class="w-full h-full object-cover">
-                    @elseif($rv->category->slug == 'mobil')
+                    @elseif(($rv->category?->slug) == 'mobil')
                         <i class="fas fa-car text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'motor')
+                    @elseif(($rv->category?->slug) == 'motor')
                         <i class="fas fa-motorcycle text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'sewa-hp')
+                    @elseif(($rv->category?->slug) == 'sewa-hp')
                         <i class="fas fa-mobile-alt text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'sewa-kamera')
+                    @elseif(($rv->category?->slug) == 'sewa-kamera')
                         <i class="fas fa-camera text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'sewa-tenda')
+                    @elseif(($rv->category?->slug) == 'sewa-tenda')
                         <i class="fas fa-campground text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'sewa-ps')
+                    @elseif(($rv->category?->slug) == 'sewa-ps')
                         <i class="fas fa-gamepad text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'sewa-drone')
+                    @elseif(($rv->category?->slug) == 'sewa-drone')
                         <i class="fas fa-drone text-sky-300 text-5xl"></i>
-                    @elseif($rv->category->slug == 'sewa-alat-musik')
+                    @elseif(($rv->category?->slug) == 'sewa-alat-musik')
                         <i class="fas fa-guitar text-sky-300 text-5xl"></i>
                     @else
                         <i class="fas fa-camera text-sky-300 text-5xl"></i>
@@ -309,15 +324,41 @@ function imageGallery() {
     }
 }
 
-function toggleWishlistShow(btn) {
-    btn.classList.toggle('active');
+function toggleWishlistShow(btn, slug) {
+    const key = 'marirent_wishlist';
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { list = []; }
+    const idx = list.indexOf(slug);
+    if (idx >= 0) {
+        list.splice(idx, 1);
+        btn.classList.remove('active');
+    } else {
+        list.push(slug);
+        btn.classList.add('active');
+    }
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) {}
     const icon = btn.querySelector('i');
     if (btn.classList.contains('active')) {
-        icon.classList.remove('far'); icon.classList.add('fas');
+        icon.classList.remove('far'); icon.classList.add('fas', 'text-red-500');
     } else {
-        icon.classList.remove('fas'); icon.classList.add('far');
+        icon.classList.remove('fas', 'text-red-500'); icon.classList.add('far');
     }
 }
+
+// Tandai status wishlist saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const list = JSON.parse(localStorage.getItem('marirent_wishlist') || '[]');
+        if (list.includes('{{ $vehicle->slug }}')) {
+            const btn = document.querySelector('.wishlist-btn');
+            if (btn) {
+                btn.classList.add('active');
+                const icon = btn.querySelector('i');
+                icon.classList.remove('far'); icon.classList.add('fas', 'text-red-500');
+            }
+        }
+    } catch (e) {}
+});
 
 function shareVehicle() {
     if (navigator.share) {

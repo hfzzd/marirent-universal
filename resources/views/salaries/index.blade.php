@@ -4,24 +4,23 @@
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
     <div class="flex flex-col sm:flex-row gap-2 flex-wrap">
-        <form action="{{ route('salaries.index') }}" method="GET" class="flex gap-2">
+        <form action="{{ route('salaries.index') }}" method="GET" class="flex gap-2 flex-wrap items-end">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama driver..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-52">
-            @if(request('company_id'))<input type="hidden" name="company_id" value="{{ request('company_id') }}">@endif
-            @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
-            @if(request('period_month'))<input type="hidden" name="period_month" value="{{ request('period_month') }}">@endif
-            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
-        </form>
-        @if(isset($companies) && $companies->isNotEmpty())
-        <form action="{{ route('salaries.index') }}" method="GET" class="flex gap-2">
-            <select name="company_id" onchange="this.form.submit()" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
+            @if(isset($companies) && $companies->isNotEmpty())
+            <select name="company_id" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
                 <option value="">Semua Company</option>
                 @foreach($companies as $c)
                 <option value="{{ $c->id }}" {{ request('company_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->city ?? '-' }})</option>
                 @endforeach
             </select>
+            @endif
+            <input type="month" name="period_month" value="{{ request('period_month') }}" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
+            @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i> Filter</button>
+            @if(request()->hasAny(['search','company_id','period_month','status']))
+            <a href="{{ route('salaries.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2 rounded-lg text-[13px] transition border border-red-100"><i class="fas fa-times"></i></a>
+            @endif
         </form>
-        @endif
-        <input type="month" name="period_month" value="{{ request('period_month') }}" onchange="const url=new URL(window.location.href); url.searchParams.set('period_month', this.value); window.location=url;" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
     </div>
     <a href="{{ route('salaries.create', request()->has('company_id') ? ['company_id' => request('company_id')] : []) }}" class="btn-primary text-white px-4 py-2 rounded-lg text-[13px] font-medium text-center"><i class="fas fa-plus mr-1.5"></i> Input Gaji</a>
 </div>

@@ -244,7 +244,9 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
             ->when(($ownerId = $this->companyOwnerId()), fn($q) => $q->where('owner_id', $ownerId))
             ->get();
 
-        return view('replacements.create', compact('bookings', 'vehicles'));
+        $preselectedBookingId = $request->query('booking_id') ?: old('booking_id');
+
+        return view('replacements.create', compact('bookings', 'vehicles', 'preselectedBookingId'));
     }
 
     protected function isHalfPeriodElapsed(Booking $booking): bool
@@ -318,6 +320,10 @@ if (in_array($role, ['superadmin', 'owner', 'admin'])) {
         }
 $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
 
+        if (($replacementVehicle->status ?? '') !== 'available' || !($replacementVehicle->is_active ?? true)) {
+            return back()->with('error', 'Kendaraan pengganti sedang tidak tersedia')->withInput();
+        }
+
         $ownerId = $this->companyOwnerId();
         if (in_array($role, ['owner', 'admin']) && (int) $replacementVehicle->owner_id !== $ownerId) {
             abort(403, 'Kendaraan pengganti bukan milik company Anda');
@@ -363,19 +369,27 @@ $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
         }
         $this->guardCompanyReplacement($replacement);
 
+        if ($replacement->status === 'approved') {
+            return back()->with('error', 'Penggantian sudah disetujui sebelumnya');
+        }
+
+        $booking = $replacement->booking;
+        $replacementVehicle = Vehicle::find($replacement->replacement_vehicle_id);
+        if ($replacementVehicle && (($replacementVehicle->status ?? '') !== 'available' || !($replacementVehicle->is_active ?? true))) {
+            return back()->with('error', 'Kendaraan pengganti sudah tidak tersedia');
+        }
+
         $replacement->update([
             'status' => 'approved',
             'approved_by' => Auth::id(),
             'swapped_at' => now(),
         ]);
 
-        $booking = $replacement->booking;
         $originalVehicle = Vehicle::find($replacement->original_vehicle_id);
-        $replacementVehicle = Vehicle::find($replacement->replacement_vehicle_id);
 
         if ($booking && $replacementVehicle) {
             $booking->update(['vehicle_id' => $replacement->replacement_vehicle_id]);
-            $replacementVehicle->update(['status' => 'reserved']);
+            $replacementVehicle->update(['status' => $booking->status === 'ongoing' ? 'rented' : 'reserved']);
         }
 
         if ($originalVehicle) {
@@ -390,6 +404,7 @@ $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
                 'total_price' => $booking->total_price + $priceDiff,
                 'final_price' => $booking->final_price + $priceDiff,
             ]);
+            $this->syncReplacementInvoice($booking);
         }
 
         return back()->with('success', 'Penggantian kendaraan disetujui');
@@ -440,9 +455,13 @@ $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
             $originalVehicle = Vehicle::find($replacement->original_vehicle_id);
             $replacementVehicle = Vehicle::find($replacement->replacement_vehicle_id);
 
+            if ($replacementVehicle && (($replacementVehicle->status ?? '') !== 'available' || !($replacementVehicle->is_active ?? true))) {
+                return back()->with('error', 'Kendaraan pengganti sudah tidak tersedia');
+            }
+
             if ($booking && $replacementVehicle) {
                 $booking->update(['vehicle_id' => $replacement->replacement_vehicle_id]);
-                $replacementVehicle->update(['status' => 'reserved']);
+                $replacementVehicle->update(['status' => $booking->status === 'ongoing' ? 'rented' : 'reserved']);
             }
 
             if ($originalVehicle) {
@@ -457,9 +476,46 @@ $replacementVehicle = Vehicle::findOrFail($validated['replacement_vehicle_id']);
                     'total_price' => $booking->total_price + $priceDiff,
                     'final_price' => $booking->final_price + $priceDiff,
                 ]);
+                $this->syncReplacementInvoice($booking);
             }
         }
 
         return back()->with('success', 'Status penggantian berhasil diubah dari ' . ucfirst($oldStatus) . ' ke ' . ucfirst($newStatus));
+    }
+
+    private function syncReplacementInvoice(Booking $booking): void
+    {
+        $booking->refresh();
+        $invoice = $booking->invoice ?? $booking->invoices()->first();
+        if (!$invoice) {
+            return;
+        }
+        $newTotal = (float) $booking->final_price;
+        // Jika invoice multi-booking, hitung ulang dari semua booking terkait
+        $invoice->loadMissing(['bookings', 'items']);
+        if ($invoice->bookings->isNotEmpty()) {
+            $ids = $invoice->bookings->pluck('id');
+            if (!$ids->contains($booking->id)) {
+                $ids->push($booking->id);
+            }
+            $newTotal = (float) Booking::whereIn('id', $ids)->sum('final_price');
+        }
+        $paidSoFar = (float) $invoice->paid_amount;
+        $invoice->update([
+            'subtotal' => $newTotal,
+            'total_amount' => $newTotal,
+            'due_amount' => max(0, $newTotal - $paidSoFar),
+            'status' => $paidSoFar >= $newTotal && $newTotal > 0 ? 'paid' : ($paidSoFar > 0 ? 'partial' : 'sent'),
+        ]);
+        if ($invoice->items->count() === 1) {
+            $invoice->items->first()->update(['unit_price' => $newTotal, 'total_price' => $newTotal]);
+        } else {
+            foreach ($invoice->items as $it) {
+                if (str_contains($it->description ?? '', $booking->booking_code)) {
+                    $it->update(['unit_price' => (float) $booking->final_price, 'total_price' => (float) $booking->final_price]);
+                    break;
+                }
+            }
+        }
     }
 }

@@ -1,11 +1,18 @@
 @extends('layouts.dashboard')
 @section('page-title', 'Penggantian Kendaraan')
 @section('content')
-@php $role = auth()->user()->role; @endphp
+@php
+    $role = auth()->user()->role;
+    $canRequest = in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin']);
+    $hasEligibleBookings = isset($modalBookings) && count($modalBookings) > 0;
+@endphp
+
+{{-- Wrapper Alpine tunggal: modal + tombol harus dalam satu scope agar @click="open = true" berfungsi --}}
+<div x-data="{ open: false, loading: false }">
 
 {{-- MODAL PENGAJUAN PENGGANTIAN --}}
-@if(in_array($role, ['driver', 'user']) && isset($modalBookings) && isset($modalVehicles))
-<div x-data="{ open: false, loading: false }" x-cloak>
+@if($canRequest && isset($modalBookings) && isset($modalVehicles))
+<div x-cloak>
     {{-- Backdrop --}}
     <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" @click="open = false"></div>
 
@@ -117,13 +124,23 @@
 </div>
 @endif
 
-{{-- SUMMARY --}}
+{{-- SUMMARY (hitung dari DB, bukan halaman aktif) --}}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     @php
-        $allCount = $replacements->total();
-        $pendingCount = $replacements->filter(fn($r) => $r->status === 'pending')->count();
-        $approvedCount = $replacements->filter(fn($r) => $r->status === 'approved')->count();
-        $rejectedCount = $replacements->filter(fn($r) => $r->status === 'rejected')->count();
+        $baseCountQuery = \App\Models\VehicleReplacement::query();
+        // samakan scope role dengan controller agar angka konsisten
+        if (in_array($role, ['driver', 'staff'], true)) {
+            $dId = \App\Models\Driver::where('user_id', auth()->id())->value('id');
+            if ($dId) {
+                $baseCountQuery->whereHas('booking', fn($q) => $q->where('driver_id', $dId));
+            }
+        } elseif ($role === 'user') {
+            $baseCountQuery->where('requested_by', auth()->id());
+        }
+        $allCount = (clone $baseCountQuery)->count();
+        $pendingCount = (clone $baseCountQuery)->where('status', 'pending')->count();
+        $approvedCount = (clone $baseCountQuery)->where('status', 'approved')->count();
+        $rejectedCount = (clone $baseCountQuery)->where('status', 'rejected')->count();
     @endphp
     <div class="glass-card rounded-2xl p-4 border border-sky-100/50">
         <div class="flex items-center gap-3">
@@ -171,10 +188,25 @@
         <a href="{{ route('replacements.index', ['status' => 'approved']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'approved' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600' }}">Disetujui</a>
         <a href="{{ route('replacements.index', ['status' => 'rejected']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'rejected' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300 hover:text-red-600' }}">Ditolak</a>
     </div>
-    @if(in_array($role, ['driver', 'user']) && isset($modalBookings) && count($modalBookings) > 0)
-    <button @click="open = true" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5 justify-center">
-        <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
-    </button>
+    @if($canRequest)
+    <div class="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+        @if($hasEligibleBookings)
+        <button type="button" @click="open = true" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5 justify-center">
+            <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
+        </button>
+        @else
+        <a href="{{ route('replacements.create') }}" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 inline-flex items-center gap-1.5 justify-center">
+            <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
+        </a>
+        @endif
+        {{-- Fallback tanpa JS: selalu bisa ke form --}}
+        <a href="{{ route('replacements.create') }}" class="bg-white text-sky-600 border border-sky-200 hover:border-sky-400 px-4 py-2 rounded-xl text-[12px] font-semibold transition inline-flex items-center gap-1.5 justify-center">
+            <i class="fas fa-arrow-right text-[10px]"></i> Ke Form
+        </a>
+    </div>
+    @if(!$hasEligibleBookings)
+    <p class="text-[11px] text-gray-400 w-full sm:text-right mt-1">Belum ada booking ongoing yang melewati setengah masa sewa. Cek syarat di form.</p>
+    @endif
     @endif
 </div>
 
@@ -236,11 +268,9 @@
                      <form method="POST" action="{{ route('replacements.approve', $r) }}" class="inline">@csrf
                          <button class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-check text-[9px]"></i> Setuju</button>
                      </form>
-                     @if(in_array($role, ['superadmin','owner']))
-                     <form method="POST" action="{{ route('replacements.reject', $r) }}" class="inline">@csrf
+                     <form method="POST" action="{{ route('replacements.reject', $r) }}" class="inline" onsubmit="return confirm('Tolak permintaan ini?')">@csrf
                          <button class="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-times text-[9px]"></i> Tolak</button>
                      </form>
-                     @endif
                      @endif
                     <a href="{{ route('replacements.show', $r) }}" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1">
                         <i class="fas fa-eye text-[9px]"></i> Detail
@@ -255,7 +285,12 @@
             <i class="fas fa-right-left text-sky-300 text-3xl"></i>
         </div>
         <h3 class="text-lg font-bold text-navy-800 mb-2">Belum ada permintaan penggantian</h3>
-        <p class="text-gray-400 text-[13px]">{{ $role === 'user' ? 'Ajukan penggantian kendaraan dari menu booking' : 'Permintaan penggantian akan muncul di sini' }}</p>
+        <p class="text-gray-400 text-[13px]">{{ in_array($role, ['driver', 'staff', 'user']) ? 'Gunakan tombol Ajukan Penggantian di atas atau dari detail booking untuk mengajukan' : 'Permintaan penggantian akan muncul di sini' }}</p>
+        @if($canRequest)
+        <a href="{{ route('replacements.create') }}" class="mt-4 inline-flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105">
+            <i class="fas fa-plus text-[10px]"></i> Ajukan Sekarang
+        </a>
+        @endif
     </div>
     @endforelse
 </div>
@@ -263,5 +298,7 @@
 @if($replacements->hasPages())
 <div class="mt-8 flex justify-center">{{ $replacements->links() }}</div>
 @endif
+
+</div>{{-- /wrapper Alpine tunggal --}}
 
 @endsection

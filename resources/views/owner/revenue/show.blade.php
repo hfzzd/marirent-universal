@@ -88,6 +88,18 @@
                 <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-lg text-xs font-semibold transition border border-red-100"><i class="fas fa-trash mr-1"></i> Hapus</button>
             </form>
         </div>
+        @elseif(in_array($invoice->status, ['sent', 'partial']))
+        <div class="border-t mt-6 pt-6 flex gap-2 flex-wrap">
+            <form method="POST" action="{{ route('owner.revenue.mark-paid', $invoice) }}" class="inline" onsubmit="return confirm('Tandai pendapatan ini sudah diterima/lunas?')">
+                @csrf
+                <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fas fa-check mr-1"></i> Tandai Sudah Diterima</button>
+            </form>
+            <p class="text-[11px] text-gray-400 w-full mt-1">Pendapatan manual dilunasi saat dana sudah diterima (cash/transfer langsung).</p>
+        </div>
+        @elseif($invoice->status === 'paid')
+        <div class="border-t mt-6 pt-6">
+            <p class="text-[12px] text-emerald-600 font-semibold"><i class="fas fa-check-circle mr-1"></i> Pendapatan sudah diterima.</p>
+        </div>
         @endif
     </div>
 </div>

@@ -90,7 +90,7 @@
     </div>
 
     <div class="p-4 border-t border-gray-100">
-        {{ $rentals->links() }}
+        {{ $rentals->withQueryString()->links() }}
     </div>
 </div>
 @endsection

@@ -95,7 +95,7 @@
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Gaji Terakhir</p>
                 <h3 class="text-xl font-black text-navy-800 mt-1">Rp {{ number_format($lastSalary?->total_salary ?? 0, 0, ',', '.') }}</h3>
-                <span class="text-[10px] text-gray-400 mt-2 block">{{ $lastSalary?->period ? \Carbon\Carbon::parse($lastSalary->period)->translatedFormat('F Y') : 'Belum ada slip' }}</span>
+                <span class="text-[10px] text-gray-400 mt-2 block">{{ $lastSalary?->period_month ? \Carbon\Carbon::createFromFormat('Y-m', $lastSalary->period_month)->translatedFormat('F Y') : 'Belum ada slip' }}</span>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/25">
                 <i class="fas fa-money-bill-wave"></i>

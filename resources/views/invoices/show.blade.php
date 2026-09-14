@@ -189,7 +189,7 @@
                         <button type="button" @click="showRejectModal{{ $p->id }} = true" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"><i class="fas fa-times mr-1"></i>Tolak</button>
 
                         {{-- Reject Modal --}}
-                        <div x-show="showRejectModal{{ $p->id }}" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div x-show="showRejectModal{{ $p->id }}" x-transition x-cloak style="display: none;" @click.self="showRejectModal{{ $p->id }} = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                             <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4" @click.away="showRejectModal{{ $p->id }} = false">
                                 <h3 class="font-bold text-navy-800 mb-3">Tolak Pembayaran</h3>
                                 <form method="POST" action="{{ route('invoices.reject-payment', $p) }}">

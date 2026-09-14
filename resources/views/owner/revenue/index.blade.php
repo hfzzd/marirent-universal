@@ -75,6 +75,10 @@
 <div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
     <form action="{{ route('owner.revenue.index') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
         <div class="flex-1 w-full">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari Nomor Invoice</label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="INV-... / deskripsi..." class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+        </div>
+        <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Kategori</label>
             <select name="category_id" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[140px]">
                 <option value="">Semua Kategori</option>
@@ -97,7 +101,7 @@
             <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
                 <i class="fas fa-filter mr-1"></i> Filter
             </button>
-            @if(request()->hasAny(['category_id','status']))
+            @if(request()->hasAny(['category_id','status','search']))
             <a href="{{ route('owner.revenue.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
                 <i class="fas fa-times text-[10px]"></i> Reset
             </a>

@@ -11,15 +11,20 @@
         <p class="text-[11px] text-gray-400 mt-0.5">{{ $isUser ? 'Lacak status pemesanan kendaraan dan barang Anda' : 'Kelola seluruh pemesanan' }}</p>
     </div>
     @if($isUser)
-    <a href="{{ route('home') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 inline-flex items-center gap-1.5">
-        <i class="fas fa-plus text-[10px]"></i> Booking Baru
-    </a>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('bookings.create-multi') }}" class="bg-white border border-sky-200 hover:border-sky-400 hover:text-sky-600 text-sky-600 px-4 py-2 rounded-xl text-[12px] font-semibold inline-flex items-center gap-1.5 transition">
+            <i class="fas fa-boxes text-[10px]"></i> Multi-Item
+        </a>
+        <a href="{{ route('home') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 inline-flex items-center gap-1.5">
+            <i class="fas fa-plus text-[10px]"></i> Booking Baru
+        </a>
+    </div>
     @elseif(in_array(auth()->user()->role, ['superadmin', 'owner']))
     <div class="flex items-center gap-2">
         <a href="{{ route('bookings.manual-create') }}" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-emerald-500/25 inline-flex items-center gap-1.5 transition">
             <i class="fas fa-user-pen text-[10px]"></i> Booking Manual
         </a>
-        <a href="{{ route('superadmin.monitoring') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold inline-flex items-center gap-1.5 transition">
+        <a href="{{ route('superadmin.scheduler') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold inline-flex items-center gap-1.5 transition">
             <i class="fas fa-calendar-days text-[10px]"></i> Scheduler
         </a>
     </div>

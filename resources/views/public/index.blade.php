@@ -180,13 +180,13 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             @foreach([
-                ['img' => 'images/app/brand-mobil.png', 't' => 'Brand Mobil'],
-                ['img' => 'images/app/kendaraan.png', 't' => 'Brand Motor'],
-                ['img' => 'images/app/brand-kamera.png', 't' => 'Brand Kamera'],
-                ['img' => 'images/app/brand-hp.png', 't' => 'Brand Handphone'],
-                ['img' => 'images/app/brand-camping.png', 't' => 'Brand Alat Camping'],
+                ['img' => 'images/app/brand-mobil.png', 't' => 'Brand Mobil', 'link' => 'public.brands', 'anchor' => '#kategori-mobil'],
+                ['img' => 'images/app/kendaraan.png', 't' => 'Brand Motor', 'link' => 'public.brands', 'anchor' => '#kategori-motor'],
+                ['img' => 'images/app/brand-kamera.png', 't' => 'Brand Kamera', 'link' => 'public.brands', 'anchor' => '#kategori-kamera'],
+                ['img' => 'images/app/brand-hp.png', 't' => 'Brand Handphone', 'link' => 'public.brands', 'anchor' => '#kategori-hp'],
+                ['img' => 'images/app/brand-camping.png', 't' => 'Brand Alat Camping', 'link' => 'public.brands', 'anchor' => '#kategori-tenda'],
             ] as $b)
-            <a href="{{ route('public.brands') }}" class="card-clean overflow-hidden group reveal">
+            <a href="{{ route($b['link']) }}{{ $b['anchor'] }}" class="card-clean overflow-hidden group reveal">
                 <div class="overflow-hidden bg-white"><img src="{{ asset($b['img']) }}" alt="{{ $b['t'] }}" class="w-full object-cover object-top max-h-56 group-hover:scale-[1.02] transition-transform duration-500" loading="lazy"></div>
                 <div class="p-5 flex items-center justify-between"><p class="font-bold text-navy-900">{{ $b['t'] }}</p><span class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center group-hover:bg-sky-700 transition-colors"><i class="fas fa-arrow-right text-sm"></i></span></div>
             </a>

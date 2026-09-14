@@ -184,8 +184,8 @@
                         'Bagaimana pembayarannya?' => 'Transfer bank, e-wallet (Dana, OVO, GoPay), atau COD.',
                         'Apakah unit diinspeksi?' => 'Ya, inspeksi ketat sebelum & sesudah sewa untuk keamanan Anda.',
                     ] as $q => $a)
-                    <div class="bg-sky-50 rounded-xl p-3 hover:bg-sky-100 transition-colors cursor-pointer group">
-                        <p class="font-semibold text-navy-800 text-[12px] mb-1 group-hover:text-sky-700">{{ $q }}</p>
+                    <div class="bg-sky-50 rounded-xl p-3 transition-colors">
+                        <p class="font-semibold text-navy-800 text-[12px] mb-1">{{ $q }}</p>
                         <p class="text-gray-500 text-[11px]">{{ $a }}</p>
                     </div>
                     @endforeach
@@ -205,7 +205,7 @@
                         </div>
                         <p class="text-sky-700 text-[13px] font-semibold">Lokasi Kantor Kami</p>
                         <p class="text-sky-500 text-[11px] mt-0.5">Jl. Sudirman No. 123, Jakarta Selatan</p>
-                        <a href="https://maps.google.com" target="_blank" class="inline-flex items-center gap-1.5 mt-3 text-sky-600 text-[11px] font-semibold hover:text-sky-700">
+                        <a href="https://maps.google.com/?q=Jl.+Sudirman+No.+123+Jakarta+Selatan" target="_blank" class="inline-flex items-center gap-1.5 mt-3 text-sky-600 text-[11px] font-semibold hover:text-sky-700">
                             <i class="fas fa-external-link-alt text-[9px]"></i> Buka di Google Maps
                         </a>
                     </div>

@@ -277,7 +277,21 @@ class SuperadminController extends Controller
 
     public function monitoringVehicle(Request $request)
     {
-        $vehicles = \App\Models\Vehicle::with('category', 'owner')->latest()->paginate(20);
+        $query = \App\Models\Vehicle::with('category', 'owner')->latest();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('license_plate', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $vehicles = $query->paginate(20)->withQueryString();
         $totalAvailable = \App\Models\Vehicle::where('status', 'available')->count();
         $totalRented = \App\Models\Vehicle::where('status', 'rented')->count();
         $totalMaintenance = \App\Models\Vehicle::where('status', 'maintenance')->count();

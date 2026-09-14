@@ -26,25 +26,25 @@
     </div>
     <div class="flex items-center flex-wrap gap-3">
         <span class="{{ $stLabel[1] }} text-sm font-semibold px-4 py-2 rounded-xl">{{ $stLabel[0] }}</span>
-        @if(in_array($rental->status, ['pending', 'confirmed', 'ongoing']) && (auth()->user()->isSuperAdmin() || auth()->user()->isOwner()))
-            <form method="POST" action="{{ route('rentals.complete', $rental->id) }}" class="inline">
+        @if(in_array($rental->status, ['confirmed', 'ongoing']) && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff()))
+            <form method="POST" action="{{ route('rentals.complete', $rental->id) }}" class="inline" onsubmit="return confirm('Tandai rental ini selesai?')">
                 @csrf
                 <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-emerald-500/25">Selesai</button>
             </form>
-            @if($rental->status === 'pending' && (auth()->user()->isSuperAdmin() || auth()->user()->isOwner()))
-                <form method="POST" action="{{ route('rentals.confirm', $rental->id) }}" class="inline">
-                    @csrf
-                    <button type="submit" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-sky-500/25">Konfirmasi</button>
-                </form>
-            @endif
-            @if(in_array($rental->status, ['pending', 'confirmed']))
-                <a href="{{ route('rentals.edit', $rental->id) }}" class="bg-gray-100 hover:bg-gray-200 text-navy-800 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Edit</a>
-                <form method="POST" action="{{ route('rentals.cancel', $rental->id) }}" class="inline">
-                    @csrf
-                    <input type="hidden" name="cancelled_reason" value="Dibatalkan oleh admin">
-                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Batalkan</button>
-                </form>
-            @endif
+        @endif
+        @if($rental->status === 'pending' && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff()))
+            <form method="POST" action="{{ route('rentals.confirm', $rental->id) }}" class="inline">
+                @csrf
+                <button type="submit" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-sky-500/25">Konfirmasi</button>
+            </form>
+        @endif
+        @if(in_array($rental->status, ['pending', 'confirmed']) && (auth()->user()->isSuperAdmin() || auth()->user()->isMerchantStaff() || (auth()->id() === $rental->user_id)))
+            <a href="{{ route('rentals.edit', $rental->id) }}" class="bg-gray-100 hover:bg-gray-200 text-navy-800 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Edit</a>
+            <form method="POST" action="{{ route('rentals.cancel', $rental->id) }}" class="inline" onsubmit="return confirm('Yakin batalkan rental ini?')">
+                @csrf
+                <input type="text" name="cancelled_reason" required placeholder="Alasan pembatalan" class="border border-gray-200 rounded-xl px-3 py-2 text-sm mr-2 w-48" value="Dibatalkan oleh admin">
+                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Batalkan</button>
+            </form>
         @endif
     </div>
 </div>

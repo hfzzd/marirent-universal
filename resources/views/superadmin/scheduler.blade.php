@@ -37,8 +37,11 @@
             </h2>
             <p class="text-xs text-gray-400 mt-0.5">Jadwal pembayaran, penjemputan, dan pemulangan kendaraan secara real-time.</p>
         </div>
-        <button @click="exportCalendar()" class="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-semibold text-navy-700 hover:border-sky-300 hover:text-sky-600 transition">
-            <i class="fas fa-download text-[10px]"></i> Export
+        <button type="button" @click="exportCalendar()" class="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-semibold text-navy-700 hover:border-sky-300 hover:text-sky-600 transition">
+            <i class="fas fa-file-csv text-[10px]"></i> Export CSV
+        </button>
+        <button type="button" onclick="window.print()" class="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-semibold text-navy-700 hover:border-sky-300 hover:text-sky-600 transition">
+            <i class="fas fa-print text-[10px]"></i> Print
         </button>
     </div>
 
@@ -389,9 +392,22 @@ function schedulerApp() {
         },
 
         exportCalendar() {
-            if (this.calendar) {
-                window.print();
-            }
+            // Export event scheduler ke CSV (data dari endpoint scheduler/events)
+            fetch('{{ route('superadmin.scheduler.events') }}')
+                .then(r => r.json())
+                .then(events => {
+                    if (!events || !events.length) { alert('Tidak ada event untuk diexport.'); return; }
+                    const rows = [['Judul', 'Mulai', 'Selesai', 'Status']];
+                    events.forEach(e => rows.push([e.title ?? '', e.start ?? '', e.end ?? '', e.status ?? '']));
+                    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'scheduler-{{ date('Y-m-d') }}.csv';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                })
+                .catch(() => alert('Gagal mengexport data.'));
         }
     };
 }

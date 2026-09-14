@@ -106,7 +106,7 @@
                     <i class="fas fa-store w-5 mr-2.5 text-sm"></i> Merchant / Toko
                 </a>
                 <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
-                    <i class="fas fa-hand-holding-usd w-5 mr-2.5 text-sm"></i> Komisi Platform
+                    <i class="fas fa-hand-holding-usd w-5 mr-2.5 text-sm"></i> Komisi & Keuangan
                 </a>
                 <a href="{{ route('superadmin.demo-requests') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.demo-requests*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Jadwal Demo
@@ -115,9 +115,6 @@
                 </a>
 
                 <div class="sidebar-group-title mt-4">Keuangan</div>
-                <a href="{{ route('superadmin.finance') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.finance') ? 'active' : '' }}">
-                    <i class="fas fa-wallet w-5 mr-2.5 text-sm"></i> Finance
-                </a>
                 <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice
                 </a>
@@ -379,10 +376,10 @@
                                 .then(r => r.json()).then(d => notifCount = d.count);
                         }, 30000);
                     ">
-                        <a href="{{ route('notifications.index') }}" class="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-sky-50 transition" @click.prevent="notifOpen = !notifOpen">
+                        <button type="button" @click="notifOpen = !notifOpen" class="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-sky-50 transition" aria-label="Notifikasi">
                             <i class="fas fa-bell text-navy-500 text-sm"></i>
                             <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak></span>
-                        </a>
+                        </button>
                         <div x-show="notifOpen" @click.away="notifOpen = false" x-transition class="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
                             <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
                                 <span class="text-[13px] font-bold text-navy-800">Notifikasi</span>
@@ -397,7 +394,7 @@
                     </div>
 
                     <div class="relative" x-data="{ open: false }">
-                        <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="flex items-center gap-2.5 hover:bg-sky-50 rounded-xl px-2.5 py-1.5 transition">
+                        <button type="button" @click="open = !open" class="flex items-center gap-2.5 hover:bg-sky-50 rounded-xl px-2.5 py-1.5 transition">
                             <div class="w-8 h-8 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-md shadow-sky-500/20">
                                 <span class="text-white font-bold text-xs">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
                             </div>
@@ -407,7 +404,7 @@
                             </div>
                             <i class="fas fa-chevron-down text-[10px] text-navy-400 hidden sm:block"></i>
                         </button>
-                        <div class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up">
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
                             <div class="px-4 py-2 border-b border-gray-100">
                                 <p class="text-[13px] font-semibold text-navy-800">{{ auth()->user()->name }}</p>
                                 <p class="text-[11px] text-gray-400">{{ auth()->user()->email }}</p>
@@ -497,16 +494,7 @@
             // clicked outside the sidebar
             closeSidebar();
         });
-        // Close dropdowns on outside click
-        document.addEventListener('click', function(e) {
-            document.querySelectorAll('[x-data]').forEach(el => {
-                if (!el.contains(e.target)) {
-                    el.querySelectorAll('.hidden').forEach(d => {
-                        if (d.classList.contains('absolute')) d.classList.add('hidden');
-                    });
-                }
-            });
-        });
+        // Alpine.js menangani dropdown (x-show + @click.away), tidak perlu handler manual.
         // Animate numbers on load
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('[data-count]').forEach(el => {

@@ -100,22 +100,16 @@
                                 </div>
                             </div>
                         @else
-                            @if(auth()->user()->role === 'user')
-                            <a href="{{ route('dashboard.profile') }}" class="nav-cta btn-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">
-                                <i class="fas fa-user-circle mr-1.5"></i> Profil Saya
-                            </a>
-                            @else
                             <a href="{{ route('dashboard') }}" class="nav-cta btn-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">
                                 <i class="fas fa-tachometer-alt mr-1.5"></i> Dashboard
                             </a>
-                            @endif
                         @endif
                     @else
                         <a href="{{ route('login') }}" class="nav-link text-sm font-semibold px-4 py-2.5 transition-all duration-300">Login</a>
                         <a href="{{ route('register') }}" class="nav-cta btn-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-300">Daftar</a>
                     @endauth
-                    <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="mobile-toggle md:hidden text-navy-600 ml-1 p-2 transition-colors duration-400" aria-label="Menu">
-                        <i class="fas fa-bars text-xl"></i>
+                    <button type="button" onclick="toggleMobileMenu()" class="mobile-toggle md:hidden text-navy-600 ml-1 p-2 transition-colors duration-400" aria-label="Menu">
+                        <i class="fas fa-bars text-xl" id="mobileMenuIcon"></i>
                     </button>
                 </div>
             </div>
@@ -133,7 +127,11 @@
                             <p class="text-sm font-bold text-navy-800">{{ auth()->user()->name }}</p>
                             <p class="text-[12px] text-navy-400">{{ auth()->user()->email }}</p>
                         </div>
+                        @if(auth()->user()->isUser())
                         <a href="{{ route('dashboard.profile') }}" class="block text-sm font-semibold text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition"><i class="fas fa-user-circle mr-2"></i> Profile Saya</a>
+                        @else
+                        <a href="{{ route('dashboard') }}" class="block text-sm font-semibold text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="block text-sm font-semibold text-red-500 hover:bg-red-50 px-4 py-3 rounded-xl transition w-full text-left"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button>
@@ -170,13 +168,16 @@
                     {{-- Newsletter --}}
                     <div class="mt-6">
                         <p class="text-[13px] font-semibold mb-2">Newsletter</p>
-                        <div class="flex gap-2" x-data="{ email: '', subscribed: false }">
-                            <input type="email" x-model="email" placeholder="Email Anda" class="flex-1 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-[12px] text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 transition">
-                            <button @click="if(email) { subscribed = true; email = ''; }" x-show="!subscribed" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 rounded-lg text-[12px] font-semibold transition">
+                        <form action="{{ route('newsletter.subscribe') }}" method="POST" class="flex gap-2">
+                            @csrf
+                            <input type="email" name="email" value="{{ old('email') }}" required placeholder="Email Anda" class="flex-1 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-[12px] text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 transition">
+                            <button type="submit" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 rounded-lg text-[12px] font-semibold transition">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
-                            <span x-show="subscribed" class="text-emerald-400 text-[12px] flex items-center"><i class="fas fa-check mr-1"></i> Tersimpan!</span>
-                        </div>
+                        </form>
+                        @if(session('newsletter_success'))
+                        <p class="text-emerald-400 text-[12px] mt-2 flex items-center"><i class="fas fa-check mr-1"></i> {{ session('newsletter_success') }}</p>
+                        @endif
                     </div>
                 </div>
                 <div>
@@ -225,14 +226,35 @@
                 <p class="text-[13px] text-gray-300">Kami menggunakan cookie untuk pengalaman terbaik. <a href="{{ route('about') }}" class="text-sky-400 underline">Pelajari lebih lanjut</a></p>
             </div>
             <div class="flex gap-2 flex-shrink-0">
-                <button @click="accept()" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl text-[12px] font-semibold transition">Terima</button>
-                <button @click="visible = false" class="bg-white/10 hover:bg-white/20 text-gray-300 px-5 py-2 rounded-xl text-[12px] font-medium transition">Tolak</button>
+                <button type="button" @click="accept()" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl text-[12px] font-semibold transition">Terima</button>
+                <button type="button" @click="decline()" class="bg-white/10 hover:bg-white/20 text-gray-300 px-5 py-2 rounded-xl text-[12px] font-medium transition">Tolak</button>
             </div>
         </div>
     </div>
 
     {{-- LOADER SCRIPT --}}
     <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('mobileMenuIcon');
+            if (!menu) return;
+            menu.classList.toggle('hidden');
+            if (icon) {
+                const isOpen = !menu.classList.contains('hidden');
+                icon.classList.toggle('fa-bars', !isOpen);
+                icon.classList.toggle('fa-times', isOpen);
+            }
+        }
+        // Tutup mobile menu saat link di dalamnya diklik
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('mobileMenu');
+            if (!menu || menu.classList.contains('hidden')) return;
+            if (e.target.closest('#mobileMenu a')) {
+                menu.classList.add('hidden');
+                const icon = document.getElementById('mobileMenuIcon');
+                if (icon) { icon.classList.add('fa-bars'); icon.classList.remove('fa-times'); }
+            }
+        });
         window.addEventListener('load', function() {
             setTimeout(function() {
                 document.getElementById('loader').classList.add('hide');
@@ -269,10 +291,12 @@
         }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
         revealEls.forEach(el => revealObserver.observe(el));
 
-        // Smooth scroll
+        // Smooth scroll (abaikan href="#" agar tidak error querySelector)
         document.querySelectorAll('a[href^="#"]').forEach(a => {
             a.addEventListener('click', e => {
-                const target = document.querySelector(a.getAttribute('href'));
+                const href = a.getAttribute('href');
+                if (!href || href.length <= 1) { e.preventDefault(); return; }
+                const target = document.querySelector(href);
                 if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
         });
@@ -289,6 +313,10 @@
                 },
                 accept() {
                     localStorage.setItem('mari_cookie_consent', '1');
+                    this.visible = false;
+                },
+                decline() {
+                    localStorage.setItem('mari_cookie_consent', '0');
                     this.visible = false;
                 }
             }

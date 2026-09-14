@@ -42,6 +42,22 @@
     </div>
 </div>
 
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form method="GET" action="{{ route('superadmin.monitoring-vehicle') }}" class="flex flex-col sm:flex-row gap-2">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, plat, brand..." class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none">
+        <select name="status" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] bg-white outline-none">
+            <option value="">Semua Status</option>
+            @foreach(['available' => 'Tersedia', 'rented' => 'Disewa', 'reserved' => 'Reservasi', 'maintenance' => 'Maintenance'] as $val => $label)
+            <option value="{{ $val }}" {{ request('status') == $val ? 'selected' : '' }}>{{ $label }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl text-[13px] font-semibold transition"><i class="fas fa-search mr-1"></i> Cari</button>
+        @if(request()->hasAny(['search','status']))
+        <a href="{{ route('superadmin.monitoring-vehicle') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2.5 rounded-xl text-[13px] transition border border-red-100 text-center"><i class="fas fa-times"></i></a>
+        @endif
+    </form>
+</div>
+
 <div class="glass-card rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-[13px]">

@@ -213,13 +213,15 @@
                                 <i class="fas fa-eye text-[10px]"></i> Detail
                             </a>
                             @if(!$isUser && $inv->payments->isNotEmpty())
-                            @php $pendingPayment = $inv->payments->first(); @endphp
+                            @foreach($inv->payments as $pendingPayment)
                             <form method="POST" action="{{ route('invoices.verify-payment', $pendingPayment) }}" class="inline" onsubmit="return confirm('Verifikasi pembayaran Rp {{ number_format($pendingPayment->amount,0,',','.') }} untuk {{ $inv->invoice_number }}?')">
                                 @csrf
-                                <button type="submit" class="text-green-600 hover:text-green-700 text-[12px] font-medium transition inline-flex items-center gap-1">
-                                    <i class="fas fa-check-circle text-[10px]"></i> Verifikasi
+                                <button type="submit" class="text-green-600 hover:text-green-700 text-[12px] font-medium transition inline-flex items-center gap-1" title="Rp {{ number_format($pendingPayment->amount,0,',','.') }}">
+                                    <i class="fas fa-check-circle text-[10px]"></i> Verifikasi{{ $inv->payments->count() > 1 ? ' (' . number_format($pendingPayment->amount/1000,0) . 'rb)' : '' }}
                                 </button>
                             </form>
+                            @endforeach
+                            <a href="{{ route('invoices.show', $inv) }}" class="text-red-400 hover:text-red-600 text-[12px] font-medium transition" title="Tolak via detail">Tolak</a>
                             @endif
                             @if(!$isUser && $inv->status !== 'paid')
                             <form method="POST" action="{{ route('invoices.send', $inv) }}" class="inline">

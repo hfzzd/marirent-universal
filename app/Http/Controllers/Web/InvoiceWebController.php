@@ -116,7 +116,7 @@ class InvoiceWebController extends Controller
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'booking_ids' => 'required|array|min:1',
+            'booking_ids' => 'required|array|min:2',
             'booking_ids.*' => 'exists:bookings,id',
             'tax_percent' => 'nullable|numeric|min:0|max:100',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -125,6 +125,11 @@ class InvoiceWebController extends Controller
         ]);
 
         $bookings = Booking::whereIn('id', $validated['booking_ids'])->with(['vehicle', 'category'])->get();
+        foreach ($bookings as $b) {
+            if ($b->invoice || $b->invoices()->exists()) {
+                return back()->with('error', 'Booking ' . $b->booking_code . ' sudah memiliki invoice. Pilih booking lain.')->withInput();
+            }
+        }
         $ownerId = Auth::user()->merchantId() ?? Auth::id();
 
         $subtotal = $bookings->sum('final_price');
@@ -296,6 +301,15 @@ class InvoiceWebController extends Controller
             'notes' => $validated['notes'] ?? null,
             'paid_at' => now(),
         ]);
+
+        if ($payment->status === 'verified') {
+            $payment->update([
+                'verified_by' => Auth::id(),
+                'verified_at' => now(),
+            ]);
+            $this->refreshInvoiceFromPayments($invoice->fresh());
+            return back()->with('success', 'Pembayaran cash tercatat dan invoice diperbarui.');
+        }
 
         return back()->with('success', 'Bukti pembayaran berhasil dikirim. Menunggu verifikasi admin.');
     }

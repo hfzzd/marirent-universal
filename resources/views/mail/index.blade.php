@@ -127,6 +127,14 @@
                                 <i class="fas fa-{{ $folder === 'trash' ? 'rotate-left' : 'trash' }} text-xs"></i>
                             </button>
                         </form>
+                        @if($folder === 'trash')
+                        <form method="POST" action="{{ route('mail.destroy', $m) }}" class="inline" onsubmit="return confirm('Hapus permanen pesan ini?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="w-7 h-7 rounded-lg hover:bg-red-100 text-red-300 hover:text-red-600 flex items-center justify-center transition" title="Hapus Permanen">
+                                <i class="fas fa-trash-can text-xs"></i>
+                            </button>
+                        </form>
+                        @endif
                     </div>
                 </div>
                 @empty

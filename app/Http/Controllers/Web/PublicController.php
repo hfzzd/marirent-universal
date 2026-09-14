@@ -275,6 +275,19 @@ class PublicController extends Controller
         return back()->with('success', 'Permintaan jadwal demo berhasil dikirim! Tim kami akan menghubungi Anda via WhatsApp maksimal 1x24 jam untuk konfirmasi jadwal.');
     }
 
+    public function subscribeNewsletter(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        \App\Models\NewsletterSubscription::firstOrCreate(
+            ['email' => strtolower(trim($validated['email']))]
+        );
+
+        return back()->with('newsletter_success', 'Terima kasih! Email Anda tersimpan.');
+    }
+
     public function products(Request $request)
     {
         $products = $this->getAllProducts($request, 12);
@@ -799,6 +812,7 @@ class PublicController extends Controller
             'review_count' => $v->reviews->count(),
             'merchant' => $this->merchantInfo($v->owner_id),
             'created_at' => $v->created_at,
+            'with_driver' => (bool) $v->with_driver,
         ];
     }
 
