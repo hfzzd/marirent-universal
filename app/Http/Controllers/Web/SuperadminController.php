@@ -348,11 +348,13 @@ class SuperadminController extends Controller
 
     public function merchantStore(Request $request)
     {
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone',
             'category_id' => 'nullable|exists:categories,id',
             'store_name' => 'required|string|max:120',
             'city' => 'nullable|string|max:80',

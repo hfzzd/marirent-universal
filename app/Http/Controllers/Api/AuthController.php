@@ -14,11 +14,13 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone',
         ]);
 
         $user = User::create([
@@ -41,15 +43,27 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login_identifier' => 'required_without_all:email,phone|string|max:255',
+            'email' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:30',
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $identifier = $request->login_identifier ?? $request->email ?? $request->phone;
+
+        if (str_contains($identifier, '@')) {
+            $field = 'email';
+            $value = strtolower(trim($identifier));
+        } else {
+            $field = 'phone';
+            $value = \App\Support\Phone::normalize($identifier);
+        }
+
+        $user = User::where($field, $value)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Email atau password salah.'],
+                $field => ['Email / No. HP atau password salah.'],
             ]);
         }
 
@@ -92,9 +106,10 @@ class AuthController extends Controller
     public function updateProfile(Request $request)
     {
         $user = $request->user();
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone,' . $user->id,
             'address' => 'nullable|string|max:500',
         ]);
 

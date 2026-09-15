@@ -208,7 +208,7 @@ class OverhaulTest extends TestCase
             'email' => 'employee_staff@example.test',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'phone' => '081234567890',
+            'phone' => '081234569991',
             'position' => 'Driver',
             'daily_salary' => 100000,
             'trip_salary' => 0,

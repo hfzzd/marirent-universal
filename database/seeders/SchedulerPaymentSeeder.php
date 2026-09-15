@@ -30,7 +30,7 @@ class SchedulerPaymentSeeder extends Seeder
                     'name' => $name,
                     'password' => Hash::make('password'),
                     'role' => 'user',
-                    'phone' => '08' . random_int(1111111111, 9999999999),
+                    'phone' => sprintf('087%08d', abs(crc32($email)) % 100000000),
                     'address' => 'Jl. Demo No. ' . random_int(1, 99) . ', Makassar',
                     'is_active' => true,
                 ]

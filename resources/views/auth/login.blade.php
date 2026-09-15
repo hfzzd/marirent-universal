@@ -102,15 +102,30 @@
                 </div>
                 @endif
 
-                <form method="POST" action="{{ route('login') }}" id="loginForm">
+                <form method="POST" action="{{ route('login') }}" id="loginForm" x-data="{ mode: 'email' }">
                     @csrf
                     <div class="mb-4">
-                        <label class="block text-[13px] font-semibold text-navy-700 mb-1.5">Email</label>
+                        <label class="block text-[13px] font-semibold text-navy-700 mb-1.5">Masuk dengan</label>
+                        <div class="grid grid-cols-2 gap-2 mb-3 bg-gray-100/70 p-1 rounded-xl">
+                            <button type="button" @click="mode = 'email'"
+                                    class="text-[12px] font-semibold py-2 rounded-lg transition"
+                                    :class="mode === 'email' ? 'bg-white text-sky-600 shadow-sm border border-sky-200' : 'text-gray-400'">
+                                <i class="fas fa-envelope mr-1.5"></i> Email
+                            </button>
+                            <button type="button" @click="mode = 'phone'"
+                                    class="text-[12px] font-semibold py-2 rounded-lg transition"
+                                    :class="mode === 'phone' ? 'bg-white text-sky-600 shadow-sm border border-sky-200' : 'text-gray-400'">
+                                <i class="fas fa-mobile-alt mr-1.5"></i> No. HP
+                            </button>
+                        </div>
                         <div class="relative">
-                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300"><i class="fas fa-envelope text-sm"></i></span>
-                            <input type="email" name="email" value="{{ old('email') }}" required
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300">
+                                <i class="fas text-sm" :class="mode === 'email' ? 'fa-envelope' : 'fa-mobile-alt'"></i>
+                            </span>
+                            <input :type="mode === 'email' ? 'email' : 'tel'" name="login_identifier"
+                                   value="{{ old('login_identifier') ?: old('email') }}" required autocomplete="username"
                                    class="input-focus w-full border border-gray-200 bg-gray-50/50 rounded-xl pl-10 pr-4 py-3 text-[13px] text-navy-800 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 focus:bg-white outline-none"
-                                   placeholder="email@contoh.com">
+                                   :placeholder="mode === 'email' ? 'email@contoh.com' : '08xxx / +628xxx'">
                         </div>
                     </div>
 
@@ -172,7 +187,11 @@
 <script>
     // Alpine event to fill login form from demo buttons
     document.addEventListener('fill-login', (e) => {
-        document.querySelector('input[name="email"]').value = e.detail.email;
+        const form = document.getElementById('loginForm');
+        if (form && form._x_dataStack) {
+            form._x_dataStack[0].mode = 'email';
+        }
+        document.querySelector('input[name="login_identifier"]').value = e.detail.email;
         document.querySelector('input[name="password"]').value = e.detail.pass;
     });
 

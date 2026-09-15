@@ -61,7 +61,7 @@ class SubscriptionTest extends TestCase
             'name' => 'Toko ' . uniqid(),
             'slug' => 'toko-' . uniqid(),
             'description' => 'Toko test',
-            'phone' => '081234567890',
+            'phone' => '085777001122',
             'address' => 'Jl. Test No. 1',
             'city' => 'Jakarta',
             'is_active' => true,

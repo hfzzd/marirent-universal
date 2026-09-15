@@ -255,10 +255,12 @@ class PublicController extends Controller
      */
     public function storeDemo(Request $request)
     {
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
+            'email' => 'required|email|max:255|unique:demo_requests,email',
+            'phone' => 'required|string|max:30|unique:demo_requests,phone',
             'business_name' => 'nullable|string|max:255',
             'preferred_date' => 'required|date|after_or_equal:today',
             'preferred_time' => 'required|string|max:20',

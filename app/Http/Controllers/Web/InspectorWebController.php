@@ -81,11 +81,13 @@ class InspectorWebController extends Controller
     {
         $this->authorizeManage();
 
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone',
             'address' => 'nullable|string|max:500',
             'is_active' => 'boolean',
         ]);
@@ -125,9 +127,11 @@ class InspectorWebController extends Controller
         $this->authorizeManage();
         $this->guardInspector($inspector);
 
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone,' . $inspector->id,
             'address' => 'nullable|string|max:500',
             'password' => 'nullable|string|min:8|confirmed',
             'is_active' => 'boolean',

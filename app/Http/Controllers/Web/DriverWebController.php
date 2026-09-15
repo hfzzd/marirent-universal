@@ -102,11 +102,13 @@ class DriverWebController extends Controller
     {
         $this->authorizeManage();
 
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone',
             'address' => 'nullable|string|max:500',
             'position' => 'nullable|string|max:100',
             'license_number' => 'nullable|string|max:50|unique:drivers,license_number',
@@ -179,9 +181,11 @@ class DriverWebController extends Controller
         $this->authorizeManage();
         $this->guardDriver($driver);
 
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone,' . $driver->user_id,
             'address' => 'nullable|string|max:500',
             'password' => 'nullable|string|min:8|confirmed',
             'position' => 'nullable|string|max:100',

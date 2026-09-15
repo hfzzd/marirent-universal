@@ -269,7 +269,7 @@ class CompanySeeder extends Seeder
                     'role' => 'admin',
                     'owner_id' => $owner->id,
                     'category_id' => $category->id,
-                    'phone' => $data['phone'],
+                    'phone' => '0822' . substr($data['phone'], 4),
                     'is_active' => true,
                     'email_verified_at' => now(),
                 ]);

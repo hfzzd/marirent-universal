@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -33,6 +34,16 @@ class Merchant extends Model
     public function isVerified(): bool
     {
         return $this->is_active && $this->status === 'active';
+    }
+
+    public function setPhoneAttribute(?string $value): void
+    {
+        $this->attributes['phone'] = Phone::normalize($value);
+    }
+
+    public function setCompanyEmailAttribute(?string $value): void
+    {
+        $this->attributes['company_email'] = $value === null ? null : strtolower(trim($value));
     }
 
     public function subscriptions()

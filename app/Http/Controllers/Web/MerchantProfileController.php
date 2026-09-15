@@ -61,11 +61,13 @@ class MerchantProfileController extends Controller
         );
         Company::ensureForOwner($owner);
 
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')],
         ]);
 
         $admin = User::create([

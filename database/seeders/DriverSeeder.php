@@ -45,7 +45,7 @@ class DriverSeeder extends Seeder
                     'role' => User::roleForPosition($tpl['position'], $company->owner?->category_id),
                     'owner_id' => $ownerId,
                     'category_id' => $company->owner?->category_id,
-                    'phone' => '08' . mt_rand(1000000000, 9999999999),
+                    'phone' => sprintf('0817%06d%03d', $ownerId % 1000000, $suffix),
                     'address' => $company->address,
                     'is_active' => true,
                     'email_verified_at' => now(),

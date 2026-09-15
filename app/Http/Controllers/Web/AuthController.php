@@ -28,9 +28,24 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+            'login_identifier' => 'required_without:email|string|max:255',
+            'email' => 'nullable|string|max:255',
+            'password' => 'required|string',
         ]);
+
+        $identifier = $request->login_identifier ?? $request->email;
+
+        if (str_contains($identifier, '@')) {
+            $credentials = [
+                'email' => strtolower(trim($identifier)),
+                'password' => $request->password,
+            ];
+        } else {
+            $credentials = [
+                'phone' => \App\Support\Phone::normalize($identifier),
+                'password' => $request->password,
+            ];
+        }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
@@ -39,7 +54,7 @@ class AuthController extends Controller
             $user = Auth::user();
             if (!$user->is_active) {
                 Auth::logout();
-                return back()->withErrors(['email' => 'Akun tidak aktif']);
+                return back()->withErrors(['login_identifier' => 'Akun tidak aktif']);
             }
 
             if (app(SubscriptionService::class)->isOverdueForUser($user)) {
@@ -51,7 +66,7 @@ class AuthController extends Controller
             return redirect()->intended($this->dashboardRedirect());
         }
 
-        return back()->withErrors(['email' => 'Email atau password salah'])->onlyInput('email');
+        return back()->withErrors(['login_identifier' => 'Email / No. HP atau password salah'])->onlyInput('login_identifier');
     }
 
     private function sendOverdueLoginNotice(User $user): void
@@ -81,11 +96,13 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone',
         ]);
 
         $validated['password'] = bcrypt($validated['password']);
@@ -107,11 +124,13 @@ class AuthController extends Controller
 
     public function registerMerchant(Request $request)
     {
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone',
             'category_id' => 'nullable|exists:categories,id',
             'store_name' => 'required|string|max:120',
         ]);

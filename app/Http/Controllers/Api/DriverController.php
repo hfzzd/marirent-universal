@@ -8,6 +8,7 @@ use App\Models\Driver;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class DriverController extends Controller
 {
@@ -40,8 +41,8 @@ class DriverController extends Controller
         }
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'license_number' => 'nullable|string|max:50',
+            'user_id' => ['required', 'exists:users,id', Rule::unique('drivers', 'user_id')],
+            'license_number' => ['nullable', 'string', 'max:50', Rule::unique('drivers', 'license_number')],
             'license_expiry' => 'nullable|date',
             'license_type' => 'nullable|string|max:20',
             'daily_salary' => 'required|numeric|min:0',
@@ -77,7 +78,7 @@ class DriverController extends Controller
     public function update(Request $request, Driver $driver)
     {
         $validated = $request->validate([
-            'license_number' => 'sometimes|string|max:50',
+            'license_number' => ['sometimes', 'string', 'max:50', Rule::unique('drivers', 'license_number')->ignore($driver->id)],
             'license_expiry' => 'sometimes|nullable|date',
             'license_type' => 'sometimes|nullable|string|max:20',
             'daily_salary' => 'sometimes|numeric|min:0',

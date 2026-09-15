@@ -814,16 +814,27 @@ class BookingWebController extends Controller
         $userId = Auth::id();
 
         if ($validated['customer_mode'] === 'new') {
-            $guestEmail = 'walkin_' . strtolower(uniqid()) . '@marirent.local';
-            $guestUser = \App\Models\User::create([
-                'name' => $validated['guest_name'],
-                'email' => $guestEmail,
-                'phone' => $validated['guest_phone'],
-                'password' => bcrypt('password123'),
-                'role' => 'user',
-                'email_verified_at' => now(),
-            ]);
-            $userId = $guestUser->id;
+            // Normalisasi & reuse: kalau nomor HP sudah dipakai akun yang ada,
+            // pakai akun itu (hindari duplikat data pelanggan).
+            $guestPhone = \App\Support\Phone::normalize($validated['guest_phone'] ?? null);
+            $existingUser = $guestPhone !== null
+                ? \App\Models\User::where('phone', $guestPhone)->first()
+                : null;
+
+            if ($existingUser) {
+                $userId = $existingUser->id;
+            } else {
+                $guestEmail = 'walkin_' . strtolower(uniqid()) . '@marirent.local';
+                $guestUser = \App\Models\User::create([
+                    'name' => $validated['guest_name'],
+                    'email' => $guestEmail,
+                    'phone' => $guestPhone,
+                    'password' => bcrypt('password123'),
+                    'role' => 'user',
+                    'email_verified_at' => now(),
+                ]);
+                $userId = $guestUser->id;
+            }
         } else {
             $userId = $validated['user_id'];
         }

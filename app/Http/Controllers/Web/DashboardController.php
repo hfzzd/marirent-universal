@@ -163,10 +163,12 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        $request->merge(['phone' => \App\Support\Phone::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:30|unique:users,phone,' . $user->id,
             'address' => 'nullable|string|max:500',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);

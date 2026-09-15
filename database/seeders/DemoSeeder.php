@@ -480,7 +480,7 @@ class DemoSeeder extends Seeder
                         'email' => 'user2@marirent.com',
                         'password' => Hash::make('password'),
                         'role' => 'user',
-                        'phone' => '081555666777',
+                        'phone' => '081666777888',
                         'is_active' => true,
                     ]);
                 }
