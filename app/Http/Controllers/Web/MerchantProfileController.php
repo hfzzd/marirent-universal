@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Services\GeocodeService;
 
 class MerchantProfileController extends Controller
 {
@@ -111,6 +112,8 @@ class MerchantProfileController extends Controller
             'address' => 'nullable|string|max:255',
             'pickup_address' => 'nullable|string|max:255',
             'operational_hours' => 'nullable|string|max:80',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
             'commission_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
@@ -121,6 +124,29 @@ class MerchantProfileController extends Controller
         $company = Company::ensureForOwner($owner);
 
         $data = collect($validated)->except('commission_rate')->all();
+
+        // Pin manual dari panel peta owner menang. Tanpa pin, isi otomatis
+        // dari alamat (geocode) saat alamat berubah atau koordinat belum ada.
+        $pinLat = $validated['latitude'] ?? null;
+        $pinLng = $validated['longitude'] ?? null;
+
+        if ($pinLat === null && $pinLng === null) {
+            unset($data['latitude'], $data['longitude']);
+
+            $needGeocode = !$merchant->hasCoordinates()
+                || ($validated['address'] ?? null) !== $merchant->address
+                || ($validated['city'] ?? null) !== $merchant->city;
+
+            if ($needGeocode) {
+                $coords = app(GeocodeService::class)->geocode(
+                    implode(', ', array_filter([$validated['address'] ?? '', $validated['city'] ?? '']))
+                );
+                if ($coords) {
+                    $data['latitude'] = $coords['latitude'];
+                    $data['longitude'] = $coords['longitude'];
+                }
+            }
+        }
 
         if ($owner->isPlatformAdmin() && isset($validated['commission_rate'])) {
             $data['commission_rate'] = $validated['commission_rate'];

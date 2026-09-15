@@ -64,6 +64,53 @@
     </div>
 </section>
 
+@if($merchant->hasCoordinates() || $merchant->address || $merchant->city)
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+    <div class="glass-card rounded-2xl overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
+            <div class="p-6 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-navy-900 flex items-center gap-2.5 mb-1">
+                        <i class="fas fa-map-marked-alt text-sky-500"></i> Lokasi Toko
+                    </h2>
+                    <p class="text-[11px] text-gray-400 mb-5">Temukan lokasi {{ $merchant->name }} di peta dan dapatkan petunjuk arah.</p>
+                    @if($merchant->address)
+                    <div class="flex items-start gap-2.5 text-[13px] text-navy-700 mb-3">
+                        <i class="fas fa-map-pin text-sky-500 mt-0.5"></i>
+                        <span>{{ $merchant->address }}</span>
+                    </div>
+                    @endif
+                    @if($merchant->city)
+                    <div class="flex items-center gap-2.5 text-[13px] text-navy-700 mb-3">
+                        <i class="fas fa-city text-sky-500"></i>
+                        <span>{{ $merchant->city }}</span>
+                    </div>
+                    @endif
+                    @if($merchant->pickup_address)
+                    <div class="flex items-start gap-2.5 text-[13px] text-navy-700 mb-3">
+                        <i class="fas fa-route text-sky-500 mt-0.5"></i>
+                        <span><strong>Penjemputan:</strong> {{ $merchant->pickup_address }}</span>
+                    </div>
+                    @endif
+                </div>
+                <a href="{{ $merchant->mapsDirectionsUrl() }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-5 py-3 rounded-xl text-[12px] font-bold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-[1.02] w-fit mt-5">
+                    <i class="fas fa-directions text-[12px]"></i> Petunjuk Arah (Google Maps)
+                </a>
+            </div>
+            <div class="lg:col-span-2 min-h-[320px]">
+                <iframe src="{{ $merchant->mapsEmbedUrl() }}" class="w-full h-full min-h-[320px]" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Lokasi {{ $merchant->name }}"></iframe>
+                <div class="text-[10px] text-gray-400 px-4 py-2 flex items-center justify-between flex-wrap gap-2 bg-sky-50/60">
+                    <span class="flex items-center gap-1.5"><i class="fab fa-google text-sky-500"></i> Ditampilkan melalui Google Maps</span>
+                    @if($merchant->hasCoordinates())
+                    <span class="font-mono">{{ number_format((float)$merchant->latitude, 5) }}, {{ number_format((float)$merchant->longitude, 5) }}</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@endif
+
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-bold text-navy-900">Produk Toko Ini</h2>

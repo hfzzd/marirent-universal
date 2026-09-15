@@ -16,6 +16,7 @@ class Merchant extends Model
         'user_id', 'slug', 'name', 'description', 'logo', 'banner',
         'phone', 'company_email', 'website', 'instagram',
         'address', 'city', 'pickup_address', 'operational_hours',
+        'latitude', 'longitude',
         'commission_rate', 'is_active', 'status',
         'verified_at', 'billing_plan', 'subscription_fee', 'subscription_until',
     ];
@@ -28,7 +29,32 @@ class Merchant extends Model
             'subscription_until' => 'datetime',
             'is_active' => 'boolean',
             'verified_at' => 'datetime',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
+    }
+
+    public function hasCoordinates(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    public function mapsEmbedUrl(): string
+    {
+        if ($this->hasCoordinates()) {
+            return 'https://www.google.com/maps?q=' . $this->latitude . ',' . $this->longitude . '&z=16&output=embed';
+        }
+        $query = implode(', ', array_filter([$this->address, $this->city]));
+        return 'https://www.google.com/maps?q=' . urlencode($query) . '&z=15&output=embed';
+    }
+
+    public function mapsDirectionsUrl(): string
+    {
+        if ($this->hasCoordinates()) {
+            return 'https://www.google.com/maps/dir/?api=1&destination=' . $this->latitude . ',' . $this->longitude;
+        }
+        $query = implode(', ', array_filter([$this->address, $this->city]));
+        return 'https://www.google.com/maps/search/?api=1&query=' . urlencode($query);
     }
 
     public function isVerified(): bool

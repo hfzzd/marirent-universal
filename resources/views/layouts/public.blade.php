@@ -64,6 +64,7 @@
                     <a href="{{ route('about') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('about') ? 'active' : '' }}">Tentang Kami</a>
                     <a href="{{ route('public.brands') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('public.brands') || request()->routeIs('public.brand') ? 'active' : '' }}">Brand</a>
                     <a href="{{ route('products') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('products') ? 'active' : '' }}">Produk</a>
+                    <a href="{{ route('public.stores') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('public.stores') ? 'active' : '' }}">Toko</a>
                     <a href="{{ route('contact') }}" class="nav-link text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-300 {{ request()->routeIs('contact') ? 'active' : '' }}">Kontak</a>
                 </div>
 
@@ -120,6 +121,7 @@
                 <a href="{{ route('about') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Tentang Kami</a>
                 <a href="{{ route('public.brands') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Brand</a>
                 <a href="{{ route('products') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Produk</a>
+                <a href="{{ route('public.stores') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Toko</a>
                 <a href="{{ route('contact') }}" class="block text-sm font-semibold text-navy-600 hover:text-sky-600 hover:bg-sky-50 px-4 py-3 rounded-xl transition">Kontak</a>
                 @auth
                     <div class="border-t border-sky-100 mt-2 pt-3">
@@ -187,6 +189,7 @@
                         <li><a href="{{ route('about') }}" class="hover:text-sky-400 transition">Tentang Kami</a></li>
                         <li><a href="{{ route('public.brands') }}" class="hover:text-sky-400 transition">Brand</a></li>
                         <li><a href="{{ route('products') }}" class="hover:text-sky-400 transition">Produk</a></li>
+                        <li><a href="{{ route('public.stores') }}" class="hover:text-sky-400 transition">Toko</a></li>
                         <li><a href="{{ route('contact') }}" class="hover:text-sky-400 transition">Kontak</a></li>
                     </ul>
                 </div>

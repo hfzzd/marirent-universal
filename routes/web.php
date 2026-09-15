@@ -41,6 +41,7 @@ Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('
 Route::get('/brands', [PublicController::class, 'brands'])->name('public.brands');
 Route::get('/brand/{type}/{brand}', [PublicController::class, 'brand'])->name('public.brand');
 Route::get('/store/{slug}', [PublicController::class, 'store'])->name('public.store');
+Route::get('/stores', [PublicController::class, 'stores'])->name('public.stores');
 Route::get('/jadwal-demo', [PublicController::class, 'demo'])->name('demo');
 Route::post('/jadwal-demo', [PublicController::class, 'storeDemo'])->name('demo.store');
 Route::post('/newsletter/subscribe', [PublicController::class, 'subscribeNewsletter'])->name('newsletter.subscribe');

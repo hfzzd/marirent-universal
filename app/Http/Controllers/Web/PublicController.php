@@ -113,6 +113,16 @@ class PublicController extends Controller
         ]);
     }
 
+    public function stores()
+    {
+        $merchants = \App\Models\Merchant::where('is_active', true)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return view('public.stores', compact('merchants'));
+    }
+
     private function typeForModel(string $modelClass): string
     {
         return match ($modelClass) {

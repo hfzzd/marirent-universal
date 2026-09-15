@@ -113,6 +113,26 @@
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Jam Operasional</label>
                 <input type="text" name="operational_hours" value="{{ old('operational_hours', $merchant->operational_hours) }}" placeholder="cont: 08.00 - 20.00" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
             </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Lokasi Toko di Peta</label>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="merchant-search-place" placeholder="Cari lokasi / nama tempat di peta..." class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+                    <button type="button" id="merchant-search-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition flex items-center gap-1.5 flex-shrink-0">
+                        <i class="fas fa-search text-[11px]"></i> Cari
+                    </button>
+                    <button type="button" id="merchant-geocode-address" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition flex items-center gap-1.5 flex-shrink-0">
+                        <i class="fas fa-map-marker-alt text-[11px]"></i> Geocode Alamat Toko
+                    </button>
+                </div>
+                <div id="merchant-map" class="w-full rounded-xl overflow-hidden border border-gray-200" style="height: 320px;"></div>
+                <div class="flex items-center gap-2 mt-2 text-[11px] text-gray-400">
+                    <i class="fas fa-info-circle text-sky-400"></i>
+                    <span>Klik atau geser pin untuk menentukan titik lokasi. Tampilan untuk konsumen memakai <strong>Google Maps</strong>.</span>
+                </div>
+                <input type="hidden" name="latitude" id="merchant-latitude" value="{{ old('latitude', $merchant->latitude) }}">
+                <input type="hidden" name="longitude" id="merchant-longitude" value="{{ old('longitude', $merchant->longitude) }}">
+            </div>
         </div>
 
         <div class="mt-5 flex items-center justify-end gap-2">
@@ -195,3 +215,7 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+    @vite(['resources/js/merchant-map.js'])
+@endpush
