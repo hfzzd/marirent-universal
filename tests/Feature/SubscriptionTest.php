@@ -83,7 +83,7 @@ class SubscriptionTest extends TestCase
         $this->actingAs($owner)->get('/dashboard')->assertOk();
     }
 
-    public function test_overdue_redirects_owner_to_billing_due(): void
+    public function test_overdue_redirects_owner_to_billing_notice(): void
     {
         $owner = $this->makeOwner('overdue_owner@example.test');
         $merchant = $this->makeMerchant($owner);
@@ -93,7 +93,7 @@ class SubscriptionTest extends TestCase
             'subscription_until' => now()->subDay(),
         ]);
 
-        $this->actingAs($owner)->get('/dashboard')->assertRedirect(route('subscriptions.due'));
+        $this->actingAs($owner)->get('/dashboard')->assertRedirect(route('subscriptions.notice'));
     }
 
     public function test_overdue_blocks_all_merchant_accounts(): void
@@ -135,7 +135,7 @@ class SubscriptionTest extends TestCase
 
         foreach ([$owner, $admin, $driverUser, $staff, $employee, $inspector] as $user) {
             $this->actingAs($user)->get('/dashboard')
-                ->assertRedirect(route('subscriptions.due'), "Role {$user->role} should be blocked");
+                ->assertRedirect(route('subscriptions.notice'), "Role {$user->role} should be blocked");
         }
     }
 
@@ -204,6 +204,27 @@ class SubscriptionTest extends TestCase
             'merchant_id' => $merchant->id,
             'status' => 'pending',
         ]);
+    }
+
+    public function test_notice_page_renders_alert_and_pay_form(): void
+    {
+        $owner = $this->makeOwner('notice_page_owner@example.test');
+        $merchant = $this->makeMerchant($owner);
+        $svc = app(SubscriptionService::class);
+        $svc->pivotToSubscription($merchant, 500000);
+        DB::table('merchants')->where('id', $merchant->id)->update([
+            'subscription_until' => now()->subDay(),
+        ]);
+
+        $this->actingAs($owner)->get(route('subscriptions.notice'))
+            ->assertOk()
+            ->assertSee('AKUN DIBLOKIR — SEGERA BAYAR SUBSCRIPTION')
+            ->assertSee('MENUNGGAK')
+            ->assertSee(route('subscriptions.pay'))
+            ->assertSee('name="proof_photo"', false);
+
+        $this->actingAs($owner)->get(route('subscriptions.notice'))
+            ->assertSee('name="method"', false);
     }
 
     public function test_payment_store_sets_pending_and_notifies_superadmin(): void

@@ -287,6 +287,7 @@ Route::middleware('auth')->prefix('replacements')->group(function () {
 // Subscription Routes (merchant billing & pembayaran)
 Route::middleware('auth')->prefix('subscriptions')->group(function () {
     Route::get('/', [SubscriptionWebController::class, 'index'])->name('subscriptions.index');
+    Route::get('/notice', [SubscriptionWebController::class, 'notice'])->name('subscriptions.notice');
     Route::get('/due', [SubscriptionWebController::class, 'due'])->name('subscriptions.due');
     Route::post('/pay', [SubscriptionWebController::class, 'pay'])->name('subscriptions.pay');
 });

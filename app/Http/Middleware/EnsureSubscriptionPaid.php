@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 /**
  * Memblokir akun di bawah merchant yang sedang menunggak subscription.
  *
- * Web : arahkan ke halaman pembayaran billing (subscriptions.due).
+ * Web : arahkan ke halaman notifikasi segera bayar (subscriptions.notice).
  * API : tolak dengan 403 (subscription_overdue) kecuali endpoint subscription.
  */
 class EnsureSubscriptionPaid
@@ -41,7 +41,7 @@ class EnsureSubscriptionPaid
             return $next($request);
         }
 
-        return redirect()->route('subscriptions.due')
+        return redirect()->route('subscriptions.notice')
             ->with('error', 'Akun Anda diblokir karena tagihan subscription belum dibayar. Silakan selesaikan pembayaran billing terlebih dahulu.');
     }
 

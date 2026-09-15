@@ -46,6 +46,31 @@ class SubscriptionWebController extends Controller
         return view('subscriptions.due', compact('merchant', 'bill', 'subscriptions'));
     }
 
+    /**
+     * Halaman khusus notifikasi "segera bayar" untuk akun yang sedang menunggak.
+     */
+    public function notice()
+    {
+        $user = Auth::user();
+        $svc = app(SubscriptionService::class);
+        $merchant = $svc->merchantForUser($user);
+
+        if (!$merchant) {
+            return redirect()->route('dashboard');
+        }
+
+        $svc->ensureCurrentBill($merchant);
+
+        if (!$svc->isOverdue($merchant)) {
+            return redirect()->route('subscriptions.index');
+        }
+
+        $bill = $svc->currentBill($merchant);
+        $subscriptions = $merchant->subscriptions()->orderByDesc('period_start')->take(5)->get();
+
+        return view('subscriptions.notice', compact('merchant', 'bill', 'subscriptions'));
+    }
+
     public function pay(Request $request)
     {
         $user = Auth::user();

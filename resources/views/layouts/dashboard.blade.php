@@ -479,7 +479,7 @@
                 <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-[13px] flex items-center gap-2 animate-slide-up shadow-sm">
                     <i class="fas fa-exclamation-triangle text-red-500"></i>
                     Tagihan subscription belum dibayar — akun sedang diblokir.
-                    <a href="{{ route('subscriptions.due') }}" class="ml-auto text-red-700 font-bold underline whitespace-nowrap">Bayar Sekarang <i class="fas fa-arrow-right text-[11px]"></i></a>
+                    <a href="{{ route('subscriptions.notice') }}" class="ml-auto text-red-700 font-bold underline whitespace-nowrap">Bayar Sekarang <i class="fas fa-arrow-right text-[11px]"></i></a>
                 </div>
             @endif
 

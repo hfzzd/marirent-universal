@@ -34,6 +34,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            $request->session()->regenerateToken();
 
             $user = Auth::user();
             if (!$user->is_active) {
@@ -43,7 +44,7 @@ class AuthController extends Controller
 
             if (app(SubscriptionService::class)->isOverdueForUser($user)) {
                 $this->sendOverdueLoginNotice($user);
-                return redirect()->route('subscriptions.due')
+                return redirect()->route('subscriptions.notice')
                     ->with('error', 'Akun Anda diblokir karena tagihan subscription belum dibayar. Silakan selesaikan pembayaran billing untuk mengaktifkan kembali akses.');
             }
 
