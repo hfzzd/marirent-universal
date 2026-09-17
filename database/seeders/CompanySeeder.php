@@ -14,6 +14,7 @@ use App\Models\Playstation;
 use App\Models\Drone;
 use App\Models\MusicalInstrument;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CompanySeeder extends Seeder
@@ -32,6 +33,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. MH Thamrin Kav. 12, Jakarta Pusat',
                 'pickup' => 'Jl. MH Thamrin Kav. 12, Jakarta Pusat',
                 'phone' => '081211110001',
+                'latitude' => -6.1954000,
+                'longitude' => 106.8230000,
             ],
             [
                 'store' => 'Gunung Mas Auto Rental',
@@ -43,6 +46,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Dago No. 27, Bandung',
                 'pickup' => 'Jl. Dago No. 27, Bandung',
                 'phone' => '081211110002',
+                'latitude' => -6.8850000,
+                'longitude' => 107.6130000,
             ],
             // ===== Kategori Motor =====
             [
@@ -55,6 +60,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Ahmad Yani No. 154, Surabaya',
                 'pickup' => 'Jl. Ahmad Yani No. 154, Surabaya',
                 'phone' => '081211110003',
+                'latitude' => -7.3113000,
+                'longitude' => 112.7290000,
             ],
             [
                 'store' => 'Cakrawala Motor Touring',
@@ -66,6 +73,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Malioboro No. 8, Yogyakarta',
                 'pickup' => 'Jl. Malioboro No. 8, Yogyakarta',
                 'phone' => '081211110004',
+                'latitude' => -7.7929000,
+                'longitude' => 110.3658000,
             ],
             // ===== Kategori HP =====
             [
@@ -78,6 +87,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Ruko Kelapa Gading Blok C No. 21, Jakarta Utara',
                 'pickup' => 'Ruko Kelapa Gading Blok C No. 21, Jakarta Utara',
                 'phone' => '081211110005',
+                'latitude' => -6.1580000,
+                'longitude' => 106.9060000,
             ],
             [
                 'store' => 'GadgetLoan Indonesia',
@@ -89,6 +100,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Gatot Subroto No. 45, Medan',
                 'pickup' => 'Jl. Gatot Subroto No. 45, Medan',
                 'phone' => '081211110006',
+                'latitude' => 3.5952000,
+                'longitude' => 98.6722000,
             ],
             // ===== Kategori Kamera =====
             [
@@ -101,6 +114,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Raya Kuta No. 78, Denpasar',
                 'pickup' => 'Jl. Raya Kuta No. 78, Denpasar',
                 'phone' => '081211110007',
+                'latitude' => -8.7184000,
+                'longitude' => 115.1689000,
             ],
             [
                 'store' => 'VisualStory Camera Rental',
@@ -112,6 +127,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Buah Batu No. 99, Bandung',
                 'pickup' => 'Jl. Buah Batu No. 99, Bandung',
                 'phone' => '081211110008',
+                'latitude' => -6.9490000,
+                'longitude' => 107.6350000,
             ],
             // ===== Kategori Tenda/Camping =====
             [
@@ -124,6 +141,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Ijen No. 12, Malang',
                 'pickup' => 'Jl. Ijen No. 12, Malang',
                 'phone' => '081211110009',
+                'latitude' => -7.9645000,
+                'longitude' => 112.6210000,
             ],
             [
                 'store' => 'Alam Camping Supply',
@@ -135,6 +154,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Pandanaran No. 30, Semarang',
                 'pickup' => 'Jl. Pandanaran No. 30, Semarang',
                 'phone' => '081211110010',
+                'latitude' => -6.9875000,
+                'longitude' => 110.4210000,
             ],
             // ===== Kategori Playstation =====
             [
@@ -147,6 +168,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Ruko BSD Serpong Blok D No. 5, Tangerang',
                 'pickup' => 'Ruko BSD Serpong Blok D No. 5, Tangerang',
                 'phone' => '081211110011',
+                'latitude' => -6.3025000,
+                'longitude' => 106.6520000,
             ],
             [
                 'store' => 'BermainStudio Entertainment',
@@ -158,6 +181,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Sumatera No. 18, Bekasi',
                 'pickup' => 'Jl. Sumatera No. 18, Bekasi',
                 'phone' => '081211110012',
+                'latitude' => -6.2383000,
+                'longitude' => 106.9756000,
             ],
             // ===== Kategori Drone =====
             [
@@ -170,6 +195,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Pemuda No. 66, Surabaya',
                 'pickup' => 'Jl. Pemuda No. 66, Surabaya',
                 'phone' => '081211110013',
+                'latitude' => -7.2575000,
+                'longitude' => 112.7521000,
             ],
             [
                 'store' => 'SkyCapture Drone Service',
@@ -181,6 +208,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Sudirman No. 54, Makassar',
                 'pickup' => 'Jl. Sudirman No. 54, Makassar',
                 'phone' => '081211110014',
+                'latitude' => -5.1487000,
+                'longitude' => 119.4319000,
             ],
             // ===== Kategori Alat Musik =====
             [
@@ -193,6 +222,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Braga No. 33, Bandung',
                 'pickup' => 'Jl. Braga No. 33, Bandung',
                 'phone' => '081211110015',
+                'latitude' => -6.9175000,
+                'longitude' => 107.6091000,
             ],
             [
                 'store' => 'NadaNusantara Music',
@@ -204,6 +235,8 @@ class CompanySeeder extends Seeder
                 'address' => 'Jl. Darmo No. 22, Surabaya',
                 'pickup' => 'Jl. Darmo No. 22, Surabaya',
                 'phone' => '081211110016',
+                'latitude' => -7.2842000,
+                'longitude' => 112.7340000,
             ],
         ];
 
@@ -231,18 +264,21 @@ class CompanySeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
 
-            // 2. Merchant / toko
+            // 2. Merchant / toko (koordinat sesuai lokasi + logo tiap merchant)
             $merchant = Merchant::create([
                 'user_id' => $owner->id,
                 'slug' => $this->uniqueSlug($data['store']),
                 'name' => $data['store'],
                 'description' => $data['description'],
+                'logo' => $this->makeLogo($data['store']),
                 'company_email' => $data['email'],
                 'phone' => $data['phone'],
                 'address' => $data['address'],
                 'city' => $data['city'],
                 'pickup_address' => $data['pickup'],
                 'operational_hours' => '08.00 - 20.00',
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
                 'commission_rate' => mt_rand(7, 12),
                 'is_active' => true,
                 'status' => 'active',
@@ -255,6 +291,8 @@ class CompanySeeder extends Seeder
                 $merchant->only([
                     'slug', 'name', 'description', 'logo', 'banner', 'phone', 'company_email',
                     'website', 'instagram', 'address', 'city', 'pickup_address', 'operational_hours',
+                    'bank_name', 'bank_account_number', 'bank_account_holder',
+                    'latitude', 'longitude',
                     'commission_rate', 'is_active', 'status', 'verified_at',
                 ])
             );
@@ -430,6 +468,33 @@ class CompanySeeder extends Seeder
                 ]);
                 break;
         }
+    }
+
+    /**
+     * Buat logo SVG tiap merchant (inisial toko di atas gradasi sky-blue)
+     * dan simpan ke disk public. Mengembalikan path relatif storage.
+     */
+    private function makeLogo(string $storeName): string
+    {
+        $slug = Str::slug($storeName) ?: Str::random(6);
+        $path = 'merchant-logos/' . $slug . '.svg';
+
+        if (!Storage::disk('public')->exists($path)) {
+            $words = preg_split('/\s+/', trim($storeName));
+            $initials = strtoupper(substr($words[0] ?? 'M', 0, 1) . substr($words[1] ?? 'R', 0, 1));
+            $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">'
+                . '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+                . '<stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#0284c7"/>'
+                . '</linearGradient></defs>'
+                . '<rect width="256" height="256" rx="56" fill="url(#g)"/>'
+                . '<circle cx="200" cy="56" r="60" fill="#ffffff" opacity="0.12"/>'
+                . '<circle cx="52" cy="208" r="44" fill="#ffffff" opacity="0.10"/>'
+                . '<text x="128" y="148" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="#ffffff" text-anchor="middle">'
+                . htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') . '</text></svg>';
+            Storage::disk('public')->put($path, $svg);
+        }
+
+        return $path;
     }
 
     private function uniqueSlug(string $name): string

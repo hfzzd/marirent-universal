@@ -36,7 +36,7 @@
                 No. HP: <span class="font-bold text-white">{{ $driver->user?->phone ?? auth()->user()->phone ?? '-' }}</span>
             </p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="hero-cta w-full sm:w-auto">
             @php
                 $todayAtt = \App\Models\Attendance::where('driver_id', $driver->id)->where('date', now()->toDateString())->first();
             @endphp
@@ -63,7 +63,7 @@
 </div>
 
 {{-- 4 Stat Widgets --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
     <div class="stat-card glass-card rounded-2xl p-5 border border-sky-100/50 shadow-sm">
         <div class="flex items-center justify-between">
             <div>
@@ -94,7 +94,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Gaji Terakhir</p>
-                <h3 class="text-xl font-black text-navy-800 mt-1">Rp {{ number_format($lastSalary?->total_salary ?? 0, 0, ',', '.') }}</h3>
+                <h3 class="text-lg sm:text-xl font-black text-navy-800 mt-1 break-words min-w-0">Rp {{ number_format($lastSalary?->total_salary ?? 0, 0, ',', '.') }}</h3>
                 <span class="text-[10px] text-gray-400 mt-2 block">{{ $lastSalary?->period_month ? \Carbon\Carbon::createFromFormat('Y-m', $lastSalary->period_month)->translatedFormat('F Y') : 'Belum ada slip' }}</span>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/25">

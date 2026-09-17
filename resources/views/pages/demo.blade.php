@@ -67,7 +67,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <button type="submit" class="btn-primary w-full text-white px-8 py-4 rounded-2xl font-bold text-[15px] shadow-lg shadow-sky-500/25 inline-flex items-center justify-center gap-2"><i class="fas fa-paper-plane"></i> Kirim Permintaan Demo</button>
-                            <p class="text-center text-[12px] text-gray-400 mt-3">atau langsung <a href="https://wa.me/6281234567890?text=Halo%20min%20saya%20mau%20jadwal%20demo%20MariRent" target="_blank" class="text-emerald-600 font-bold hover:underline">chat WhatsApp <i class="fab fa-whatsapp"></i></a></p>
+                            <p class="text-center text-[12px] text-gray-400 mt-3">atau langsung <a href="https://wa.me/6281234567890?text=Halo%20min%20saya%20mau%20jadwal%20demo%20MariRent" target="_blank" class="text-sky-600 font-bold hover:underline">chat WhatsApp <i class="fab fa-whatsapp"></i></a></p>
                         </div>
                     </form>
                 </div>
@@ -92,9 +92,9 @@
                 <div class="rounded-3xl p-7 text-white reveal reveal-delay-2" style="background: linear-gradient(135deg, #0c4a6e, #0284c7);">
                     <h3 class="font-extrabold text-[16px]">Yang akan Anda lihat</h3>
                     <ul class="mt-4 space-y-2.5 text-[14px] text-sky-100">
-                        <li class="flex gap-2.5"><i class="fas fa-check text-emerald-300 mt-1"></i> Dasbor monitoring & scheduler operasional</li>
-                        <li class="flex gap-2.5"><i class="fas fa-check text-emerald-300 mt-1"></i> Alur booking → pembayaran → serah terima unit</li>
-                        <li class="flex gap-2.5"><i class="fas fa-check text-emerald-300 mt-1"></i> Laporan keuangan otomatis & penggantian unit</li>
+                        <li class="flex gap-2.5"><i class="fas fa-check text-sky-300 mt-1"></i> Dasbor monitoring & scheduler operasional</li>
+                        <li class="flex gap-2.5"><i class="fas fa-check text-sky-300 mt-1"></i> Alur booking → pembayaran → serah terima unit</li>
+                        <li class="flex gap-2.5"><i class="fas fa-check text-sky-300 mt-1"></i> Laporan keuangan otomatis & penggantian unit</li>
                     </ul>
                 </div>
             </div>

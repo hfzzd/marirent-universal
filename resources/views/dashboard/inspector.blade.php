@@ -3,18 +3,18 @@
 
 @section('content')
 {{-- Hero Banner --}}
-<div class="relative overflow-hidden rounded-3xl mb-6 shadow-xl shadow-sky-900/10" style="background: linear-gradient(135deg, #0b1e36 0%, #134e4a 50%, #059669 100%);">
-    <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="relative overflow-hidden rounded-3xl mb-6 shadow-xl shadow-sky-900/10" style="background: linear-gradient(135deg, #09203f 0%, #173b6c 50%, #0284c7 100%);">
+    <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none"></div>
     <div class="relative px-6 py-7 md:px-8 md:py-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-emerald-200 text-xs font-semibold mb-3">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sky-200 text-xs font-semibold mb-3">
+                <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
                 <span>Inspector - Unit Quality Control</span>
             </div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
                 Selamat Datang, {{ auth()->user()->name }}!
             </h1>
-            <p class="text-emerald-100/80 text-xs md:text-sm mt-1 max-w-xl">
+            <p class="text-sky-100/80 text-xs md:text-sm mt-1 max-w-xl">
                 Kelola tugas inspeksi awal & akhir rental lepas kunci (tanpa driver).
             </p>
             <div class="flex flex-wrap items-center gap-3 mt-4">
@@ -32,8 +32,8 @@
             <a href="{{ route('inspections.index') }}" class="flex-1 lg:flex-initial bg-white/15 hover:bg-white/25 text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 backdrop-blur-md">
                 <i class="fas fa-clipboard-list"></i> Riwayat
             </a>
-            <a href="{{ route('inspections.create') }}" class="flex-1 lg:flex-initial bg-white text-navy-900 hover:bg-emerald-50 px-5 py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center justify-center gap-2">
-                <i class="fas fa-plus text-emerald-600"></i> Buat Inspeksi
+            <a href="{{ route('inspections.create') }}" class="flex-1 lg:flex-initial bg-white text-navy-900 hover:bg-sky-50 px-5 py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center justify-center gap-2">
+                <i class="fas fa-plus text-sky-600"></i> Buat Inspeksi
             </a>
         </div>
     </div>
@@ -151,8 +151,8 @@
 <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-sky-100/50">
     <div class="px-6 py-4 border-b border-sky-100/60 flex items-center justify-between">
         <div>
-            <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
-                <i class="fas fa-clock-rotate-left text-emerald-500"></i> Inspeksi Terbaru Saya
+                <h3 class="text-sm font-extrabold text-navy-800 flex items-center gap-2">
+                <i class="fas fa-clock-rotate-left text-sky-500"></i> Inspeksi Terbaru Saya
             </h3>
             <p class="text-[11px] text-gray-400">Pemeriksaan terakhir yang Anda catat.</p>
         </div>

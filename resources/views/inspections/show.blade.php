@@ -17,7 +17,7 @@
                 <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $scopeColors[$inspection->scope] ?? 'bg-gray-100 text-gray-700' }}">{{ $inspection->getScopeLabel() }}</span>
                 <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $inspection->type === 'pre_rental' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700' }}">{{ $inspection->getTypeLabel() }}</span>
                 @if($inspection->booking && $inspection->booking->with_driver !== null)
-                <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $inspection->booking->with_driver ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-700' }}">{{ $inspection->getRentalTypeLabel() }}</span>
+                <span class="px-3 py-1.5 rounded-full text-sm font-medium {{ $inspection->booking->with_driver ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-700' }}">{{ $inspection->getRentalTypeLabel() }}</span>
                 @endif
             </div>
         </div>

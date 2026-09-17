@@ -114,6 +114,14 @@
             </div>
             @endif
 
+            {{-- Kondisi Unit Asal --}}
+            @if($replacement->damage_notes)
+            <div class="glass-card rounded-2xl p-6 border border-amber-100">
+                <h3 class="text-[14px] font-bold text-navy-800 mb-2"><i class="fas fa-triangle-exclamation text-amber-500 mr-2"></i>Kondisi Unit Asal</h3>
+                <p class="text-[12px] text-amber-700">{{ $replacement->damage_notes }}</p>
+            </div>
+            @endif
+
             {{-- Admin Notes --}}
             @if($replacement->admin_notes)
             <div class="glass-card rounded-2xl p-6 border border-sky-100">

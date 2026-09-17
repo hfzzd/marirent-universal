@@ -16,6 +16,7 @@ class Merchant extends Model
         'user_id', 'slug', 'name', 'description', 'logo', 'banner',
         'phone', 'company_email', 'website', 'instagram',
         'address', 'city', 'pickup_address', 'operational_hours',
+        'bank_name', 'bank_account_number', 'bank_account_holder',
         'latitude', 'longitude',
         'commission_rate', 'is_active', 'status',
         'verified_at', 'billing_plan', 'subscription_fee', 'subscription_until',
@@ -37,6 +38,57 @@ class Merchant extends Model
     public function hasCoordinates(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    /**
+     * Arah lintang: LU (Lintang Utara) / LS (Lintang Selatan).
+     */
+    public function latitudeDirection(): ?string
+    {
+        if ($this->latitude === null) {
+            return null;
+        }
+
+        return (float) $this->latitude >= 0 ? 'LU' : 'LS';
+    }
+
+    /**
+     * Arah bujur: BT (Bujur Timur) / BB (Bujur Barat).
+     */
+    public function longitudeDirection(): ?string
+    {
+        if ($this->longitude === null) {
+            return null;
+        }
+
+        return (float) $this->longitude >= 0 ? 'BT' : 'BB';
+    }
+
+    /**
+     * Koordinat desimal: "-6.19540, 106.82300".
+     */
+    public function coordinatesDecimal(): ?string
+    {
+        if (!$this->hasCoordinates()) {
+            return null;
+        }
+
+        return number_format((float) $this->latitude, 5, '.', '') . ', '
+            . number_format((float) $this->longitude, 5, '.', '');
+    }
+
+    /**
+     * Koordinat angka dengan arah mata angin:
+     * "6.19540° LS, 106.82300° BT".
+     */
+    public function formattedCoordinates(): ?string
+    {
+        if (!$this->hasCoordinates()) {
+            return null;
+        }
+
+        return number_format(abs((float) $this->latitude), 5, '.', '') . '° ' . $this->latitudeDirection()
+            . ', ' . number_format(abs((float) $this->longitude), 5, '.', '') . '° ' . $this->longitudeDirection();
     }
 
     public function mapsEmbedUrl(): string

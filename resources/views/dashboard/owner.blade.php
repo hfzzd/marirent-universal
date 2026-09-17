@@ -77,11 +77,11 @@
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-2.5">
-            <a href="{{ route('vehicles.create', ['type' => 'mobil']) }}" class="bg-white text-navy-900 hover:bg-sky-50 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+        <div class="hero-cta w-full sm:w-auto">
+            <a href="{{ route('vehicles.create', ['type' => 'mobil']) }}" class="bg-white text-navy-900 hover:bg-sky-50 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5">
                 <i class="fas fa-plus text-sky-600"></i> Tambah Mobil
             </a>
-            <a href="{{ route('vehicles.create', ['type' => 'motor']) }}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+            <a href="{{ route('vehicles.create', ['type' => 'motor']) }}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5">
                 <i class="fas fa-plus"></i> Tambah Motor
             </a>
         </div>
@@ -235,7 +235,7 @@
         </a>
     </div>
     <div class="p-5">
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             @foreach($manualIncomePerCategory as $catName => $amount)
             <div class="bg-sky-50/50 rounded-xl p-3 text-center">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">{{ $catName }}</p>

@@ -9,12 +9,139 @@
         </h2>
         <p class="text-xs text-gray-400 mt-0.5">Kelola permintaan penggantian unit HP, kamera, dan tenda.</p>
     </div>
-    @if(in_array(auth()->user()->role, ['superadmin','owner','user']))
-    <a href="{{ route('item-replacements.create') }}" class="btn-primary text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
-        <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
-    </a>
+    @if(in_array(auth()->user()->role, ['superadmin','owner','admin','user']))
+    <div class="flex items-center gap-2 flex-wrap">
+        @if(in_array(auth()->user()->role, ['admin', 'owner'], true))
+        <button type="button" x-data @click="$dispatch('open-item-modal')" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
+            <i class="fas fa-bolt text-[10px]"></i> Penggantian Cepat
+        </button>
+        @endif
+        <a href="{{ route('item-replacements.create') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold transition flex items-center gap-1.5">
+            <i class="fas fa-plus text-[10px]"></i> Form Lengkap
+        </a>
+    </div>
     @endif
 </div>
+
+{{-- MODAL PENGGANTIAN CEPAT (khusus akun admin & owner) --}}
+@if(in_array(auth()->user()->role, ['admin', 'owner'], true))
+@php
+    $typeLabels = ['hp' => 'HP', 'camera' => 'Kamera', 'tenda' => 'Alat Camping', 'ps' => 'Playstation', 'drone' => 'Drone', 'musik' => 'Alat Musik'];
+    $typeToClass = ['Phone' => 'hp', 'Camera' => 'camera', 'CampingEquipment' => 'tenda', 'Playstation' => 'ps', 'Drone' => 'drone', 'MusicalInstrument' => 'musik'];
+@endphp
+<div x-data="itemQuickForm()" @open-item-modal.window="open = true" x-cloak>
+    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" @click="open = false"></div>
+    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95 translate-y-4" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="open = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 rounded-t-2xl p-5 relative overflow-hidden">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                <div class="relative flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-swap-horizontal text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Penggantian Unit Cepat</h3>
+                            <p class="text-sky-200 text-[11px]">Ajukan tanpa buka halaman baru</p>
+                        </div>
+                    </div>
+                    <button @click="open = false" class="text-white/70 hover:text-white transition"><i class="fas fa-times text-lg"></i></button>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('item-replacements.store') }}" enctype="multipart/form-data" @submit="loading = true" class="p-5 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tipe Unit *</label>
+                    <select name="item_type" x-model="type" @change="onTypeChange()" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                        @foreach($typeLabels as $val => $label)
+                        <option value="{{ $val }}" {{ ($modalType ?? 'hp') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking *</label>
+                    <select name="booking_id" x-model="bookingId" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                        <option value="">Pilih Booking</option>
+                        @foreach($modalBookings as $b)
+                        <option value="{{ $b->id }}" data-type="{{ $typeToClass[class_basename($b->item_type ?? '')] ?? '' }}">{{ $b->booking_code }} - {{ $b->item_type ? class_basename($b->item_type) : '-' }}</option>
+                        @endforeach
+                    </select>
+                    <p x-show="filteredBookings === 0" class="text-amber-600 text-[12px] mt-2"><i class="fas fa-info-circle mr-1"></i> Tidak ada booking ongoing untuk tipe ini.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Saat Ini *</label>
+                        <select name="original_item_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50" x-html="itemOptions"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Pengganti *</label>
+                        <select name="replacement_item_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50" x-html="itemOptions"></select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Alasan *</label>
+                    <textarea name="reason" rows="2" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 resize-none" placeholder="Jelaskan alasan penggantian unit..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Foto Awal Unit *</label>
+                    <input type="file" name="initial_item_photo" accept="image/*" required class="w-full text-[12px] text-navy-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[12px] file:font-semibold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 file:transition border-2 border-dashed border-gray-200 rounded-xl p-3 bg-gray-50/50">
+                </div>
+                <div class="flex gap-3 pt-2 border-t border-gray-100">
+                    <button type="submit" :disabled="loading" class="bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white px-6 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-sky-500/25 transition flex items-center gap-2 disabled:opacity-50">
+                        <i class="fas fa-paper-plane" x-show="!loading"></i>
+                        <i class="fas fa-spinner fa-spin" x-show="loading" x-cloak></i>
+                        <span x-text="loading ? 'Mengirim...' : 'Ajukan Penggantian'"></span>
+                    </button>
+                    <button type="button" @click="open = false" class="bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-xl text-[13px] font-medium text-navy-700 transition">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function itemQuickForm() {
+    const itemsByType = @json($modalItemsByType ?? []);
+    return {
+        open: false,
+        loading: false,
+        type: '{{ $modalType ?? 'hp' }}',
+        bookingId: '',
+        itemOptions: '',
+        filteredBookings: 1,
+        init() {
+            this.onTypeChange();
+            this.$watch('type', () => this.onTypeChange());
+        },
+        onTypeChange() {
+            const list = itemsByType[this.type] || [];
+            if (!list.length) {
+                this.itemOptions = '<option value="">Tidak ada unit tersedia</option>';
+            } else {
+                this.itemOptions = '<option value="">Pilih Unit</option>' + list.map(i =>
+                    '<option value="' + i.id + '">' + i.label.replace(/</g, '&lt;') + '</option>'
+                ).join('');
+            }
+            // Filter booking sesuai tipe
+            const sel = this.$el.querySelector('select[name="booking_id"]');
+            let visible = 0;
+            sel.querySelectorAll('option[data-type]').forEach(o => {
+                const show = !o.dataset.type || o.dataset.type === this.type;
+                o.hidden = !show;
+                if (show) visible++;
+            });
+            this.filteredBookings = visible;
+            if (this.bookingId) {
+                const cur = sel.querySelector('option[value="' + this.bookingId + '"]');
+                if (!cur || cur.hidden) this.bookingId = '';
+            }
+        }
+    };
+}
+</script>
+@endpush
+@endif
 
 {{-- FILTERS --}}
 <div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">

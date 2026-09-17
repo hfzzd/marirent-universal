@@ -5,7 +5,7 @@
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
     <div>
         <h2 class="text-xl font-bold text-navy-800 flex items-center gap-2">
-            <span class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm shadow-sm"><i class="fas fa-address-book"></i></span>
+            <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center text-sm shadow-sm"><i class="fas fa-address-book"></i></span>
             Direktori Buku Kontak
         </h2>
         <p class="text-xs text-gray-400 mt-0.5">Daftar kontak Pelanggan, Driver, Karyawan, Mitra Owner, dan Admin sistem.</p>
@@ -20,25 +20,25 @@
 {{-- Search & Filter Tabs --}}
 <div class="glass-card rounded-2xl p-4 border border-sky-100/50 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
     <div class="flex flex-wrap items-center gap-2 w-full md:w-auto text-xs">
-        <a href="{{ route('contacts.index') }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ !$role ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index') }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ !$role ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Semua ({{ $counts['all'] }})
         </a>
-        <a href="{{ route('contacts.index', ['role' => 'user']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'user' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index', ['role' => 'user']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'user' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Pelanggan ({{ $counts['user'] }})
         </a>
-        <a href="{{ route('contacts.index', ['role' => 'driver']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'driver' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index', ['role' => 'driver']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'driver' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Driver ({{ $counts['driver'] }})
         </a>
-        <a href="{{ route('contacts.index', ['role' => 'staff']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'staff' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index', ['role' => 'staff']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'staff' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Staff ({{ $counts['staff'] ?? 0 }})
         </a>
-        <a href="{{ route('contacts.index', ['role' => 'employee']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'employee' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index', ['role' => 'employee']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'employee' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Karyawan ({{ $counts['employee'] }})
         </a>
-        <a href="{{ route('contacts.index', ['role' => 'owner']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'owner' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index', ['role' => 'owner']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'owner' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Mitra Owner ({{ $counts['owner'] }})
         </a>
-        <a href="{{ route('contacts.index', ['role' => 'superadmin']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'superadmin' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
+        <a href="{{ route('contacts.index', ['role' => 'superadmin']) }}" class="px-3.5 py-2 rounded-xl font-bold transition {{ $role === 'superadmin' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'text-gray-600 hover:bg-gray-100' }}">
             Admin ({{ $counts['superadmin'] }})
         </a>
     </div>
@@ -47,7 +47,7 @@
         @if($role)
         <input type="hidden" name="role" value="{{ $role }}">
         @endif
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, nomor HP..." class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, nomor HP..." class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
     </form>
 </div>
@@ -63,7 +63,7 @@
         <div>
             {{-- Top Row: Avatar & Role --}}
             <div class="flex items-start justify-between gap-3 mb-4">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-purple-500/20">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-sky-500/20">
                     {{ strtoupper(substr($c->name, 0, 2)) }}
                 </div>
                 @if($c->role === 'superadmin')
@@ -116,14 +116,14 @@
             </a>
 
             {{-- Mail Compose --}}
-            <a href="{{ route('mail.compose', ['to' => $c->id]) }}" class="w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-600 flex items-center justify-center text-xs transition" title="Kirim Surat / Email">
+            <a href="{{ route('mail.compose', ['to' => $c->id]) }}" class="w-8 h-8 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-600 flex items-center justify-center text-xs transition" title="Kirim Surat / Email">
                 <i class="fas fa-envelope"></i>
             </a>
         </div>
     </div>
     @empty
     <div class="col-span-full py-16 text-center text-gray-400">
-        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-400 flex items-center justify-center mx-auto mb-2 text-xl">
+        <div class="w-12 h-12 rounded-full bg-sky-50 text-sky-400 flex items-center justify-center mx-auto mb-2 text-xl">
             <i class="fas fa-address-book"></i>
         </div>
         <p class="font-semibold text-navy-700">Tidak ada kontak ditemukan</p>

@@ -100,7 +100,7 @@
                             <span class="text-[13px] font-semibold text-navy-700 hidden sm:block">{{ auth()->user()->name }}</span>
                             <i class="fas fa-chevron-down text-[9px] text-gray-400 hidden sm:block transition-transform duration-200" :class="open && 'rotate-180'"></i>
                         </button>
-                        <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-1" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="hidden absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50" style="display: none;">
+                        <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-1" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" x-cloak class="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50">
                             <div class="px-4 py-3 border-b border-gray-100">
                                 <p class="text-[13px] font-bold text-navy-800">{{ auth()->user()->name }}</p>
                                 <p class="text-[11px] text-gray-400 mt-0.5">{{ auth()->user()->email }}</p>

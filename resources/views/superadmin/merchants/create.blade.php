@@ -16,7 +16,7 @@
             <p class="text-[11px] text-gray-400 mt-0.5">Buat akun owner beserta profil tokonya. Toko dibuat dengan status menunggu verifikasi.</p>
         </div>
 
-        <form action="{{ route('superadmin.merchants.store') }}" method="POST" class="p-6 space-y-5">
+        <form action="{{ route('superadmin.merchants.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5" x-data="{ logoPreview: '' }">
             @csrf
 
             <div>
@@ -59,6 +59,26 @@
                 @error('store_name') <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
 
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Logo Toko <span class="text-gray-400 font-normal">(opsional, JPG/PNG/WebP maks 2MB)</span></label>
+                <div class="flex items-center gap-3">
+                    <div class="w-14 h-14 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <template x-if="logoPreview">
+                            <img :src="logoPreview" alt="Logo" class="w-full h-full object-cover">
+                        </template>
+                        <template x-if="!logoPreview">
+                            <i class="fas fa-image text-sky-300"></i>
+                        </template>
+                    </div>
+                    <label class="flex-1 cursor-pointer border-2 border-dashed border-gray-200 hover:border-sky-300 rounded-xl px-4 py-2.5 text-center transition bg-gray-50/50 text-[12px] font-semibold text-sky-600">
+                        <i class="fas fa-upload mr-1.5"></i>Pilih Logo
+                        <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden"
+                               x-on:change="if($event.target.files[0]) { const r = new FileReader(); r.onload = e => logoPreview = e.target.result; r.readAsDataURL($event.target.files[0]); }">
+                    </label>
+                </div>
+                @error('logo') <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p> @enderror
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Kota</label>
@@ -67,6 +87,35 @@
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Alamat</label>
                     <input type="text" name="address" value="{{ old('address') }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Titik Lokasi di Peta <span class="text-gray-400 font-normal">(opsional — klik peta untuk menandai)</span></label>
+                <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                    <input type="text" id="merchant-search-place" placeholder="Cari lokasi / nama tempat..." class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+                    <div class="flex gap-2">
+                        <button type="button" id="merchant-search-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition"><i class="fas fa-search text-[11px] mr-1"></i>Cari</button>
+                        <button type="button" id="merchant-geocode-address" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition"><i class="fas fa-map-marker-alt text-[11px] mr-1"></i>Dari Alamat</button>
+                    </div>
+                </div>
+                <div id="merchant-map" class="w-full rounded-xl overflow-hidden border border-gray-200" style="height: 260px;"></div>
+                <input type="hidden" name="latitude" id="merchant-latitude" value="{{ old('latitude') }}">
+                <input type="hidden" name="longitude" id="merchant-longitude" value="{{ old('longitude') }}">
+            </div>
+
+            <div>
+                <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Rekening Bank Toko <span class="text-gray-400 font-normal">(opsional)</span></label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <input type="text" name="bank_name" value="{{ old('bank_name') }}" placeholder="Nama bank (cth: BCA)" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+                    </div>
+                    <div>
+                        <input type="text" name="bank_account_number" value="{{ old('bank_account_number') }}" placeholder="Nomor rekening" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100 font-mono">
+                    </div>
+                    <div>
+                        <input type="text" name="bank_account_holder" value="{{ old('bank_account_holder') }}" placeholder="Atas nama" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] outline-none focus:ring-sky-100">
+                    </div>
                 </div>
             </div>
 
@@ -91,4 +140,11 @@
         </form>
     </div>
 </div>
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+@endpush
+@push('scripts')
+@vite(['resources/js/merchant-map.js'])
+@endpush
 @endsection

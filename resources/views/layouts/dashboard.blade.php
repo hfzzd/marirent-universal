@@ -16,9 +16,9 @@
     @yield('styles')
     @stack('styles')
 </head>
-<body class="bg-sky-50/50 flex">
+<body class="bg-sky-50/50 flex overflow-x-clip">
     {{-- SIDEBAR --}}
-    <aside id="sidebar" class="sidebar w-60 max-w-[85vw] h-screen fixed top-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 overflow-y-auto flex-shrink-0">
+    <aside id="sidebar" class="sidebar w-60 max-w-[85vw] h-screen fixed top-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 overflow-y-auto overscroll-contain flex-shrink-0">
         <div class="p-4">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5 mb-5 pb-4 border-b border-white/5">
                 <div class="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -83,7 +83,7 @@
                 <a href="{{ route('superadmin.monitoring-vehicle') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.monitoring-vehicle') ? 'active' : '' }}">
                     <i class="fas fa-car w-5 mr-2.5 text-sm"></i> Monitoring Vehicle
                 </a>
-                <a href="{{ route('superadmin.scheduler') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.scheduler*') ? 'active' : '' }}">
+                <a href="{{ route('scheduler.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('superadmin.scheduler*', 'scheduler.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-alt w-5 mr-2.5 text-sm"></i> Scheduler
                 </a>
 
@@ -205,9 +205,15 @@
                     <i class="fas fa-credit-card w-5 mr-2.5 text-sm"></i> Subscription
                 </a>
                 @endif
+                <a href="{{ route('merchant.bank') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('merchant.bank*') ? 'active' : '' }}">
+                    <i class="fas fa-university w-5 mr-2.5 text-sm"></i> Rekening Bank
+                </a>
                 <div class="sidebar-group-title mt-4">Operasional</div>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Booking
+                </a>
+                <a href="{{ route('scheduler.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('scheduler.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-alt w-5 mr-2.5 text-sm"></i> Scheduler
                 </a>
                 <a href="{{ route('invoices.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-2.5 text-sm"></i> Invoice
@@ -221,12 +227,16 @@
                 <a href="{{ route('reports.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
                 </a>
+                @if(auth()->user()->managesVehicles())
                 <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
+                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian Kendaraan
                 </a>
+                @endif
+                @if(auth()->user()->managesItems())
                 <a href="{{ route('item-replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('item-replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-sync-alt w-5 mr-2.5 text-sm"></i> Penggantian Unit
                 </a>
+                @endif
                 @endif
 
                 @elseif($role === 'admin')
@@ -262,9 +272,15 @@
                 <a href="{{ route('subscriptions.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}">
                     <i class="fas fa-credit-card w-5 mr-2.5 text-sm"></i> Subscription
                 </a>
+                <a href="{{ route('merchant.bank') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('merchant.bank*') ? 'active' : '' }}">
+                    <i class="fas fa-university w-5 mr-2.5 text-sm"></i> Rekening Bank
+                </a>
                 <div class="sidebar-group-title mt-4">Operasional</div>
                 <a href="{{ route('bookings.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check w-5 mr-2.5 text-sm"></i> Booking
+                </a>
+                <a href="{{ route('scheduler.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('scheduler.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-alt w-5 mr-2.5 text-sm"></i> Scheduler
                 </a>
                 <a href="{{ route('inspections.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('inspections.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-check w-5 mr-2.5 text-sm"></i> Inspeksi
@@ -275,12 +291,16 @@
                 <a href="{{ route('reports.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fas fa-route w-5 mr-2.5 text-sm"></i> Laporan
                 </a>
+                @if(auth()->user()->managesVehicles())
                 <a href="{{ route('replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('replacements.*') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian
+                    <i class="fas fa-exchange-alt w-5 mr-2.5 text-sm"></i> Penggantian Kendaraan
                 </a>
+                @endif
+                @if(auth()->user()->managesItems())
                 <a href="{{ route('item-replacements.index') }}" class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-gray-400 text-[13px] font-medium {{ request()->routeIs('item-replacements.*') ? 'active' : '' }}">
                     <i class="fas fa-sync-alt w-5 mr-2.5 text-sm"></i> Penggantian Unit
                 </a>
+                @endif
 
                 @elseif($role === 'driver' || $role === 'staff')
                 <div class="sidebar-group-title mt-4">Absensi</div>
@@ -368,19 +388,19 @@
         </div>
     </aside>
 
-    {{-- Backdrop untuk sidebar mobile (off-canvas) --}}
-    <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-navy-900/50 z-30 md:hidden" onclick="toggleSidebar()" aria-hidden="true"></div>
+    {{-- Backdrop untuk sidebar mobile/tablet (off-canvas) --}}
+    <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-navy-900/50 z-30 lg:hidden" onclick="toggleSidebar()" aria-hidden="true"></div>
 
     {{-- MAIN CONTENT --}}
-    <div class="md:pl-60 flex-1 min-h-screen">
+    <div class="lg:pl-60 flex-1 min-w-0 min-h-screen overflow-x-clip">
         {{-- TOPBAR --}}
         <header class="bg-white/80 backdrop-blur-md border-b border-sky-100 sticky top-0 z-30">
-            <div class="flex items-center justify-between px-5 py-3">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="md:hidden text-navy-600 hover:text-sky-600 transition">
+            <div class="flex items-center justify-between gap-3 px-4 sm:px-5 py-3">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-navy-600 hover:text-sky-600 transition flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl hover:bg-sky-50" aria-label="Buka menu">
                         <i class="fas fa-bars text-lg"></i>
                     </button>
-                    <h1 class="text-[15px] font-semibold text-navy-800 hidden md:block">@yield('page-title', 'Dashboard')</h1>
+                    <h1 class="text-[14px] sm:text-[15px] font-semibold text-navy-800 truncate">@yield('page-title', 'Dashboard')</h1>
                 </div>
                 <div class="flex items-center gap-3">
                     {{-- Notification Bell --}}
@@ -441,7 +461,7 @@
             </div>
         </header>
 
-        <main class="p-3 sm:p-5">
+        <main class="p-4 sm:p-5 lg:p-6 max-w-[100vw] min-w-0">
             @if(session('success'))
                 <div class="mb-4 bg-sky-50 border border-sky-200 text-sky-700 px-4 py-3 rounded-xl text-[13px] flex items-center animate-slide-up shadow-sm">
                     <i class="fas fa-check-circle mr-2 text-sky-500"></i> {{ session('success') }}
@@ -495,8 +515,8 @@
             const sidebar = document.getElementById('sidebar');
             const backdrop = document.getElementById('sidebar-backdrop');
             if (!sidebar) return;
-            // On desktop the sidebar is always visible in-flow; keep it static.
-            if (window.innerWidth >= 768) return;
+            // On desktop (laptop/komputer) the sidebar is always visible in-flow; keep it static.
+            if (window.innerWidth >= 1024) return;
             sidebar.classList.toggle('-translate-x-full', !open);
             if (backdrop) backdrop.classList.toggle('hidden', !open);
             // Lock body scroll while the drawer is open so it never feels like it covers the page.
@@ -508,9 +528,9 @@
         function closeSidebar() {
             setSidebar(false);
         }
-        // Auto-close sidebar after clicking a link/logout inside, or anywhere outside (mobile)
+        // Auto-close sidebar after clicking a link/logout inside, or anywhere outside (mobile/tablet)
         document.addEventListener('click', function(e) {
-            if (window.innerWidth >= 768) return;
+            if (window.innerWidth >= 1024) return;
             const sidebar = document.getElementById('sidebar');
             if (!sidebar) return;
             const hamburger = e.target.closest('button[onclick="toggleSidebar()"]');
@@ -522,6 +542,22 @@
             }
             // clicked outside the sidebar
             closeSidebar();
+        });
+        // Reset drawer state saat resize ke laptop/desktop agar backdrop tidak nyangkut.
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024) {
+                const sidebar = document.getElementById('sidebar');
+                const backdrop = document.getElementById('sidebar-backdrop');
+                if (sidebar) sidebar.classList.remove('-translate-x-full');
+                if (backdrop) backdrop.classList.add('hidden');
+                document.body.style.overflow = '';
+            } else {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full') && document.body.style.overflow !== 'hidden') {
+                    // Biarkan state drawer apa adanya di tablet/HP; pastikan sidebar bisa di-scroll.
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
         });
         // Alpine.js menangani dropdown (x-show + @click.away), tidak perlu handler manual.
         // Animate numbers on load

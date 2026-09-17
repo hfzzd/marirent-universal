@@ -165,7 +165,7 @@
         $myActiveBooking = $myDriver ? \App\Models\Booking::where('driver_id', $myDriver->id)->whereIn('status', ['confirmed', 'ongoing'])->with(['vehicle', 'user'])->latest()->first() : null;
     @endphp
     {{-- Driver Dashboard --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
                 <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>

@@ -23,211 +23,17 @@ class SuperadminController extends Controller
         return view('superadmin.monitoring', compact('status'));
     }
 
-    public function scheduler()
-    {
-        return view('superadmin.scheduler');
-    }
-
+    /**
+     * Alias takscoped (seluruh data) ke SchedulerService.
+     * Route aktif: scheduler.events (SchedulerController).
+     */
     public function schedulerEvents(Request $request)
     {
+        $service = app(\App\Services\SchedulerService::class);
         $start = $request->input('start') ? \Carbon\Carbon::parse($request->input('start')) : now()->startOfMonth();
         $end = $request->input('end') ? \Carbon\Carbon::parse($request->input('end')) : now()->endOfMonth();
 
-        $events = [];
-        $bookings = Booking::with(['user', 'vehicle', 'invoice', 'invoice.payments'])
-            ->where('status', '!=', 'cancelled')
-            ->where(function ($q) use ($start, $end) {
-                $q->whereBetween('start_date', [$start, $end])
-                  ->orWhereBetween('end_date', [$start, $end])
-                  ->orWhere(function ($q2) use ($start, $end) {
-                      $q2->whereNotNull('actual_start_date')
-                         ->whereBetween('actual_start_date', [$start, $end]);
-                  })
-                  ->orWhere(function ($q3) use ($start, $end) {
-                      $q3->whereNotNull('actual_end_date')
-                         ->whereBetween('actual_end_date', [$start, $end]);
-                  });
-            })
-            ->get();
-
-        foreach ($bookings as $b) {
-            $userName = $b->user->name ?? '-';
-            $vehicleName = $b->vehicle->name ?? ($b->category->name ?? '-');
-            $code = $b->booking_code;
-            $label = $code . ' - ' . $userName;
-
-            if ($b->start_date && $b->start_date->between($start, $end)) {
-                $events[] = [
-                    'id' => 'start-' . $b->id,
-                    'title' => $label . ' Mulai',
-                    'start' => $b->start_date->toIso8601String(),
-                    'color' => '#3b82f6',
-                    'textColor' => '#ffffff',
-                    'extendedProps' => [
-                        'type' => 'mulai',
-                        'booking_code' => $code,
-                        'user_name' => $userName,
-                        'vehicle_name' => $vehicleName,
-                        'booking_id' => $b->id,
-                        'start_date' => $b->start_date->format('d M Y'),
-                        'end_date' => $b->end_date ? $b->end_date->format('d M Y') : '-',
-                    ],
-                ];
-            }
-
-            if ($b->end_date && $b->end_date->between($start, $end)) {
-                $events[] = [
-                    'id' => 'end-' . $b->id,
-                    'title' => $label . ' Selesai',
-                    'start' => $b->end_date->toIso8601String(),
-                    'color' => '#6366f1',
-                    'textColor' => '#ffffff',
-                    'extendedProps' => [
-                        'type' => 'selesai',
-                        'booking_code' => $code,
-                        'user_name' => $userName,
-                        'vehicle_name' => $vehicleName,
-                        'booking_id' => $b->id,
-                    ],
-                ];
-            }
-
-            if ($b->actual_start_date && $b->actual_start_date->between($start, $end)) {
-                $events[] = [
-                    'id' => 'pickup-' . $b->id,
-                    'title' => $label . ' Penjemputan',
-                    'start' => $b->actual_start_date->toIso8601String(),
-                    'color' => '#06b6d4',
-                    'textColor' => '#ffffff',
-                    'extendedProps' => [
-                        'type' => 'penjemputan',
-                        'booking_code' => $code,
-                        'user_name' => $userName,
-                        'vehicle_name' => $vehicleName,
-                        'booking_id' => $b->id,
-                        'pickup_location' => $b->pickup_location ?? '-',
-                    ],
-                ];
-            }
-
-            if ($b->actual_end_date && $b->actual_end_date->between($start, $end)) {
-                $events[] = [
-                    'id' => 'return-' . $b->id,
-                    'title' => $label . ' Pemulangan',
-                    'start' => $b->actual_end_date->toIso8601String(),
-                    'color' => '#8b5cf6',
-                    'textColor' => '#ffffff',
-                    'extendedProps' => [
-                        'type' => 'pemulangan',
-                        'booking_code' => $code,
-                        'user_name' => $userName,
-                        'vehicle_name' => $vehicleName,
-                        'booking_id' => $b->id,
-                        'dropoff_location' => $b->dropoff_location ?? '-',
-                    ],
-                ];
-            }
-
-            if ($b->invoice) {
-                $invoice = $b->invoice;
-                $paidAmount = $invoice->payments->where('status', 'verified')->sum('amount');
-
-                if ($invoice->status === 'paid') {
-                    $events[] = [
-                        'id' => 'paid-' . $b->id,
-                        'title' => $label . ' Lunas',
-                        'start' => ($invoice->paid_at ?? $b->start_date)->toIso8601String(),
-                        'color' => '#22c55e',
-                        'textColor' => '#ffffff',
-                        'extendedProps' => [
-                            'type' => 'lunas',
-                            'booking_code' => $code,
-                            'user_name' => $userName,
-                            'vehicle_name' => $vehicleName,
-                            'booking_id' => $b->id,
-                            'amount' => $invoice->total_amount,
-                            'paid_amount' => $paidAmount,
-                        ],
-                    ];
-                } elseif ($invoice->status === 'partial' || ($paidAmount > 0 && $paidAmount < $invoice->total_amount)) {
-                    $events[] = [
-                        'id' => 'partial-' . $b->id,
-                        'title' => $label . ' Sebagian',
-                        'start' => ($invoice->due_date ?? $b->start_date)->toIso8601String(),
-                        'color' => '#f59e0b',
-                        'textColor' => '#ffffff',
-                        'extendedProps' => [
-                            'type' => 'sebagian',
-                            'booking_code' => $code,
-                            'user_name' => $userName,
-                            'vehicle_name' => $vehicleName,
-                            'booking_id' => $b->id,
-                            'amount' => $invoice->total_amount,
-                            'paid_amount' => $paidAmount,
-                            'due_amount' => $invoice->total_amount - $paidAmount,
-                        ],
-                    ];
-                } elseif ($invoice->status !== 'paid' && $invoice->due_date && $invoice->due_date->isPast()) {
-                    $events[] = [
-                        'id' => 'overdue-' . $b->id,
-                        'title' => $label . ' Terlambat',
-                        'start' => $invoice->due_date->toIso8601String(),
-                        'color' => '#ef4444',
-                        'textColor' => '#ffffff',
-                        'extendedProps' => [
-                            'type' => 'terlambat',
-                            'booking_code' => $code,
-                            'user_name' => $userName,
-                            'vehicle_name' => $vehicleName,
-                            'booking_id' => $b->id,
-                            'amount' => $invoice->total_amount,
-                            'paid_amount' => $paidAmount,
-                            'due_amount' => $invoice->total_amount - $paidAmount,
-                            'due_date' => $invoice->due_date->format('d M Y'),
-                        ],
-                    ];
-                }
-            }
-        }
-
-        // Maintenance Events
-        $maintenances = Maintenance::with(['vehicle'])
-            ->where('status', '!=', 'cancelled')
-            ->where(function ($q) use ($start, $end) {
-                $q->whereBetween('scheduled_date', [$start, $end])
-                  ->orWhere(function ($q2) use ($start, $end) {
-                      $q2->whereNotNull('completed_date')
-                         ->whereBetween('completed_date', [$start, $end]);
-                  });
-            })
-            ->get();
-
-        foreach ($maintenances as $m) {
-            $vehicleName = $m->vehicle->name ?? '-';
-            $typeLabels = ['routine' => 'Rutin', 'repair' => 'Perbaikan', 'inspection' => 'Inspeksi', 'emergency' => 'Darurat'];
-            $priorityColors = ['low' => '#22c55e', 'medium' => '#f59e0b', 'high' => '#f97316', 'urgent' => '#ef4444'];
-            $priorityColor = $priorityColors[$m->priority] ?? '#6b7280';
-
-            $events[] = [
-                'id' => 'maintenance-' . $m->id,
-                'title' => '🔧 ' . $m->title,
-                'start' => $m->scheduled_date->toIso8601String(),
-                'color' => $priorityColor,
-                'textColor' => '#ffffff',
-                'extendedProps' => [
-                    'type' => 'maintenance',
-                    'maintenance_code' => $m->maintenance_code,
-                    'vehicle_name' => $vehicleName,
-                    'maintenance_type' => $typeLabels[$m->type] ?? $m->type,
-                    'priority' => $m->priority,
-                    'status' => $m->status,
-                    'estimated_cost' => $m->estimated_cost,
-                    'technician' => $m->technician ?? '-',
-                ],
-            ];
-        }
-
-        return response()->json($events);
+        return response()->json($service->events($start, $end));
     }
 
     public function finance()
@@ -357,12 +163,18 @@ class SuperadminController extends Controller
             'phone' => 'nullable|string|max:30|unique:users,phone',
             'category_id' => 'nullable|exists:categories,id',
             'store_name' => 'required|string|max:120',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'city' => 'nullable|string|max:80',
             'address' => 'nullable|string|max:255',
+            'bank_name' => 'nullable|string|max:80',
+            'bank_account_number' => 'nullable|string|max:40',
+            'bank_account_holder' => 'nullable|string|max:120',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
             'commission_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $merchant = DB::transaction(function () use ($validated) {
+        $merchant = DB::transaction(function () use ($validated, $request) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -372,16 +184,35 @@ class SuperadminController extends Controller
                 'role' => 'owner',
             ]);
 
+            $logoPath = $request->hasFile('logo')
+                ? $request->file('logo')->store('merchant-logos', 'public')
+                : null;
+
             $merchant = Merchant::create([
                 'user_id' => $user->id,
                 'slug' => $this->uniqueMerchantSlug($validated['store_name']),
                 'name' => $validated['store_name'],
+                'logo' => $logoPath,
                 'city' => $validated['city'] ?? null,
                 'address' => $validated['address'] ?? null,
+                'bank_name' => $validated['bank_name'] ?? null,
+                'bank_account_number' => $validated['bank_account_number'] ?? null,
+                'bank_account_holder' => $validated['bank_account_holder'] ?? null,
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
                 'commission_rate' => $validated['commission_rate'] ?? 10,
                 'is_active' => false,
                 'status' => 'pending',
             ]);
+
+            if (!$merchant->hasCoordinates() && !empty($validated['address'] ?? null)) {
+                $coords = app(\App\Services\GeocodeService::class)->geocode(
+                    implode(', ', array_filter([$validated['address'] ?? '', $validated['city'] ?? '']))
+                );
+                if ($coords) {
+                    $merchant->update(['latitude' => $coords['latitude'], 'longitude' => $coords['longitude']]);
+                }
+            }
 
             Company::ensureForOwner($user);
 
@@ -436,6 +267,7 @@ class SuperadminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|string|max:30',
             'company_email' => 'nullable|email|max:120',
             'website' => 'nullable|url|max:120',
@@ -444,10 +276,35 @@ class SuperadminController extends Controller
             'address' => 'nullable|string|max:255',
             'pickup_address' => 'nullable|string|max:255',
             'operational_hours' => 'nullable|string|max:80',
+            'bank_name' => 'nullable|string|max:80',
+            'bank_account_number' => 'nullable|string|max:40',
+            'bank_account_holder' => 'nullable|string|max:120',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
             'commission_rate' => 'required|numeric|min:0|max:100',
         ]);
 
-        $merchant->update($validated);
+        $data = collect($validated)->except('logo')->all();
+        if ($request->hasFile('logo')) {
+            if ($merchant->logo) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($merchant->logo);
+            }
+            $data['logo'] = $request->file('logo')->store('merchant-logos', 'public');
+        }
+        // Tanpa pin manual tapi alamat berubah & belum ada koordinat: geocode otomatis.
+        if (!isset($data['latitude']) && (!empty($data['address'] ?? null) || !empty($data['city'] ?? null))) {
+            if (!$merchant->hasCoordinates() || ($data['address'] ?? null) !== $merchant->address || ($data['city'] ?? null) !== $merchant->city) {
+                $coords = app(\App\Services\GeocodeService::class)->geocode(
+                    implode(', ', array_filter([$data['address'] ?? $merchant->address, $data['city'] ?? $merchant->city]))
+                );
+                if ($coords) {
+                    $data['latitude'] = $coords['latitude'];
+                    $data['longitude'] = $coords['longitude'];
+                }
+            }
+        }
+
+        $merchant->update($data);
 
         return back()->with('success', 'Toko "' . $merchant->name . '" diperbarui.');
     }

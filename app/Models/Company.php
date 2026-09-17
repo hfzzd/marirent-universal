@@ -52,7 +52,8 @@ class Company extends Merchant
             ? $merchant->only([
                 'description', 'logo', 'banner', 'phone', 'company_email',
                 'website', 'instagram', 'address', 'city', 'pickup_address',
-                'operational_hours', 'latitude', 'longitude',
+                'operational_hours', 'bank_name', 'bank_account_number', 'bank_account_holder',
+                'latitude', 'longitude',
                 'commission_rate', 'is_active', 'status',
                 'verified_at',
             ])

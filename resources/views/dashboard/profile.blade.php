@@ -104,7 +104,7 @@
                            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-[13px] text-navy-700 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 outline-none transition-all duration-200 hover:border-gray-300">
                     @error('current_password') <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Password Baru</label>
                         <input type="password" name="password" required minlength="8"

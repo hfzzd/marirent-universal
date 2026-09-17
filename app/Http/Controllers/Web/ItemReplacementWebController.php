@@ -41,6 +41,8 @@ class ItemReplacementWebController extends Controller
 
         $role = Auth::user()->role;
 
+        $this->ensureItemScope();
+
         if ($role === 'user') {
             $query->whereHas('booking', fn($q) => $q->where('user_id', Auth::id()));
         } elseif (in_array($role, ['owner', 'admin'])) {
@@ -65,7 +67,35 @@ class ItemReplacementWebController extends Controller
 
         $replacements = $query->latest()->paginate(15);
 
-        return view('item-replacements.index', compact('replacements'));
+        // Data popup form cepat khusus akun admin & owner
+        $modalType = 'hp';
+        $modalBookings = collect();
+        $modalItemsByType = [];
+        if (in_array($role, ['owner', 'admin'], true)) {
+            $lockedSlug = Auth::user()->merchantCategory?->slug;
+            $modalType = match ($lockedSlug) {
+                'sewa-kamera' => 'camera',
+                'sewa-tenda' => 'tenda',
+                'sewa-ps' => 'ps',
+                'sewa-drone' => 'drone',
+                'sewa-alat-musik' => 'musik',
+                default => 'hp',
+            };
+            $ownerId = $this->itemMerchantOwnerId();
+            $modalBookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
+                ->where('item_type', '!=', null)
+                ->forMerchantCategory($ownerId, Auth::user()->merchantCategoryId())
+                ->with(['user', 'category'])
+                ->get();
+            foreach (['hp', 'camera', 'tenda', 'ps', 'drone', 'musik'] as $t) {
+                $modalItemsByType[$t] = $this->getAvailableItems($t, $role)->map(fn($i) => [
+                    'id' => $i->id,
+                    'label' => $i->name . ' (' . $i->brand . ') - Rp ' . number_format($i->daily_price, 0, ',', '.') . '/hari',
+                ])->values();
+            }
+        }
+
+        return view('item-replacements.index', compact('replacements', 'modalType', 'modalBookings', 'modalItemsByType'));
     }
 
     public function show(ItemReplacement $replacement)
@@ -82,8 +112,10 @@ class ItemReplacementWebController extends Controller
 
     public function create(Request $request)
     {
+        $this->ensureItemScope();
+
         $role = Auth::user()->role;
-        if (!in_array($role, ['superadmin', 'owner', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'user'])) {
             abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 
@@ -125,8 +157,22 @@ class ItemReplacementWebController extends Controller
         return null;
     }
 
+    /**
+     * Merchant kendaraan (mobil/motor) tidak memakai Penggantian Unit —
+     * khusus Penggantian Kendaraan.
+     */
+    private function ensureItemScope(): void
+    {
+        $user = Auth::user();
+        if (in_array($user->role, ['owner', 'admin'], true) && !$user->managesItems()) {
+            abort(403, 'Toko Anda (' . ($user->merchantCategory?->name ?? '-') . ') memakai Penggantian Kendaraan, bukan Penggantian Unit');
+        }
+    }
+
     private function guardCompanyItemReplacement(ItemReplacement $replacement): void
     {
+        $this->ensureItemScope();
+
         $ownerId = $this->itemMerchantOwnerId();
         if ($ownerId && !Booking::where('id', $replacement->booking_id)
             ->forMerchantCategory($ownerId, Auth::user()->merchantCategoryId())
@@ -180,8 +226,10 @@ class ItemReplacementWebController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureItemScope();
+
         $role = Auth::user()->role;
-        if (!in_array($role, ['superadmin', 'owner', 'user'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'user'])) {
             abort(403, 'Anda tidak berhak mengajukan penggantian unit');
         }
 

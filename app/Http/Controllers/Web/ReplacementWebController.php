@@ -13,6 +13,8 @@ class ReplacementWebController extends Controller
 {
     public function index(Request $request)
     {
+        $this->ensureVehicleScope();
+
         $query = VehicleReplacement::with(['booking', 'originalVehicle', 'replacementVehicle', 'requestedBy', 'approvedBy']);
 
         $role = Auth::user()->role;
@@ -50,7 +52,7 @@ class ReplacementWebController extends Controller
         $modalBookings = [];
         $modalVehicles = [];
 
-        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin', 'inspector'])) {
+        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'admin', 'superadmin', 'inspector'])) {
             $formData = $this->getFormData();
             $modalBookings = $formData['bookings'];
             $modalVehicles = $formData['vehicles'];
@@ -72,8 +74,22 @@ class ReplacementWebController extends Controller
         return null;
     }
 
+    /**
+     * Merchant non-kendaraan (HP, kamera, camping, dll) tidak memakai
+     * Penggantian Kendaraan — khusus Penggantian Unit.
+     */
+    private function ensureVehicleScope(): void
+    {
+        $user = Auth::user();
+        if (in_array($user->role, ['owner', 'admin'], true) && !$user->managesVehicles()) {
+            abort(403, 'Toko Anda (' . ($user->merchantCategory?->name ?? '-') . ') memakai Penggantian Unit, bukan Penggantian Kendaraan');
+        }
+    }
+
     private function guardCompanyReplacement(VehicleReplacement $replacement): void
     {
+        $this->ensureVehicleScope();
+
         $ownerId = $this->companyOwnerId();
         if ($ownerId !== null && (int) $replacement->originalVehicle?->owner_id !== $ownerId) {
             abort(403, 'Penggantian ini bukan milik company Anda');
@@ -275,9 +291,11 @@ class ReplacementWebController extends Controller
 
     public function create(Request $request)
     {
+        $this->ensureVehicleScope();
+
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user', 'inspector'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user', 'inspector'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
@@ -304,9 +322,11 @@ class ReplacementWebController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureVehicleScope();
+
         $role = Auth::user()->role;
 
-        if (!in_array($role, ['superadmin', 'owner', 'driver', 'staff', 'user', 'inspector'])) {
+        if (!in_array($role, ['superadmin', 'owner', 'admin', 'driver', 'staff', 'user', 'inspector'])) {
             abort(403, 'Anda tidak memiliki akses untuk membuat penggantian kendaraan');
         }
 
@@ -316,6 +336,7 @@ class ReplacementWebController extends Controller
             'reason' => 'required|string|max:2000',
             'price_difference' => 'nullable|numeric',
             'mark_maintenance' => 'nullable|in:0,1',
+            'damage_notes' => 'nullable|string|max:2000',
             'initial_vehicle_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'final_vehicle_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
@@ -368,6 +389,7 @@ class ReplacementWebController extends Controller
             'requested_by' => Auth::id(),
             'status' => 'pending',
             'reason' => $validated['reason'],
+            'damage_notes' => $validated['damage_notes'] ?? null,
             'price_difference' => $validated['price_difference'] ?? 0,
             'mark_maintenance' => ($validated['mark_maintenance'] ?? '1') === '1',
             'initial_vehicle_photo' => $initialPhoto,

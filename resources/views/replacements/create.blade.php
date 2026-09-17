@@ -58,7 +58,7 @@
 
         <div class="glass-card rounded-2xl p-6 mb-5 border border-sky-100/50">
             <h3 class="text-[13px] font-bold text-navy-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-car text-emerald-500"></i> Unit Pengganti
+                <i class="fas fa-car text-sky-500"></i> Unit Pengganti
             </h3>
             <div>
                 <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Pilih Unit *</label>
@@ -87,45 +87,90 @@
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Selisih Harga (Rp)</label>
-                        <input type="number" step="0.01" min="-999999999" name="price_difference" placeholder="0" value="{{ old('price_difference', 0) }}" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all duration-300 hover:border-gray-300">
-                        <p class="text-[11px] text-gray-400 mt-1.5"><i class="fas fa-info-circle text-[9px] mr-1"></i> Positif = lebih mahal, Negatif = lebih murah</p>
-                    </div>
-                    <div class="flex items-center pb-1">
-                        <label class="inline-flex items-center gap-2.5 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 hover:border-sky-300 transition w-full">
-                            <input type="hidden" name="mark_maintenance" value="0">
-                            <input type="checkbox" name="mark_maintenance" value="1" checked class="rounded border-gray-300 text-sky-600 focus:ring-sky-500 w-4 h-4">
-                            <div>
-                                <span class="text-[12px] font-medium text-navy-700">Unit lama → maintenance</span>
-                                <p class="text-[10px] text-gray-400">Tandai unit asal untuk perawatan</p>
-                            </div>
-                        </label>
-                    </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Selisih Harga (Rp)</label>
+                    <input type="number" step="0.01" min="-999999999" name="price_difference" placeholder="0" value="{{ old('price_difference', 0) }}" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all duration-300 hover:border-gray-300">
+                    <p class="text-[11px] text-gray-400 mt-1.5"><i class="fas fa-info-circle text-[9px] mr-1"></i> Positif = lebih mahal, Negatif = lebih murah</p>
                 </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 mb-5 border border-amber-100/70 bg-amber-50/20">
+            <h3 class="text-[13px] font-bold text-navy-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-triangle-exclamation text-amber-500"></i> Kondisi Unit Asal
+            </h3>
+            <label class="flex items-start gap-2.5 cursor-pointer">
+                <input type="hidden" name="mark_maintenance" value="0">
+                <input type="checkbox" name="mark_maintenance" value="1" checked class="mt-0.5 rounded border-gray-300 text-amber-500 focus:ring-amber-400" onchange="document.getElementById('damageNotesField').classList.toggle('hidden', !this.checked)">
+                <span class="text-[12px] font-semibold text-navy-700">Unit asal rusak, tandai sebagai maintenance</span>
+            </label>
+            <div id="damageNotesField" class="mt-3">
+                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Detail Kerusakan</label>
+                <textarea name="damage_notes" rows="2" maxlength="2000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none bg-white resize-none" placeholder="Jelaskan kerusakan unit asal...">{{ old('damage_notes') }}</textarea>
+                @error('damage_notes') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
             </div>
         </div>
 
         <div class="glass-card rounded-2xl p-6 mb-6 border border-sky-100/50">
             <h3 class="text-[13px] font-bold text-navy-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-camera text-violet-500"></i> Foto Unit (Opsional)
+                <i class="fas fa-camera text-sky-500"></i> Foto Unit (Opsional)
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Foto Awal Unit</label>
                     <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-sky-300 transition bg-gray-50/50">
-                        <input type="file" name="initial_vehicle_photo" accept="image/*" class="w-full text-[12px] text-navy-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[12px] file:font-semibold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 file:transition">
+                        <input type="file" name="initial_vehicle_photo" accept="image/*" id="initial-photo" class="hidden" onchange="previewPhoto(this, 'initial-preview', 'initial-empty')">
+                        <div id="initial-empty">
+                            <i class="fas fa-camera text-gray-300 text-xl mb-1"></i>
+                            <p class="text-[11px] text-gray-400 mb-1.5">Foto kondisi awal unit</p>
+                            <label for="initial-photo" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-3 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition inline-block">
+                                <i class="fas fa-upload text-[9px]"></i> Pilih Foto
+                            </label>
+                        </div>
+                        <div id="initial-preview" class="hidden">
+                            <img id="initial-preview-img" class="max-h-28 mx-auto rounded-lg border border-gray-200 shadow-sm mb-1">
+                            <button type="button" onclick="removePhoto('initial-photo', 'initial-preview', 'initial-empty')" class="text-red-500 text-[10px] font-medium hover:underline">Hapus</button>
+                        </div>
                     </div>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Foto Akhir Unit</label>
                     <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-sky-300 transition bg-gray-50/50">
-                        <input type="file" name="final_vehicle_photo" accept="image/*" class="w-full text-[12px] text-navy-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[12px] file:font-semibold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 file:transition">
+                        <input type="file" name="final_vehicle_photo" accept="image/*" id="final-photo" class="hidden" onchange="previewPhoto(this, 'final-preview', 'final-empty')">
+                        <div id="final-empty">
+                            <i class="fas fa-camera text-gray-300 text-xl mb-1"></i>
+                            <p class="text-[11px] text-gray-400 mb-1.5">Foto kondisi akhir unit</p>
+                            <label for="final-photo" class="bg-sky-50 hover:bg-sky-100 text-sky-600 px-3 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition inline-block">
+                                <i class="fas fa-upload text-[9px]"></i> Pilih Foto
+                            </label>
+                        </div>
+                        <div id="final-preview" class="hidden">
+                            <img id="final-preview-img" class="max-h-28 mx-auto rounded-lg border border-gray-200 shadow-sm mb-1">
+                            <button type="button" onclick="removePhoto('final-photo', 'final-preview', 'final-empty')" class="text-red-500 text-[10px] font-medium hover:underline">Hapus</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+<script>
+function previewPhoto(input, previewId, emptyId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(previewId + '-img').src = e.target.result;
+            document.getElementById(previewId).classList.remove('hidden');
+            document.getElementById(emptyId).classList.add('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+function removePhoto(inputId, previewId, emptyId) {
+    document.getElementById(inputId).value = '';
+    document.getElementById(previewId).classList.add('hidden');
+    document.getElementById(emptyId).classList.remove('hidden');
+}
+</script>
 
         <div class="flex gap-3">
             <button type="submit" :disabled="loading" class="bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white px-8 py-3 rounded-xl text-[13px] font-bold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">

@@ -8,29 +8,29 @@
         @csrf
 
         {{-- Header --}}
-        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl p-6 relative overflow-hidden">
+        <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-2xl p-6 relative overflow-hidden">
             <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full"></div>
             <div class="absolute -right-2 -bottom-4 w-16 h-16 bg-white/5 rounded-full"></div>
             <h2 class="text-xl font-bold relative z-10"><i class="fas fa-clipboard-check mr-2"></i>Inspeksi Unit</h2>
-            <p class="text-emerald-100 text-sm mt-1 relative z-10">Isi form inspeksi kendaraan sebelum atau sesudah masa sewa</p>
+            <p class="text-sky-100 text-sm mt-1 relative z-10">Isi form inspeksi kendaraan sebelum atau sesudah masa sewa</p>
         </div>
 
         {{-- Step Indicators --}}
         <div class="flex items-center gap-2 text-xs font-medium flex-wrap">
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
-                <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold">1</span> Booking
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-100 text-sky-700">
+                <span class="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold">1</span> Booking
             </div>
             <div class="w-8 h-px bg-gray-200 hidden sm:block"></div>
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="selectedBookingId ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'">
-                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="selectedBookingId ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'">2</span> Target
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="selectedBookingId ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-400'">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="selectedBookingId ? 'bg-sky-500 text-white' : 'bg-gray-300 text-white'">2</span> Target
             </div>
             <div class="w-8 h-px bg-gray-200 hidden sm:block"></div>
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="selectedItemId ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'">
-                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="selectedItemId ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'">3</span> Kondisi
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="selectedItemId ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-400'">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="selectedItemId ? 'bg-sky-500 text-white' : 'bg-gray-300 text-white'">3</span> Kondisi
             </div>
             <div class="w-8 h-px bg-gray-200 hidden sm:block"></div>
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="damageItems.filter(d=>d).length || completenessItems.filter(c=>c).length ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'">
-                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="damageItems.filter(d=>d).length || completenessItems.filter(c=>c).length ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'">4</span> Temuan
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" :class="damageItems.filter(d=>d).length || completenessItems.filter(c=>c).length ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-400'">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="damageItems.filter(d=>d).length || completenessItems.filter(c=>c).length ? 'bg-sky-500 text-white' : 'bg-gray-300 text-white'">4</span> Temuan
             </div>
         </div>
 
@@ -40,13 +40,13 @@
                 {{-- Booking & Type --}}
                 <div class="bg-white rounded-2xl shadow-sm p-6">
                     <h3 class="text-sm font-bold text-navy-800 mb-4 flex items-center gap-2">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-calendar-check text-emerald-500 text-sm"></i></div>
+                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-calendar-check text-sky-500 text-sm"></i></div>
                         Data Booking
                     </h3>
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-navy-600 mb-1.5">Booking *</label>
-                            <select name="booking_id" x-model="selectedBookingId" @change="detectScope()" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition bg-gray-50/50">
+                            <select name="booking_id" x-model="selectedBookingId" @change="detectScope()" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50">
                                 <option value="">Pilih Booking</option>
                                 @foreach($bookings as $b)
                                 <option value="{{ $b->id }}"
@@ -65,8 +65,8 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="type" value="pre_rental" class="peer sr-only" checked>
-                                    <div class="border-2 border-gray-200 rounded-xl p-3 text-center transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:border-gray-300 cursor-pointer">
-                                        <i class="fas fa-clipboard-list text-emerald-500 mb-1"></i>
+                                    <div class="border-2 border-gray-200 rounded-xl p-3 text-center transition-all peer-checked:border-sky-500 peer-checked:bg-sky-50 hover:border-gray-300 cursor-pointer">
+                                        <i class="fas fa-clipboard-list text-sky-500 mb-1"></i>
                                         <p class="text-xs font-semibold text-navy-700">Pre-Rental</p>
                                         <p class="text-[10px] text-gray-400">Sebelum sewa</p>
                                     </div>
@@ -87,7 +87,7 @@
                 {{-- Scope & Item Selection --}}
                 <div class="bg-white rounded-2xl shadow-sm p-6">
                     <h3 class="text-sm font-bold text-navy-800 mb-4 flex items-center gap-2">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-crosshairs text-emerald-500 text-sm"></i></div>
+                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-crosshairs text-sky-500 text-sm"></i></div>
                         Target Inspeksi
                     </h3>
 
@@ -96,7 +96,7 @@
                     {{-- Item Selector --}}
                     <div>
                         <label class="block text-xs font-medium text-navy-600 mb-1.5">Kendaraan *</label>
-                        <select name="inspection_item_id" x-model="selectedItemId" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition bg-gray-50/50">
+                        <select name="inspection_item_id" x-model="selectedItemId" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50">
                             <option value="">Pilih Kendaraan</option>
                             <template x-for="v in vehicles" :key="v.id">
                                 <option :value="v.id" x-text="v.name + ' (' + (v.category?.name || '-') + ')'"></option>
@@ -106,14 +106,14 @@
 
                     <div class="mt-4">
                         <label class="block text-xs font-medium text-navy-600 mb-1.5">Lama Pemakaian (jam)</label>
-                        <input type="number" name="usage_duration_hours" min="0" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition bg-gray-50/50" placeholder="Contoh: 48 (opsional)">
+                        <input type="number" name="usage_duration_hours" min="0" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50" placeholder="Contoh: 48 (opsional)">
                     </div>
                 </div>
 
                 {{-- Condition Assessment - Vehicle --}}
                 <div class="bg-white rounded-2xl shadow-sm p-6" x-transition>
                     <h3 class="text-sm font-bold text-navy-800 mb-4 flex items-center gap-2">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-gauge-high text-emerald-500 text-sm"></i></div>
+                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-gauge-high text-sky-500 text-sm"></i></div>
                         Kondisi Kendaraan
                     </h3>
                     <div class="grid sm:grid-cols-2 gap-4">
@@ -125,12 +125,12 @@
                             'brake_condition' => ['Rem', 'fa-hand-paper', 'amber'],
                             'electrical_condition' => ['Kelistrikan', 'fa-bolt', 'yellow'],
                         ] as $field => [$label, $icon, $color])
-                        <div class="border border-gray-100 rounded-xl p-3 hover:border-emerald-200 transition">
+                        <div class="border border-gray-100 rounded-xl p-3 hover:border-sky-200 transition">
                             <div class="flex items-center gap-2 mb-2">
                                 <div class="w-7 h-7 bg-{{ $color }}-100 text-{{ $color }}-600 rounded-lg flex items-center justify-center"><i class="fas {{ $icon }} text-xs"></i></div>
                                 <label class="text-xs font-semibold text-navy-700">{{ $label }}</label>
                             </div>
-                            <input type="number" name="{{ $field }}" min="1" max="10" value="7" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 transition text-center font-bold text-navy-800">
+                            <input type="number" name="{{ $field }}" min="1" max="10" value="7" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition text-center font-bold text-navy-800">
                         </div>
                         @endforeach
                     </div>
@@ -140,7 +140,7 @@
                                 <i class="fas fa-gas-pump text-gray-400"></i> Level Bensin (%)
                             </label>
                             <div class="relative">
-                                <input type="number" name="fuel_level" min="0" max="100" value="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 transition text-center font-bold text-navy-800">
+                                <input type="number" name="fuel_level" min="0" max="100" value="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition text-center font-bold text-navy-800">
                                 <div class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</div>
                             </div>
                         </div>
@@ -148,7 +148,7 @@
                             <label class="text-xs font-semibold text-navy-700 flex items-center gap-1.5 mb-2">
                                 <i class="fas fa-tachometer-alt text-gray-400"></i> Odometer (km)
                             </label>
-                            <input type="number" name="odometer_reading" min="0" step="0.1" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 transition text-center font-bold text-navy-800" placeholder="Opsional">
+                            <input type="number" name="odometer_reading" min="0" step="0.1" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition text-center font-bold text-navy-800" placeholder="Opsional">
                         </div>
                     </div>
                 </div>
@@ -156,13 +156,13 @@
                 {{-- Overall Condition (always shown) --}}
                 <div class="bg-white rounded-2xl shadow-sm p-6">
                     <h3 class="text-sm font-bold text-navy-800 mb-4 flex items-center gap-2">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-star text-emerald-500 text-sm"></i></div>
+                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-star text-sky-500 text-sm"></i></div>
                         Kondisi Keseluruhan
                     </h3>
                     <div class="border border-gray-100 rounded-xl p-4">
                         <label class="block text-xs font-medium text-navy-600 mb-2">Skor Kondisi (1-10) *</label>
                         <div class="flex items-center gap-3">
-                            <input type="number" name="overall_condition" min="1" max="10" value="7" required class="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 transition text-center font-bold text-lg text-navy-800">
+                            <input type="number" name="overall_condition" min="1" max="10" value="7" required class="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition text-center font-bold text-lg text-navy-800">
                             <div class="flex-1">
                                 <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div class="h-full rounded-full transition-all duration-300" :class="overallColor()" :style="'width:' + (overall_condition * 10) + '%'"></div>
@@ -204,7 +204,7 @@
                             </div>
                         </template>
                     </div>
-                    <button type="button" @click="damageItems.push('')" class="mt-3 text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                    <button type="button" @click="damageItems.push('')" class="mt-3 text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1">
                         <i class="fas fa-plus-circle"></i> Tambah Manual
                     </button>
                 </div>
@@ -239,7 +239,7 @@
                             </div>
                         </template>
                     </div>
-                    <button type="button" @click="completenessItems.push('')" class="mt-3 text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                    <button type="button" @click="completenessItems.push('')" class="mt-3 text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1">
                         <i class="fas fa-plus-circle"></i> Tambah Manual
                     </button>
                 </div>
@@ -253,11 +253,11 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-medium text-navy-600 mb-1.5">Catatan Inspeksi</label>
-                            <textarea name="notes" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition bg-gray-50/50" placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
+                            <textarea name="notes" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50" placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-navy-600 mb-1.5">Rekomendasi</label>
-                            <textarea name="recommendations" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition bg-gray-50/50" placeholder="Rekomendasi perbaikan, perawatan, dll...">{{ old('recommendations') }}</textarea>
+                            <textarea name="recommendations" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50" placeholder="Rekomendasi perbaikan, perawatan, dll...">{{ old('recommendations') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -267,7 +267,7 @@
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-2xl shadow-sm p-6 sticky top-24">
                     <h3 class="text-sm font-bold text-navy-800 mb-4 flex items-center gap-2">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-info-circle text-emerald-500 text-sm"></i></div>
+                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center"><i class="fas fa-info-circle text-sky-500 text-sm"></i></div>
                         Ringkasan
                     </h3>
                     <div class="space-y-3 text-sm">
@@ -297,7 +297,7 @@
                             <span class="font-bold text-lg" :class="overallTextColor()" x-text="overall_condition + '/10'"></span>
                         </div>
                     </div>
-                    <button type="submit" class="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-emerald-600 hover:to-teal-700 transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full mt-6 bg-gradient-to-r from-sky-500 to-blue-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-sky-600 hover:to-blue-700 transition shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2">
                         <i class="fas fa-check-circle"></i> Simpan Inspeksi
                     </button>
                 </div>

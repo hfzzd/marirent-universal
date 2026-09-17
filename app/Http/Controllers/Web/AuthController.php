@@ -133,9 +133,17 @@ class AuthController extends Controller
             'phone' => 'nullable|string|max:30|unique:users,phone',
             'category_id' => 'nullable|exists:categories,id',
             'store_name' => 'required|string|max:120',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'city' => 'nullable|string|max:80',
+            'address' => 'nullable|string|max:255',
+            'bank_name' => 'nullable|string|max:80',
+            'bank_account_number' => 'nullable|string|max:40',
+            'bank_account_holder' => 'nullable|string|max:120',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $request) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -145,14 +153,36 @@ class AuthController extends Controller
                 'role' => 'owner',
             ]);
 
-            Merchant::create([
+            $logoPath = $request->hasFile('logo')
+                ? $request->file('logo')->store('merchant-logos', 'public')
+                : null;
+
+            $merchant = Merchant::create([
                 'user_id' => $user->id,
                 'slug' => $this->uniqueMerchantSlug($validated['store_name']),
                 'name' => $validated['store_name'],
+                'logo' => $logoPath,
+                'city' => $validated['city'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'bank_name' => $validated['bank_name'] ?? null,
+                'bank_account_number' => $validated['bank_account_number'] ?? null,
+                'bank_account_holder' => $validated['bank_account_holder'] ?? null,
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
                 'commission_rate' => 10,
                 'is_active' => false,
                 'status' => 'pending',
             ]);
+
+            // Tanpa pin manual, coba geocode otomatis dari alamat + kota.
+            if (!$merchant->hasCoordinates() && !empty($validated['address'] ?? null)) {
+                $coords = app(\App\Services\GeocodeService::class)->geocode(
+                    implode(', ', array_filter([$validated['address'] ?? '', $validated['city'] ?? '']))
+                );
+                if ($coords) {
+                    $merchant->update(['latitude' => $coords['latitude'], 'longitude' => $coords['longitude']]);
+                }
+            }
 
             Company::ensureForOwner($user);
         });

@@ -172,6 +172,43 @@ class User extends Authenticatable
         return $this->category_id ? (int) $this->category_id : null;
     }
 
+    public const VEHICLE_CATEGORY_SLUGS = ['mobil', 'motor'];
+    public const ITEM_CATEGORY_SLUGS = ['sewa-hp', 'sewa-kamera', 'sewa-tenda', 'sewa-ps', 'sewa-drone', 'sewa-alat-musik'];
+
+    /**
+     * Slug kategori merchant (null = seluruh kategori / platform).
+     */
+    public function merchantCategorySlug(): ?string
+    {
+        if (!$this->isMerchantStaff() && !$this->isEmployee() && !$this->isStaff()) {
+            return null;
+        }
+
+        return $this->merchantCategory?->slug;
+    }
+
+    /**
+     * Merchant kendaraan (mobil/motor) memakai Penggantian Kendaraan.
+     * Tanpa kategori = seluruh kategori (kedua menu tampil).
+     */
+    public function managesVehicles(): bool
+    {
+        $slug = $this->merchantCategorySlug();
+
+        return $slug === null || in_array($slug, self::VEHICLE_CATEGORY_SLUGS, true);
+    }
+
+    /**
+     * Merchant non-kendaraan (HP, kamera, camping, dll) memakai Penggantian Unit.
+     * Tanpa kategori = seluruh kategori (kedua menu tampil).
+     */
+    public function managesItems(): bool
+    {
+        $slug = $this->merchantCategorySlug();
+
+        return $slug === null || in_array($slug, self::ITEM_CATEGORY_SLUGS, true);
+    }
+
     public function vehicles()
     {
         return $this->hasMany(Vehicle::class, 'owner_id');

@@ -104,6 +104,7 @@ class MerchantProfileController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'phone' => 'nullable|string|max:30',
             'company_email' => 'nullable|email|max:120',
             'website' => 'nullable|url|max:120',
@@ -112,6 +113,9 @@ class MerchantProfileController extends Controller
             'address' => 'nullable|string|max:255',
             'pickup_address' => 'nullable|string|max:255',
             'operational_hours' => 'nullable|string|max:80',
+            'bank_name' => 'nullable|string|max:80',
+            'bank_account_number' => 'nullable|string|max:40',
+            'bank_account_holder' => 'nullable|string|max:120',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
             'commission_rate' => 'nullable|numeric|min:0|max:100',
@@ -123,7 +127,14 @@ class MerchantProfileController extends Controller
         );
         $company = Company::ensureForOwner($owner);
 
-        $data = collect($validated)->except('commission_rate')->all();
+        $data = collect($validated)->except('commission_rate', 'logo')->all();
+
+        if ($request->hasFile('logo')) {
+            if ($merchant->logo) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($merchant->logo);
+            }
+            $data['logo'] = $request->file('logo')->store('merchant-logos', 'public');
+        }
 
         // Pin manual dari panel peta owner menang. Tanpa pin, isi otomatis
         // dari alamat (geocode) saat alamat berubah atau koordinat belum ada.

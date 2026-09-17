@@ -32,7 +32,7 @@
 @endphp
 
 {{-- Hero --}}
-<div class="relative overflow-hidden rounded-2xl mb-6" style="background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);">
+<div class="relative overflow-hidden rounded-2xl mb-6" style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%);">
     <div class="absolute inset-0 opacity-10">
         <div class="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div class="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full translate-y-1/2 -translate-x-1/4"></div>
@@ -40,11 +40,11 @@
     <div class="relative px-8 py-7 flex items-center justify-between">
         <div>
             <h2 class="text-2xl font-bold text-white mb-1">Finance Overview</h2>
-            <p class="text-emerald-100 text-[13px]">Ringkasan keuangan MariRent bulan ini.</p>
+            <p class="text-sky-100 text-[13px]">Ringkasan keuangan MariRent bulan ini.</p>
         </div>
         <div class="hidden md:flex items-center gap-6 text-right">
             <div>
-                <p class="text-emerald-200 text-[11px] font-medium">Laba Bersih</p>
+                <p class="text-sky-200 text-[11px] font-medium">Laba Bersih</p>
                 <p class="text-xl font-bold text-white">Rp {{ number_format($netProfit, 0, ',', '.') }}</p>
             </div>
         </div>
@@ -54,8 +54,8 @@
 {{-- Stat Cards --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="stat-card glass-card rounded-2xl p-5 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60"></div>
-        <div class="w-11 h-11 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-3">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-sky-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60"></div>
+        <div class="w-11 h-11 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/25 mb-3">
             <i class="fas fa-arrow-up text-white"></i>
         </div>
         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">Total Pendapatan</p>

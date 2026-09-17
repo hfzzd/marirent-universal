@@ -34,8 +34,14 @@
         <div>
             <h2 class="text-lg font-extrabold text-navy-800 flex items-center gap-2">
                 <i class="fas fa-calendar-alt text-sky-500"></i> Monitoring Scheduler
+                @if(!empty($locked ?? false) && !empty($activeCategory ?? ''))
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-sky-100 text-sky-700 px-2.5 py-1 rounded-full">{{ ($categories ?? collect())->firstWhere('slug', $activeCategory)?->name ?? $activeCategory }}</span>
+                @endif
             </h2>
             <p class="text-xs text-gray-400 mt-0.5">Jadwal pembayaran, penjemputan, dan pemulangan kendaraan secara real-time.</p>
+            @if(!empty($scopeNote ?? ''))
+            <p class="text-[11px] text-sky-600 font-medium mt-1 flex items-center gap-1"><i class="fas fa-filter text-[10px]"></i> {{ $scopeNote }}</p>
+            @endif
         </div>
         <button type="button" @click="exportCalendar()" class="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-semibold text-navy-700 hover:border-sky-300 hover:text-sky-600 transition">
             <i class="fas fa-file-csv text-[10px]"></i> Export CSV
@@ -44,6 +50,19 @@
             <i class="fas fa-print text-[10px]"></i> Print
         </button>
     </div>
+
+    {{-- Filter Kategori --}}
+    @if(empty($locked ?? false) && !empty($categories ?? []))
+    <div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] font-bold text-navy-700 uppercase tracking-wide mr-1"><i class="fas fa-tags text-sky-400 mr-1"></i> Kategori:</span>
+            <a href="{{ route('scheduler.index') }}" class="px-3.5 py-2 rounded-xl text-[12px] font-bold transition {{ ($activeCategory ?? 'all') === 'all' ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">Semua</a>
+            @foreach($categories as $cat)
+            <a href="{{ route('scheduler.index', ['category' => $cat->slug]) }}" class="px-3.5 py-2 rounded-xl text-[12px] font-bold transition {{ ($activeCategory ?? '') === $cat->slug ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">{{ $cat->name }}</a>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     {{-- Legend --}}
     <div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
@@ -318,7 +337,7 @@ function schedulerApp() {
                     week: 'Minggu',
                     day: 'Hari'
                 },
-                events: '{{ route("superadmin.scheduler.events") }}',
+                events: '{{ $eventsUrl ?? route("superadmin.scheduler.events") }}',
                 eventSourceSuccess: function(response) {
                     self.computeSummary(response);
                     return response;
@@ -393,7 +412,7 @@ function schedulerApp() {
 
         exportCalendar() {
             // Export event scheduler ke CSV (data dari endpoint scheduler/events)
-            fetch('{{ route('superadmin.scheduler.events') }}')
+            fetch('{{ $eventsUrl ?? route('superadmin.scheduler.events') }}')
                 .then(r => r.json())
                 .then(events => {
                     if (!events || !events.length) { alert('Tidak ada event untuk diexport.'); return; }

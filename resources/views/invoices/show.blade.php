@@ -94,6 +94,19 @@
         @if($invoice->status !== 'paid' && $invoice->due_amount > 0)
         <div class="border-t mt-8 pt-6">
             <h4 class="font-bold text-navy-800 mb-4"><i class="fas fa-money-check-alt mr-2 text-sky-500"></i>Kirim Pembayaran</h4>
+            @php $merchantBank = $invoice->owner?->merchantProfile; @endphp
+            @if($merchantBank && $merchantBank->bank_name && $merchantBank->bank_account_number)
+            <div class="mb-4 bg-gradient-to-r from-sky-50 to-blue-50 border border-sky-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-md shadow-sky-500/25 flex-shrink-0">
+                    <i class="fas fa-university text-white"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-bold text-sky-600 uppercase tracking-wider">Transfer ke rekening {{ $merchantBank->name }}</p>
+                    <p class="text-lg font-extrabold text-navy-900 font-mono">{{ $merchantBank->bank_name }} • {{ $merchantBank->bank_account_number }}</p>
+                    <p class="text-[12px] text-gray-500">a.n. {{ $merchantBank->bank_account_holder ?? $merchantBank->name }}</p>
+                </div>
+            </div>
+            @endif
             <form method="POST" action="{{ route('invoices.pay', $invoice) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">

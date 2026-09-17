@@ -86,6 +86,15 @@
                         <span>{{ $merchant->city }}</span>
                     </div>
                     @endif
+                    @if($merchant->hasCoordinates())
+                    <div class="flex items-start gap-2.5 text-[13px] text-navy-700 mb-3">
+                        <i class="fas fa-location-crosshairs text-sky-500 mt-0.5"></i>
+                        <span>
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Koordinat</span>
+                            <span class="font-mono font-bold">{{ $merchant->formattedCoordinates() }}</span>
+                        </span>
+                    </div>
+                    @endif
                     @if($merchant->pickup_address)
                     <div class="flex items-start gap-2.5 text-[13px] text-navy-700 mb-3">
                         <i class="fas fa-route text-sky-500 mt-0.5"></i>
@@ -99,10 +108,14 @@
             </div>
             <div class="lg:col-span-2 min-h-[320px]">
                 <iframe src="{{ $merchant->mapsEmbedUrl() }}" class="w-full h-full min-h-[320px]" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Lokasi {{ $merchant->name }}"></iframe>
-                <div class="text-[10px] text-gray-400 px-4 py-2 flex items-center justify-between flex-wrap gap-2 bg-sky-50/60">
-                    <span class="flex items-center gap-1.5"><i class="fab fa-google text-sky-500"></i> Ditampilkan melalui Google Maps</span>
+                <div class="px-4 py-3 flex items-center justify-between flex-wrap gap-3 bg-sky-50/60">
+                    <span class="text-[10px] text-gray-400 flex items-center gap-1.5"><i class="fab fa-google text-sky-500"></i> Ditampilkan melalui Google Maps</span>
                     @if($merchant->hasCoordinates())
-                    <span class="font-mono">{{ number_format((float)$merchant->latitude, 5) }}, {{ number_format((float)$merchant->longitude, 5) }}</span>
+                    <span class="inline-flex items-center gap-2 bg-white border border-sky-200 rounded-xl px-3 py-1.5 shadow-sm">
+                        <i class="fas fa-location-crosshairs text-sky-500 text-[11px]"></i>
+                        <span class="font-mono font-bold text-navy-800 text-[12px]">{{ $merchant->formattedCoordinates() }}</span>
+                        <span class="font-mono text-gray-400 text-[10px]">({{ $merchant->coordinatesDecimal() }})</span>
+                    </span>
                     @endif
                 </div>
             </div>

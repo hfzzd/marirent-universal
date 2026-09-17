@@ -108,6 +108,33 @@ body { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; -webkit
 .animate-slide-up { animation: slideUp 0.4s ease-out; }
 .animate-count { animation: countUp 1s ease-out; }
 
+/* ===== RESPONSIVE GLOBAL (laptop / tablet / HP) ===== */
+img, video, iframe { max-width: 100%; }
+table { border-collapse: collapse; }
+/* Tabel dashboard: selalu bisa scroll horizontal di tablet/HP */
+.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-responsive table { min-width: 640px; }
+/* Angka besar (Rp, statistik) jangan merusak layout HP */
+.stat-num, .stat-card h3, .glass-card h3 { overflow-wrap: anywhere; word-break: break-word; }
+.stat-card > div, .glass-card > div { min-width: 0; }
+/* Hero/CTA dashboard: tombol wrap rapi di HP */
+.hero-cta { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.hero-cta > * { flex: 1 1 auto; min-width: 140px; }
+@media (min-width: 640px) { .hero-cta > * { flex: 0 1 auto; min-width: 0; } }
+/* Grid statistik: cegah card terjepit di tablet */
+@media (min-width: 1024px) and (max-width: 1279px) {
+    .grid.lg\:grid-cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* Kurangi padding section di HP agar konten lega */
+@media (max-width: 639px) {
+    .section { padding-top: 3rem; padding-bottom: 3rem; }
+    .h-display { letter-spacing: -0.01em; }
+    /* Tabel dashboard: padding lebih ramping di HP */
+    table th, table td { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+}
+/* Kode booking / tanggal / aksi jangan wrap di tabel */
+table td:first-child, table td:last-child { white-space: nowrap; }
+
 /* ===== DASHBOARD ===== */
 * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }

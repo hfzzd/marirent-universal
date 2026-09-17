@@ -30,6 +30,7 @@ use App\Http\Controllers\Web\RentalController;
 use App\Http\Controllers\Web\InspectorWebController;
 use App\Http\Controllers\Web\SubscriptionWebController;
 use App\Http\Controllers\Web\SubscriptionsController;
+use App\Http\Controllers\Web\SchedulerController;
 
 Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
@@ -59,6 +60,12 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('/profile', [DashboardController::class, 'profile'])->name('dashboard.profile');
     Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('dashboard.profile.update');
     Route::put('/password', [DashboardController::class, 'updatePassword'])->name('dashboard.password.update');
+});
+
+// Scheduler operasional per kategori (superadmin, owner, admin merchant)
+Route::middleware(['auth', 'role:superadmin,admin,owner'])->group(function () {
+    Route::get('/scheduler', [SchedulerController::class, 'index'])->name('scheduler.index');
+    Route::get('/scheduler/events', [SchedulerController::class, 'events'])->name('scheduler.events');
 });
 
 // Communication Routes (Mail, Chat, Contacts)
@@ -100,8 +107,8 @@ Route::middleware('auth')->group(function () {
 // Superadmin Routes
 Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->group(function () {
     Route::get('/monitoring', [SuperadminController::class, 'monitoring'])->name('superadmin.monitoring');
-    Route::get('/scheduler', [SuperadminController::class, 'scheduler'])->name('superadmin.scheduler');
-    Route::get('/scheduler/events', [SuperadminController::class, 'schedulerEvents'])->name('superadmin.scheduler.events');
+    Route::get('/scheduler', [SchedulerController::class, 'index'])->name('superadmin.scheduler');
+    Route::get('/scheduler/events', [SchedulerController::class, 'events'])->name('superadmin.scheduler.events');
     Route::get('/finance', [SuperadminController::class, 'finance'])->name('superadmin.finance');
     Route::get('/merchants', [SuperadminController::class, 'merchants'])->name('superadmin.merchants');
     Route::get('/merchants/create', [SuperadminController::class, 'merchantCreate'])->name('superadmin.merchants.create');
@@ -149,6 +156,8 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('admin/brand-
 Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('owner')->group(function () {
     Route::get('/store', [MerchantProfileController::class, 'show'])->name('merchant.profile');
     Route::put('/store', [MerchantProfileController::class, 'update'])->name('merchant.profile.update');
+    Route::get('/bank', [\App\Http\Controllers\Web\MerchantBankController::class, 'show'])->name('merchant.bank');
+    Route::put('/bank', [\App\Http\Controllers\Web\MerchantBankController::class, 'update'])->name('merchant.bank.update');
     Route::post('/store/admins', [MerchantProfileController::class, 'storeAdmin'])->name('merchant.admin.store');
     Route::delete('/store/admins/{admin}', [MerchantProfileController::class, 'destroyAdmin'])->name('merchant.admin.destroy');
     Route::get('/elektronik/{type}', [ElektronikController::class, 'index'])->name('owner.elektronik.type');

@@ -21,10 +21,10 @@
     </div>
     @elseif(in_array(auth()->user()->role, ['superadmin', 'owner']))
     <div class="flex items-center gap-2">
-        <a href="{{ route('bookings.manual-create') }}" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-emerald-500/25 inline-flex items-center gap-1.5 transition">
+        <a href="{{ route('bookings.manual-create') }}" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 inline-flex items-center gap-1.5 transition">
             <i class="fas fa-user-pen text-[10px]"></i> Booking Manual
         </a>
-        <a href="{{ route('superadmin.scheduler') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold inline-flex items-center gap-1.5 transition">
+        <a href="{{ route('scheduler.index') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold inline-flex items-center gap-1.5 transition">
             <i class="fas fa-calendar-days text-[10px]"></i> Scheduler
         </a>
     </div>

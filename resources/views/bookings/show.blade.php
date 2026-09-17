@@ -76,7 +76,7 @@
                     </div>
 
                     {{-- Pengguna --}}
-                    <div class="bg-gradient-to-br from-emerald-50/60 to-emerald-100/30 p-4 rounded-xl border border-emerald-100/50">
+                    <div class="bg-gradient-to-br from-sky-50/60 to-sky-100/30 p-4 rounded-xl border border-sky-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Pengguna</p>
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->user->name ?? '-' }}</p>
                         <p class="text-[12px] text-gray-400 mt-0.5">{{ $booking->user->email ?? '-' }}</p>
@@ -133,7 +133,7 @@
 
 {{-- Driver untuk Kendaraan ATAU Paket/Jaminan untuk Non-Kendaraan --}}
                     @if($booking->isVehicleBooking())
-                    <div class="bg-gradient-to-br from-purple-50/60 to-purple-100/30 p-4 rounded-xl border border-purple-100/50">
+                    <div class="bg-gradient-to-br from-sky-50/60 to-sky-100/30 p-4 rounded-xl border border-sky-100/50">
                         <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Driver</p>
                         @if($booking->driver && $booking->with_driver)
                         <p class="font-bold text-navy-800 text-[15px]">{{ $booking->driver->user->name ?? '-' }}</p>
@@ -144,8 +144,8 @@
                         @endif
                     </div>
                     @else
-                    <div class="bg-gradient-to-br from-indigo-50/60 to-indigo-100/30 p-4 rounded-xl border border-indigo-100/50">
-                        <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5"><i class="fas fa-shield-halved text-indigo-500 mr-1"></i> Jaminan & Paket Sewa</p>
+                    <div class="bg-gradient-to-br from-sky-50/60 to-sky-100/30 p-4 rounded-xl border border-sky-100/50">
+                        <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5"><i class="fas fa-shield-halved text-sky-500 mr-1"></i> Jaminan & Paket Sewa</p>
                         <div class="space-y-1.5 text-[12px]">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-500">Deposit:</span>
@@ -160,11 +160,11 @@
                                 @endif
                             </div>
                             @if(!empty($booking->accessories))
-                            <div class="pt-1.5 border-t border-indigo-100/70">
+                            <div class="pt-1.5 border-t border-sky-100/70">
                                 <span class="text-[11px] text-gray-500 block mb-1">Aksesoris:</span>
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($booking->accessories as $acc)
-                                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ $acc }}</span>
+                                    <span class="bg-sky-100 text-sky-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ $acc }}</span>
                                     @endforeach
                                 </div>
                             </div>
@@ -175,7 +175,7 @@
 
                     {{-- Assign Driver (Admin/Owner) - Khusus Kendaraan --}}
                     @if($booking->vehicle && in_array(auth()->user()->role, ['superadmin','owner','admin']) && !in_array($booking->status, ['completed', 'cancelled']))
-                    <div class="bg-gradient-to-br from-indigo-50/60 to-indigo-100/30 p-4 rounded-xl border border-indigo-100/50" x-data="{ open: false }">
+                    <div class="bg-gradient-to-br from-sky-50/60 to-sky-100/30 p-4 rounded-xl border border-sky-100/50" x-data="{ open: false }">
                         <div class="flex items-center justify-between gap-2">
                             <div>
                                 <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1">Kelola Driver</p>
@@ -185,7 +185,7 @@
                                 <p class="text-[12px] text-navy-700 font-medium">Belum ada driver ditugaskan</p>
                                 @endif
                             </div>
-                            <button type="button" @click="open = !open" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap">
+                            <button type="button" @click="open = !open" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap">
                                 <i class="fas fa-user-cog text-[10px] mr-1"></i> {{ $booking->driver ? 'Ganti' : 'Tugaskan' }}
                             </button>
                         </div>
@@ -193,7 +193,7 @@
                             @csrf
                             <div>
                                 <label class="block text-[11px] font-semibold text-navy-700 mb-1">Pilih Driver *</label>
-                                <select name="driver_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-indigo-500 bg-white">
+                                <select name="driver_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 bg-white">
                                     <option value="">-- Pilih driver tersedia --</option>
                                     @foreach($availableDrivers as $d)
                                     <option value="{{ $d->id }}" {{ $booking->driver_id == $d->id ? 'selected' : '' }}>
@@ -206,7 +206,7 @@
                                 @endif
                             </div>
                             <div class="flex items-center gap-2">
-                                <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold transition" {{ $availableDrivers->isEmpty() ? 'disabled' : '' }}>
+                                <button type="submit" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold transition" {{ $availableDrivers->isEmpty() ? 'disabled' : '' }}>
                                     <i class="fas fa-check text-[10px] mr-1"></i> Simpan Driver
                                 </button>
                                 <button type="button" @click="open = false" class="bg-gray-100 hover:bg-gray-200 text-navy-700 px-4 py-2 rounded-lg text-[11px] font-medium transition">Batal</button>
@@ -316,7 +316,7 @@
                 {{-- Aksi Inspector (khusus booking kendaraan lepas kunci) --}}
                 @if(auth()->user()->role === 'inspector' && $booking->vehicle && in_array($booking->status, ['confirmed','ongoing']) && !$booking->with_driver)
                 <div class="border-t border-gray-100 pt-4 mt-4">
-                    <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-3 rounded-xl text-[13px] font-bold transition-all duration-200 shadow-md shadow-emerald-500/20 active:scale-[0.97]">
+                    <a href="{{ route('inspections.create', ['booking_id' => $booking->id]) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-5 py-3 rounded-xl text-[13px] font-bold transition-all duration-200 shadow-md shadow-sky-500/20 active:scale-[0.97]">
                         <i class="fas fa-clipboard-check"></i> Inspeksi Unit Booking Ini
                     </a>
                     <p class="text-[11px] text-gray-400 mt-2">Klik untuk langsung membuka form inspeksi dengan booking & unit ini sudah terpilih.</p>

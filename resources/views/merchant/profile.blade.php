@@ -36,6 +36,7 @@
             <p class="text-sky-100/80 text-[12px] mt-0.5 flex items-center gap-2 flex-wrap">
                 <span class="inline-flex items-center gap-1"><i class="fas fa-link text-sky-300"></i> {{ $merchant->slug }}</span>
                 @if($merchant->city)<span class="inline-flex items-center gap-1"><i class="fas fa-map-marker-alt text-sky-300"></i> {{ $merchant->city }}</span>@endif
+                @if($merchant->bank_name && $merchant->bank_account_number)<span class="inline-flex items-center gap-1"><i class="fas fa-university text-sky-300"></i> {{ $merchant->bank_name }} • {{ $merchant->bank_account_number }}</span>@endif
                 @if($merchant->is_active)<span class="inline-flex items-center gap-1 text-emerald-300"><i class="fas fa-check-circle"></i> Aktif</span>@endif
             </p>
         </div>
@@ -74,9 +75,34 @@
     <h3 class="text-[14px] font-bold text-navy-800 mb-1">Edit Profil Toko</h3>
     <p class="text-[11px] text-gray-400 mb-5">Profil toko akan tampil di halaman publik marketplace (/store/{{ $merchant->slug }}).</p>
 
-    <form action="{{ route('merchant.profile.update') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('merchant.profile.update') }}" method="POST" enctype="multipart/form-data" x-data="{ logoPreview: '' }">
         @csrf
         @method('PUT')
+        {{-- Logo toko --}}
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-5 pb-5 border-b border-gray-100">
+            <div class="w-20 h-20 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center overflow-hidden flex-shrink-0 text-2xl font-bold text-sky-400">
+                <template x-if="logoPreview">
+                    <img :src="logoPreview" alt="Logo" class="w-full h-full object-cover">
+                </template>
+                <template x-if="!logoPreview">
+                    @if($merchant->logo)
+                        <img src="{{ asset('storage/' . $merchant->logo) }}" alt="{{ $merchant->name }}" class="w-full h-full object-cover">
+                    @else
+                        {{ strtoupper(substr($merchant->name, 0, 1)) }}
+                    @endif
+                </template>
+            </div>
+            <div class="flex-1 min-w-0">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Logo Toko</label>
+                <label class="cursor-pointer inline-flex items-center gap-2 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition">
+                    <i class="fas fa-upload text-[11px]"></i> Pilih Logo Baru
+                    <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden"
+                           x-on:change="if($event.target.files[0]) { const r = new FileReader(); r.onload = e => logoPreview = e.target.result; r.readAsDataURL($event.target.files[0]); }">
+                </label>
+                <p class="text-[11px] text-gray-400 mt-1.5">JPG, PNG, atau WebP — maks 2MB. Tampil di daftar toko & halaman publik.</p>
+                @error('logo')<p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>@enderror
+            </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="md:col-span-2">
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Nama Toko</label>
@@ -114,6 +140,28 @@
                 <input type="text" name="operational_hours" value="{{ old('operational_hours', $merchant->operational_hours) }}" placeholder="cont: 08.00 - 20.00" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
             </div>
 
+            <div class="md:col-span-2 mt-1 pt-4 border-t border-gray-100">
+                <p class="text-[11px] font-bold text-navy-800 flex items-center gap-2 mb-1">
+                    <span class="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center"><i class="fas fa-university text-sky-600 text-[11px]"></i></span>
+                    Rekening Bank Toko
+                </p>
+                <p class="text-[11px] text-gray-400 mb-3">Untuk pencairan dana & verifikasi pembayaran. Hanya terlihat oleh Anda dan superadmin.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Nama Bank</label>
+                        <input type="text" name="bank_name" value="{{ old('bank_name', $merchant->bank_name) }}" placeholder="cth: BCA" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Nomor Rekening</label>
+                        <input type="text" name="bank_account_number" value="{{ old('bank_account_number', $merchant->bank_account_number) }}" placeholder="cth: 1234567890" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Atas Nama</label>
+                        <input type="text" name="bank_account_holder" value="{{ old('bank_account_holder', $merchant->bank_account_holder) }}" placeholder="Nama pemilik rekening" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+                    </div>
+                </div>
+            </div>
+
             <div class="md:col-span-2">
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Lokasi Toko di Peta</label>
                 <div class="flex gap-2 mb-2">
@@ -126,6 +174,13 @@
                     </button>
                 </div>
                 <div id="merchant-map" class="w-full rounded-xl overflow-hidden border border-gray-200" style="height: 320px;"></div>
+                <div class="flex items-center gap-2 mt-2 flex-wrap">
+                    <span class="inline-flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-xl px-3 py-1.5">
+                        <i class="fas fa-location-crosshairs text-sky-500 text-[11px]"></i>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Koordinat</span>
+                        <span class="font-mono font-bold text-navy-800 text-[12px]">{{ $merchant->hasCoordinates() ? $merchant->formattedCoordinates() : 'Belum ditentukan — klik peta' }}</span>
+                    </span>
+                </div>
                 <div class="flex items-center gap-2 mt-2 text-[11px] text-gray-400">
                     <i class="fas fa-info-circle text-sky-400"></i>
                     <span>Klik atau geser pin untuk menentukan titik lokasi. Tampilan untuk konsumen memakai <strong>Google Maps</strong>.</span>

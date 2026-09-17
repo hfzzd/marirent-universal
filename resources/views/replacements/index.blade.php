@@ -1,9 +1,10 @@
 @extends('layouts.dashboard')
 @section('page-title', 'Penggantian Kendaraan')
+@section('title', 'Penggantian Kendaraan - MariRent')
 @section('content')
 @php
     $role = auth()->user()->role;
-    $canRequest = in_array($role, ['driver', 'staff', 'user', 'owner', 'superadmin', 'inspector']);
+    $canRequest = in_array($role, ['driver', 'staff', 'user', 'owner', 'admin', 'superadmin', 'inspector']);
     $hasEligibleBookings = isset($modalBookings) && count($modalBookings) > 0;
 @endphp
 
@@ -74,6 +75,11 @@
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Alasan Penggantian *</label>
                     <textarea name="reason" rows="3" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all hover:border-gray-300 resize-none" placeholder="Jelaskan alasan penggantian kendaraan...">{{ old('reason') }}</textarea>
                     @error('reason') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Detail Kerusakan Unit Asal <span class="text-gray-300 font-normal normal-case">(opsional)</span></label>
+                    <textarea name="damage_notes" rows="2" maxlength="2000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none bg-gray-50/50 transition-all hover:border-gray-300 resize-none" placeholder="Jelaskan kerusakan unit asal...">{{ old('damage_notes') }}</textarea>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">

@@ -350,8 +350,8 @@
                 <span class="text-[10px] text-gray-400">{{ $totalDrivers }} personil</span>
             </a>
 
-            <a href="{{ route('superadmin.finance') }}" class="group p-3.5 rounded-xl bg-teal-50/60 hover:bg-teal-50 border border-teal-100/60 transition flex flex-col items-center text-center">
-                <div class="w-10 h-10 rounded-xl bg-teal-500 text-white flex items-center justify-center text-base shadow-md shadow-teal-500/20 group-hover:scale-110 transition">
+            <a href="{{ route('superadmin.finance') }}" class="group p-3.5 rounded-xl bg-sky-50/60 hover:bg-sky-50 border border-sky-100/60 transition flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center text-base shadow-md shadow-sky-500/20 group-hover:scale-110 transition">
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
                 <span class="text-xs font-bold text-navy-800 mt-2">Finance</span>
@@ -382,7 +382,7 @@
                 <span class="text-[10px] text-gray-400">Trip & Rekap</span>
             </a>
 
-            <a href="{{ route('superadmin.scheduler') }}" class="group p-3.5 rounded-xl bg-violet-50/60 hover:bg-violet-50 border border-violet-100/60 transition flex flex-col items-center text-center">
+            <a href="{{ route('scheduler.index') }}" class="group p-3.5 rounded-xl bg-violet-50/60 hover:bg-violet-50 border border-violet-100/60 transition flex flex-col items-center text-center">
                 <div class="w-10 h-10 rounded-xl bg-violet-500 text-white flex items-center justify-center text-base shadow-md shadow-violet-500/20 group-hover:scale-110 transition">
                     <i class="fas fa-calendar-alt"></i>
                 </div>

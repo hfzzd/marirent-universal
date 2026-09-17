@@ -69,6 +69,12 @@
             </div>
             <div class="relative h-44 bg-gray-100">
                 <iframe src="{{ $m->mapsEmbedUrl() }}" class="w-full h-full" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Lokasi {{ $m->name }}"></iframe>
+                @if($m->hasCoordinates())
+                <span class="absolute bottom-2 left-2 inline-flex items-center gap-1.5 bg-navy-900/80 backdrop-blur text-white rounded-lg px-2.5 py-1.5 shadow-lg">
+                    <i class="fas fa-location-crosshairs text-sky-300 text-[10px]"></i>
+                    <span class="font-mono font-bold text-[10px]">{{ $m->formattedCoordinates() }}</span>
+                </span>
+                @endif
             </div>
             <div class="p-4 pt-3 flex items-center gap-2">
                 <a href="{{ route('public.store', $m->slug) }}" class="flex-1 bg-sky-50 hover:bg-sky-100 text-sky-700 px-4 py-2.5 rounded-xl text-[12px] font-bold transition flex items-center justify-center gap-1.5">

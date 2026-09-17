@@ -54,7 +54,16 @@ class TripReportWebController extends Controller
 
         $reports = $query->latest()->paginate(15);
 
-        return view('reports.index', compact('reports'));
+        // Data popup form cepat khusus akun admin & owner
+        $modalBookings = collect();
+        if (in_array(Auth::user()->role, ['admin', 'owner'], true)) {
+            $modalBookings = Booking::whereIn('status', ['ongoing'])
+                ->forMerchantCategory(Auth::user()->merchantId(), Auth::user()->merchantCategoryId())
+                ->with(['vehicle', 'category', 'user'])
+                ->get();
+        }
+
+        return view('reports.index', compact('reports', 'modalBookings'));
     }
 
     public function create(Request $request)

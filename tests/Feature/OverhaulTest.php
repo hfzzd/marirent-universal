@@ -1361,7 +1361,7 @@ class OverhaulTest extends TestCase
         ]);
 
         $this->actingAs($admin)->get('/replacements')->assertOk();
-        $this->actingAs($admin)->get('/replacements/create')->assertForbidden();
+        $this->actingAs($admin)->get('/replacements/create')->assertOk();
 
         $this->actingAs($owner)->get('/replacements/create')
             ->assertOk()
@@ -1386,7 +1386,7 @@ class OverhaulTest extends TestCase
             ->assertOk()
             ->assertSee('Penggantian Unit');
 
-        $this->actingAs($admin)->get('/item-replacements/create?type=hp')->assertForbidden();
+        $this->actingAs($admin)->get('/item-replacements/create?type=hp')->assertOk();
 
         $this->actingAs($owner)->get('/item-replacements/create?type=hp')
             ->assertOk()

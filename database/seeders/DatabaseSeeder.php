@@ -236,6 +236,9 @@ class DatabaseSeeder extends Seeder
         // Seed perusahaan/merchant partner (16 company di berbagai kota & kategori)
         $this->call(CompanySeeder::class);
 
+        // Isi koordinat peta & rekening bank tiap merchant (idempotent)
+        $this->call(MerchantLocationBankSeeder::class);
+
         // Seed driver & karyawan untuk setiap company (dengan asal company)
         $this->call(DriverSeeder::class);
 

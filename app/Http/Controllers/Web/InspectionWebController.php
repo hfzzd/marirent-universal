@@ -58,7 +58,21 @@ class InspectionWebController extends Controller
         // Driver melihat laporannya sendiri, sisanya lihat semua sesuai merchant
         $inspections = $query->latest()->paginate(15)->withQueryString();
 
-        return view('inspections.index', compact('inspections'));
+        // Data popup form cepat khusus akun admin & owner
+        $modalBookings = collect();
+        $modalVehicles = collect();
+        if (in_array($user->role, ['admin', 'owner'], true)) {
+            $modalBookings = Booking::whereIn('status', ['confirmed', 'ongoing'])
+                ->forMerchantCategory($user->merchantId(), $user->merchantCategoryId())
+                ->with(['user', 'vehicle', 'category'])
+                ->get();
+            $modalVehicles = Vehicle::where('status', '!=', 'maintenance')
+                ->where('owner_id', $user->merchantId())
+                ->when($user->merchantCategoryId(), fn($q, $catId) => $q->where('category_id', $catId))
+                ->get();
+        }
+
+        return view('inspections.index', compact('inspections', 'modalBookings', 'modalVehicles'));
     }
 
     public function create(Request $request)

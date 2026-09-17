@@ -12,6 +12,7 @@ class VehicleReplacement extends Model
     protected $fillable = [
         'booking_id', 'rental_id', 'original_vehicle_id', 'replacement_vehicle_id',
         'requested_by', 'approved_by', 'status', 'reason',
+        'damage_notes',
         'admin_notes', 'price_difference',
         'mark_maintenance',
         'handover_type', 'handover_notes', 'actual_handover_at',

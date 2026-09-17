@@ -18,11 +18,11 @@
                 Kelola booking, pembayaran, maintenance, dan inspeksi untuk merchant Anda.
             </p>
         </div>
-        <div class="flex items-center gap-2.5">
-            <a href="{{ route('bookings.manual-create') }}" class="bg-white text-navy-900 hover:bg-sky-50 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+        <div class="hero-cta w-full sm:w-auto">
+            <a href="{{ route('bookings.manual-create') }}" class="bg-white text-navy-900 hover:bg-sky-50 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5">
                 <i class="fas fa-plus text-sky-600"></i> Buat Booking
             </a>
-            <a href="{{ route('maintenances.index') }}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+            <a href="{{ route('maintenances.index') }}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5">
                 <i class="fas fa-wrench"></i> Maintenance
             </a>
         </div>

@@ -50,6 +50,9 @@
                     <option value="{{ $b->id }}">{{ $b->booking_code }} - {{ $b->item_type ? class_basename($b->item_type) : '-' }} @if($b->status === 'ongoing')(sedang berjalan)@endif</option>
                     @endforeach
                 </select>
+                @if($bookings->isEmpty())
+                <p class="text-amber-600 text-[12px] mt-2"><i class="fas fa-info-circle mr-1"></i> Belum ada booking ongoing yang dapat diajukan penggantian.</p>
+                @endif
                 @error('booking_id') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
             </div>
         </div>

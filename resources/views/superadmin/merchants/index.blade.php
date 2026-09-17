@@ -63,6 +63,7 @@
                 <span class="inline-flex items-center gap-1"><i class="fas fa-box-open text-sky-400"></i> {{ $m->vehicles_count }} unit</span>
                 <span class="inline-flex items-center gap-1"><i class="fas fa-percentage text-amber-500"></i> Komisi {{ number_format($m->commission_rate, 0) }}%</span>
                 <span class="inline-flex items-center gap-1"><i class="fas fa-map-marker-alt text-gray-300"></i> {{ $m->city ?? $m->address ?? '-' }}</span>
+                @if($m->bank_name && $m->bank_account_number)<span class="inline-flex items-center gap-1"><i class="fas fa-university text-sky-400"></i> {{ $m->bank_name }} • {{ $m->bank_account_number }}</span>@endif
             </div>
         </div>
 
@@ -106,12 +107,25 @@
         <summary class="cursor-pointer text-[12px] font-semibold text-sky-600 hover:text-sky-700 inline-flex items-center gap-1.5 select-none">
             <i class="fas fa-edit text-[11px]"></i> Edit Toko
         </summary>
-        <form action="{{ route('superadmin.merchants.update', $m->id) }}" method="POST" class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-50/70 p-4 rounded-xl border border-gray-100">
+        <form action="{{ route('superadmin.merchants.update', $m->id) }}" method="POST" enctype="multipart/form-data" class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-50/70 p-4 rounded-xl border border-gray-100">
             @csrf
             @method('PUT')
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nama Toko</label>
                 <input name="name" value="{{ $m->name }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px]">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Logo Toko <span class="normal-case font-medium">(kosongkan jika tidak diganti)</span></label>
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 font-bold text-sky-500 text-sm">
+                        @if($m->logo)
+                            <img src="{{ asset('storage/' . $m->logo) }}" class="w-full h-full object-cover" alt="">
+                        @else
+                            {{ strtoupper(substr($m->name, 0, 1)) }}
+                        @endif
+                    </div>
+                    <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/webp" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px] bg-white file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-sky-50 file:text-sky-700 file:text-[11px] file:font-semibold">
+                </div>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Komisi (%)</label>
@@ -134,6 +148,21 @@
                 <input name="address" value="{{ $m->address }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px]">
             </div>
             <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Latitude</label>
+                <input name="latitude" value="{{ $m->latitude }}" placeholder="-6.2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px] font-mono">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Longitude</label>
+                <input name="longitude" value="{{ $m->longitude }}" placeholder="106.8" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px] font-mono">
+            </div>
+            @if($m->hasCoordinates())
+            <div class="md:col-span-3">
+                <a href="{{ $m->mapsDirectionsUrl() }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-600 hover:text-sky-700">
+                    <i class="fas fa-map-marked-alt"></i> Lihat di Google Maps (<span class="font-mono">{{ $m->formattedCoordinates() }}</span>)
+                </a>
+            </div>
+            @endif
+            <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Jam Operasional</label>
                 <input name="operational_hours" value="{{ $m->operational_hours }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px]">
             </div>
@@ -148,6 +177,18 @@
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Instagram</label>
                 <input name="instagram" value="{{ $m->instagram }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px]">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Bank</label>
+                <input name="bank_name" value="{{ $m->bank_name }}" placeholder="cth: BCA" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px]">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">No. Rekening</label>
+                <input name="bank_account_number" value="{{ $m->bank_account_number }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px] font-mono">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Atas Nama</label>
+                <input name="bank_account_holder" value="{{ $m->bank_account_holder }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[12px]">
             </div>
             <div class="md:col-span-3 text-right">
                 <button class="px-4 py-2 rounded-lg bg-navy-800 hover:bg-navy-900 text-white text-[12px] font-semibold transition inline-flex items-center gap-1.5">
