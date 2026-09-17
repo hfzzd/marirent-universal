@@ -11,7 +11,7 @@ class BookingCancelled extends Notification
 {
     use Queueable;
 
-    public function __construct(public Booking $booking, ?string $reason = null) {}
+    public function __construct(public Booking $booking, public ?string $reason = null) {}
 
     public function via(object $notifiable): array
     {

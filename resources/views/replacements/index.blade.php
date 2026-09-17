@@ -5,14 +5,36 @@
 @php
     $role = auth()->user()->role;
     $canRequest = in_array($role, ['driver', 'staff', 'user', 'owner', 'admin', 'superadmin', 'inspector']);
-    $hasEligibleBookings = isset($modalBookings) && count($modalBookings) > 0;
+    $hasEligibleBookings = $hasEligibleBookings ?? (isset($modalBookings, $modalVehicles) && count($modalBookings) > 0 && count($modalVehicles) > 0);
+    $counts = $counts ?? ['all' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0];
 @endphp
 
-{{-- Wrapper Alpine tunggal: modal + tombol harus dalam satu scope agar @click="open = true" berfungsi --}}
+{{-- Wrapper Alpine tunggal: modal + tombol harus dalam satu scope agar @click="open = true" berfungsi di semua akun --}}
 <div x-data="{ open: false, loading: false }">
 
-{{-- MODAL PENGAJUAN PENGGANTIAN --}}
-@if($canRequest && isset($modalBookings) && isset($modalVehicles))
+{{-- HEADER & ACTION (selaras dengan halaman Penggantian Unit) --}}
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
+    <div>
+        <h2 class="text-lg font-extrabold text-navy-800 flex items-center gap-2">
+            <i class="fas fa-right-left text-sky-500"></i> Penggantian Kendaraan
+        </h2>
+        <p class="text-xs text-gray-400 mt-0.5">Kelola permintaan penggantian unit mobil & motor yang sedang berjalan.</p>
+    </div>
+    @if($canRequest)
+    <div class="flex items-center gap-2 flex-wrap">
+        {{-- Tombol utama SELALU pop-up modal, untuk semua role --}}
+        <button type="button" @click="open = true" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5">
+            <i class="fas fa-bolt text-[10px]"></i> Ajukan Penggantian
+        </button>
+        <a href="{{ route('replacements.create') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-4 py-2 rounded-xl text-[12px] font-semibold transition flex items-center gap-1.5">
+            <i class="fas fa-plus text-[10px]"></i> Form Lengkap
+        </a>
+    </div>
+    @endif
+</div>
+
+{{-- MODAL PENGAJUAN — selalu tersedia untuk semua akun yang boleh mengajukan --}}
+@if($canRequest)
 <div x-cloak>
     {{-- Backdrop --}}
     <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" @click="open = false"></div>
@@ -30,7 +52,7 @@
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-white">Ajukan Penggantian Kendaraan</h3>
-                            <p class="text-sky-200 text-[11px]">Isi form di bawah untuk mengajukan penggantian unit</p>
+                            <p class="text-sky-200 text-[11px]">Isi form di bawah tanpa buka halaman baru</p>
                         </div>
                     </div>
                     <button @click="open = false" class="text-white/70 hover:text-white transition">
@@ -45,6 +67,7 @@
                 <span>Penggantian dapat diajukan untuk booking yang sedang berjalan (ongoing). Permintaan menunggu persetujuan admin/owner/superadmin.</span>
             </div>
 
+            @if($hasEligibleBookings)
             {{-- Modal Body --}}
             <form method="POST" action="{{ route('replacements.store') }}" enctype="multipart/form-data" @submit="loading = true" class="p-5 space-y-4">
                 @csrf
@@ -82,11 +105,11 @@
                     <textarea name="damage_notes" rows="2" maxlength="2000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none bg-gray-50/50 transition-all hover:border-gray-300 resize-none" placeholder="Jelaskan kerusakan unit asal...">{{ old('damage_notes') }}</textarea>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Selisih Harga (Rp)</label>
                         <input type="number" step="0.01" min="-999999999" name="price_difference" placeholder="0" value="{{ old('price_difference', 0) }}" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all hover:border-gray-300">
-                        <p class="text-[10px] text-gray-400 mt-1"><i class="fas fa-info-circle text-[9px] mr-1"></i> Positif = lebih mahal</p>
+                        <p class="text-[10px] text-gray-400 mt-1"><i class="fas fa-info-circle text-[9px] mr-1"></i> Positif = lebih mahal, negatif = lebih murah</p>
                     </div>
                     <div class="flex items-end pb-1">
                         <label class="inline-flex items-center gap-2.5 cursor-pointer bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200 hover:border-sky-300 transition w-full">
@@ -100,7 +123,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Foto Awal Unit</label>
                         <div class="border-2 border-dashed border-gray-200 rounded-xl p-3 text-center hover:border-sky-300 transition bg-gray-50/50">
@@ -125,35 +148,37 @@
                     <button type="button" @click="open = false" class="bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-xl text-[13px] font-medium text-navy-700 transition">Batal</button>
                 </div>
             </form>
+            @else
+            {{-- Empty state di dalam modal: tetap pop-up meski belum ada booking eligible --}}
+            <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-sky-50 to-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-sky-100">
+                    <i class="fas fa-calendar-xmark text-sky-300 text-2xl"></i>
+                </div>
+                <h4 class="text-[15px] font-bold text-navy-800 mb-1.5">Belum ada booking yang bisa diajukan</h4>
+                <p class="text-[12px] text-gray-400 mb-5 max-w-sm mx-auto">Penggantian hanya untuk booking <span class="font-semibold text-gray-500">ongoing</span> yang memiliki kendaraan. Begitu ada booking berjalan, form di sini langsung bisa dipakai.</p>
+                <div class="flex gap-2 justify-center flex-wrap">
+                    <a href="{{ route('bookings.index') }}" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold shadow-lg shadow-sky-500/25 transition hover:scale-105 inline-flex items-center gap-1.5">
+                        <i class="fas fa-calendar-check text-[10px]"></i> Lihat Booking
+                    </a>
+                    <a href="{{ route('replacements.create') }}" class="bg-white border border-gray-200 hover:border-sky-300 hover:text-sky-600 text-gray-500 px-5 py-2.5 rounded-xl text-[12px] font-semibold transition inline-flex items-center gap-1.5">
+                        <i class="fas fa-arrow-right text-[10px]"></i> Buka Form Lengkap
+                    </a>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
 @endif
 
-{{-- SUMMARY (hitung dari DB, bukan halaman aktif) --}}
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    @php
-        $baseCountQuery = \App\Models\VehicleReplacement::query();
-        // samakan scope role dengan controller agar angka konsisten
-        if (in_array($role, ['driver', 'staff'], true)) {
-            $dId = \App\Models\Driver::where('user_id', auth()->id())->value('id');
-            if ($dId) {
-                $baseCountQuery->whereHas('booking', fn($q) => $q->where('driver_id', $dId));
-            }
-        } elseif ($role === 'user') {
-            $baseCountQuery->where('requested_by', auth()->id());
-        }
-        $allCount = (clone $baseCountQuery)->count();
-        $pendingCount = (clone $baseCountQuery)->where('status', 'pending')->count();
-        $approvedCount = (clone $baseCountQuery)->where('status', 'approved')->count();
-        $rejectedCount = (clone $baseCountQuery)->where('status', 'rejected')->count();
-    @endphp
+{{-- RINGKASAN (dari controller, scope role konsisten) --}}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
     <div class="glass-card rounded-2xl p-4 border border-sky-100/50">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20"><i class="fas fa-right-left text-white text-sm"></i></div>
             <div>
-                <p class="text-[20px] font-extrabold text-navy-800">{{ $allCount }}</p>
-                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Total</p>
+                <p class="text-[20px] font-extrabold text-navy-800 leading-none">{{ $counts['all'] }}</p>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-1">Total</p>
             </div>
         </div>
     </div>
@@ -161,8 +186,8 @@
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20"><i class="fas fa-clock text-white text-sm"></i></div>
             <div>
-                <p class="text-[20px] font-extrabold text-blue-600">{{ $pendingCount }}</p>
-                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Pending</p>
+                <p class="text-[20px] font-extrabold text-blue-600 leading-none">{{ $counts['pending'] }}</p>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-1">Pending</p>
             </div>
         </div>
     </div>
@@ -170,8 +195,8 @@
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"><i class="fas fa-check text-white text-sm"></i></div>
             <div>
-                <p class="text-[20px] font-extrabold text-emerald-600">{{ $approvedCount }}</p>
-                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Disetujui</p>
+                <p class="text-[20px] font-extrabold text-emerald-600 leading-none">{{ $counts['approved'] }}</p>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-1">Disetujui</p>
             </div>
         </div>
     </div>
@@ -179,99 +204,112 @@
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20"><i class="fas fa-times text-white text-sm"></i></div>
             <div>
-                <p class="text-[20px] font-extrabold text-red-600">{{ $rejectedCount }}</p>
-                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Ditolak</p>
+                <p class="text-[20px] font-extrabold text-red-600 leading-none">{{ $counts['rejected'] }}</p>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-1">Ditolak</p>
             </div>
         </div>
     </div>
 </div>
 
-{{-- FILTER & ACTION --}}
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
-    <div class="flex gap-2 flex-wrap">
-        <a href="{{ route('replacements.index') }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !request('status') ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Semua</a>
-        <a href="{{ route('replacements.index', ['status' => 'pending']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'pending' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-blue-300 hover:text-blue-600' }}">Pending</a>
-        <a href="{{ route('replacements.index', ['status' => 'approved']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'approved' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600' }}">Disetujui</a>
-        <a href="{{ route('replacements.index', ['status' => 'rejected']) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'rejected' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300 hover:text-red-600' }}">Ditolak</a>
-    </div>
-    @if($canRequest)
-    <div class="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
-        @if($hasEligibleBookings)
-        <button type="button" @click="open = true" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-1.5 justify-center">
-            <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
-        </button>
-        @else
-        <a href="{{ route('replacements.create') }}" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-xl text-[12px] font-semibold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105 inline-flex items-center gap-1.5 justify-center">
-            <i class="fas fa-plus text-[10px]"></i> Ajukan Penggantian
-        </a>
-        @endif
-        {{-- Fallback tanpa JS: selalu bisa ke form --}}
-        <a href="{{ route('replacements.create') }}" class="bg-white text-sky-600 border border-sky-200 hover:border-sky-400 px-4 py-2 rounded-xl text-[12px] font-semibold transition inline-flex items-center gap-1.5 justify-center">
-            <i class="fas fa-arrow-right text-[10px]"></i> Ke Form
-        </a>
-    </div>
-    @if(!$hasEligibleBookings)
-    <p class="text-[11px] text-gray-400 w-full sm:text-right mt-1">Belum ada booking ongoing yang dapat diajukan. Cek syarat di form.</p>
-    @endif
-    @endif
+{{-- FILTER & PENCARIAN --}}
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form action="{{ route('replacements.index') }}" method="GET" class="flex flex-col gap-3">
+        <div class="flex flex-col md:flex-row gap-3 md:items-end">
+            <div class="flex-1 w-full">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari</label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-[11px]"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Kode booking, nama unit asal / pengganti..."
+                        class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+                @if(request()->hasAny(['search','status']))
+                <a href="{{ route('replacements.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
+                    <i class="fas fa-times text-[10px]"></i> Reset
+                </a>
+                @endif
+            </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+            <a href="{{ route('replacements.index', array_filter(['search' => request('search')])) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !request('status') ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Semua</a>
+            <a href="{{ route('replacements.index', array_filter(['search' => request('search'), 'status' => 'pending'])) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'pending' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-blue-300 hover:text-blue-600' }}">Pending</a>
+            <a href="{{ route('replacements.index', array_filter(['search' => request('search'), 'status' => 'approved'])) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'approved' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600' }}">Disetujui</a>
+            <a href="{{ route('replacements.index', array_filter(['search' => request('search'), 'status' => 'rejected'])) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ request('status') == 'rejected' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300 hover:text-red-600' }}">Ditolak</a>
+        </div>
+    </form>
 </div>
 
-{{-- CARDS --}}
+{{-- DAFTAR PENGGANTIAN --}}
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     @forelse($replacements as $r)
     @php
+        // Mapping eksplisit per status (hindari class dinamis text-*-* yang tidak ter-compile Tailwind)
         $statusConfig = match($r->status) {
-            'approved' => ['color' => 'emerald', 'icon' => 'fa-check-circle', 'label' => 'Disetujui', 'bg' => 'from-emerald-50 to-teal-50', 'border' => 'border-emerald-200'],
-            'rejected' => ['color' => 'red', 'icon' => 'fa-times-circle', 'label' => 'Ditolak', 'bg' => 'from-red-50 to-rose-50', 'border' => 'border-red-200'],
-            default => ['color' => 'blue', 'icon' => 'fa-clock', 'label' => 'Pending', 'bg' => 'from-blue-50 to-indigo-50', 'border' => 'border-blue-200'],
+            'approved' => ['badge' => 'badge-green', 'icon' => 'fa-check-circle', 'iconClass' => 'text-emerald-500', 'label' => 'Disetujui', 'labelClass' => 'text-emerald-600', 'headBg' => 'from-emerald-50 to-teal-50', 'border' => 'border-emerald-200'],
+            'rejected' => ['badge' => 'badge-red', 'icon' => 'fa-times-circle', 'iconClass' => 'text-red-500', 'label' => 'Ditolak', 'labelClass' => 'text-red-600', 'headBg' => 'from-red-50 to-rose-50', 'border' => 'border-red-200'],
+            default => ['badge' => 'badge-blue', 'icon' => 'fa-clock', 'iconClass' => 'text-blue-500', 'label' => 'Pending', 'labelClass' => 'text-blue-600', 'headBg' => 'from-blue-50 to-indigo-50', 'border' => 'border-blue-200'],
         };
         $requester = $r->requestedBy;
         $requesterRole = $requester?->role ?? '-';
+        $requesterBadge = match(true) {
+            $requesterRole === 'driver' => '<span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">Driver</span>',
+            $requesterRole === 'user' => '<span class="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">Penyewa</span>',
+            in_array($requesterRole, ['superadmin', 'owner', 'admin']) => '<span class="text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-medium">Admin</span>',
+            $requesterRole === 'inspector' => '<span class="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-medium">Inspektor</span>',
+            in_array($requesterRole, ['staff']) => '<span class="text-[10px] bg-cyan-50 text-cyan-600 px-2 py-0.5 rounded-full font-medium">Staff</span>',
+            default => '',
+        };
     @endphp
-    <div class="glass-card rounded-2xl overflow-hidden border {{ $statusConfig['border'] }} hover:shadow-lg transition-all duration-300" style="box-shadow: 0 2px 16px rgba(0,0,0,0.03);">
-        <div class="bg-gradient-to-r {{ $statusConfig['bg'] }} p-4 border-b {{ $statusConfig['border'] }}">
+    <div class="glass-card rounded-2xl overflow-hidden border {{ $statusConfig['border'] }} hover:shadow-lg transition-all duration-300 flex flex-col" style="box-shadow: 0 2px 16px rgba(0,0,0,0.03);">
+        <div class="bg-gradient-to-r {{ $statusConfig['headBg'] }} px-4 py-3 border-b {{ $statusConfig['border'] }}">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <i class="fas {{ $statusConfig['icon'] }} text-{{ $statusConfig['color'] }}-500 text-sm"></i>
-                    <span class="text-[11px] font-bold text-{{ $statusConfig['color'] }}-600 uppercase tracking-wider">{{ $statusConfig['label'] }}</span>
+                    <i class="fas {{ $statusConfig['icon'] }} {{ $statusConfig['iconClass'] }} text-sm"></i>
+                    <span class="text-[11px] font-bold {{ $statusConfig['labelClass'] }} uppercase tracking-wider">{{ $statusConfig['label'] }}</span>
                 </div>
                 <span class="text-[11px] text-gray-400">{{ $r->created_at->format('d M Y') }}</span>
             </div>
         </div>
-        <div class="p-4">
-            <div class="flex items-start justify-between mb-3">
-                <div>
-                    <p class="text-[13px] font-bold text-navy-800">{{ $r->booking->booking_code ?? '-' }}</p>
-                    <p class="text-[12px] text-gray-400 mt-0.5">Diajukan oleh</p>
+        <div class="p-4 flex-1 flex flex-col">
+            <div class="flex items-start justify-between mb-3 gap-2">
+                <div class="min-w-0">
+                    <p class="text-[13px] font-bold text-navy-800 truncate">{{ $r->booking->booking_code ?? '-' }}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Diajukan oleh {{ $requester?->name ?? '-' }}</p>
                 </div>
-                @if($requesterRole === 'driver')
-                    <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">Driver</span>
-                @elseif($requesterRole === 'user')
-                    <span class="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">Penyewa</span>
-                 @elseif(in_array($requesterRole, ['superadmin', 'owner', 'admin']))
-                    <span class="text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-medium">Admin</span>
-                @endif
+                {!! $requesterBadge !!}
             </div>
 
-            <div class="flex items-center gap-2 mb-3">
-                <div class="flex-1 bg-gray-50 rounded-xl p-2.5 text-center">
+            <div class="flex items-stretch gap-2 mb-3">
+                <div class="flex-1 bg-gray-50 rounded-xl p-2.5 text-center min-w-0">
                     <p class="text-[9px] text-gray-400 uppercase tracking-wider font-semibold">Asal</p>
                     <p class="text-[12px] font-bold text-navy-700 truncate">{{ $r->originalVehicle?->name ?? '-' }}</p>
+                    @if($r->originalVehicle?->license_plate)
+                    <p class="text-[10px] text-gray-400 truncate mt-0.5">{{ $r->originalVehicle->license_plate }}</p>
+                    @endif
                 </div>
-                <i class="fas fa-arrow-right text-gray-300 text-[10px]"></i>
-                <div class="flex-1 bg-gray-50 rounded-xl p-2.5 text-center">
+                <div class="flex items-center flex-shrink-0">
+                    <span class="w-6 h-6 rounded-full bg-sky-100 flex items-center justify-center"><i class="fas fa-arrow-right text-sky-500 text-[9px]"></i></span>
+                </div>
+                <div class="flex-1 bg-gray-50 rounded-xl p-2.5 text-center min-w-0">
                     <p class="text-[9px] text-gray-400 uppercase tracking-wider font-semibold">Pengganti</p>
                     <p class="text-[12px] font-bold text-navy-700 truncate">{{ $r->replacementVehicle?->name ?? '-' }}</p>
+                    @if($r->replacementVehicle?->license_plate)
+                    <p class="text-[10px] text-gray-400 truncate mt-0.5">{{ $r->replacementVehicle->license_plate }}</p>
+                    @endif
                 </div>
             </div>
 
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between mt-auto pt-1">
                 <div class="font-bold text-[13px] {{ $r->price_difference > 0 ? 'text-red-600' : ($r->price_difference < 0 ? 'text-emerald-600' : 'text-gray-500') }}">
-                    {{ $r->price_difference > 0 ? '+' : '' }} Rp {{ number_format((float)$r->price_difference, 0, ',', '.') }}
+                    {{ $r->price_difference > 0 ? '+' : '' }} Rp {{ number_format((float) $r->price_difference, 0, ',', '.') }}
                 </div>
                 <div class="flex items-center gap-2">
                      @if($r->status == 'pending' && in_array($role, ['superadmin','owner','admin']))
-                     <form method="POST" action="{{ route('replacements.approve', $r) }}" class="inline">@csrf
+                     <form method="POST" action="{{ route('replacements.approve', $r) }}" class="inline" onsubmit="return confirm('Setujui penggantian ini?')">@csrf
                          <button class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"><i class="fas fa-check text-[9px]"></i> Setuju</button>
                      </form>
                      <form method="POST" action="{{ route('replacements.reject', $r) }}" class="inline" onsubmit="return confirm('Tolak permintaan ini?')">@csrf
@@ -291,18 +329,18 @@
             <i class="fas fa-right-left text-sky-300 text-3xl"></i>
         </div>
         <h3 class="text-lg font-bold text-navy-800 mb-2">Belum ada permintaan penggantian</h3>
-        <p class="text-gray-400 text-[13px]">{{ in_array($role, ['driver', 'staff', 'user']) ? 'Gunakan tombol Ajukan Penggantian di atas atau dari detail booking untuk mengajukan' : 'Permintaan penggantian akan muncul di sini' }}</p>
+        <p class="text-gray-400 text-[13px] max-w-sm mx-auto">{{ in_array($role, ['driver', 'staff', 'user', 'inspector']) ? 'Gunakan tombol Ajukan Penggantian di atas untuk mengajukan dari booking ongoing Anda' : 'Permintaan penggantian akan muncul di sini setelah ada pengajuan' }}</p>
         @if($canRequest)
-        <a href="{{ route('replacements.create') }}" class="mt-4 inline-flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105">
+        <button type="button" @click="open = true" class="mt-4 inline-flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-105">
             <i class="fas fa-plus text-[10px]"></i> Ajukan Sekarang
-        </a>
+        </button>
         @endif
     </div>
     @endforelse
 </div>
 
 @if($replacements->hasPages())
-<div class="mt-8 flex justify-center">{{ $replacements->links() }}</div>
+<div class="mt-8 flex justify-center">{{ $replacements->withQueryString()->links() }}</div>
 @endif
 
 </div>{{-- /wrapper Alpine tunggal --}}

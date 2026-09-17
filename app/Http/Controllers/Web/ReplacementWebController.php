@@ -19,6 +19,52 @@ class ReplacementWebController extends Controller
 
         $role = Auth::user()->role;
 
+        $this->applyRoleScope($query, $role);
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('booking', fn($bq) => $bq->where('booking_code', 'like', $search))
+                    ->orWhereHas('originalVehicle', fn($vq) => $vq->where('name', 'like', $search))
+                    ->orWhereHas('replacementVehicle', fn($vq) => $vq->where('name', 'like', $search));
+            });
+        }
+
+        $replacements = $query->latest()->paginate(15)->withQueryString();
+
+        // Ringkasan dihitung di controller dengan scope role yang sama persis
+        // agar angka konsisten dengan daftar (tanpa filter status/search).
+        $counts = [
+            'all' => $this->scopedCount($role),
+            'pending' => $this->scopedCount($role, 'pending'),
+            'approved' => $this->scopedCount($role, 'approved'),
+            'rejected' => $this->scopedCount($role, 'rejected'),
+        ];
+
+        $modalBookings = [];
+        $modalVehicles = [];
+
+        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'admin', 'superadmin', 'inspector'])) {
+            $formData = $this->getFormData();
+            $modalBookings = $formData['bookings'];
+            $modalVehicles = $formData['vehicles'];
+        }
+
+        $hasEligibleBookings = count($modalBookings) > 0 && count($modalVehicles) > 0;
+
+        return view('replacements.index', compact('replacements', 'modalBookings', 'modalVehicles', 'counts', 'hasEligibleBookings'));
+    }
+
+    /**
+     * Scope daftar sesuai role. Dipakai query utama & penghitung ringkasan
+     * agar konsisten untuk semua akun.
+     */
+    private function applyRoleScope($query, string $role): void
+    {
         if (in_array($role, ['driver', 'staff'], true)) {
             $driver = \App\Models\Driver::where('user_id', Auth::id())->first();
             if ($driver) {
@@ -42,23 +88,17 @@ class ReplacementWebController extends Controller
                     ->when(Auth::user()->merchantCategoryId(), fn($categoryQuery, $categoryId) => $categoryQuery->where('category_id', $categoryId));
             });
         }
+    }
 
-        if ($request->status) {
-            $query->where('status', $request->status);
+    private function scopedCount(string $role, ?string $status = null): int
+    {
+        $query = VehicleReplacement::query();
+        $this->applyRoleScope($query, $role);
+        if ($status) {
+            $query->where('status', $status);
         }
 
-        $replacements = $query->latest()->paginate(15);
-
-        $modalBookings = [];
-        $modalVehicles = [];
-
-        if (in_array($role, ['driver', 'staff', 'user', 'owner', 'admin', 'superadmin', 'inspector'])) {
-            $formData = $this->getFormData();
-            $modalBookings = $formData['bookings'];
-            $modalVehicles = $formData['vehicles'];
-        }
-
-        return view('replacements.index', compact('replacements', 'modalBookings', 'modalVehicles'));
+        return (clone $query)->count();
     }
 
     private function companyOwnerId(): ?int
