@@ -32,12 +32,12 @@
                 </h3>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking (Perjalanan Aktif) *</label>
-                    <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all duration-300 hover:border-gray-300 cursor-pointer">
+                    <x-searchable-select name="booking_id" placeholder="Pilih Booking" required>
                         <option value="">Pilih Booking</option>
                         @foreach($bookings as $b)
                         <option value="{{ $b->id }}">{{ $b->booking_code }} - {{ $b->vehicle?->name ?? ($b->category?->name ?? '-') }} ({{ $b->user?->name }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('booking_id') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>

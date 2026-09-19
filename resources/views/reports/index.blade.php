@@ -117,12 +117,12 @@
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking (Perjalanan Aktif) *</label>
-                    <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                    <x-searchable-select name="booking_id" placeholder="Pilih Booking" required>
                         <option value="">Pilih Booking</option>
                         @foreach($modalBookings as $b)
                         <option value="{{ $b->id }}">{{ $b->booking_code }} - {{ $b->vehicle?->name ?? ($b->category?->name ?? '-') }} ({{ $b->user?->name }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -177,11 +177,11 @@
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</label>
-            <select name="status" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[140px]">
+            <x-searchable-select name="status" placeholder="Semua" size="sm" wrapClass="min-w-[140px]">
                 <option value="">Semua</option>
                 <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Selesai</option>
                 <option value="has_issues" {{ request('status') == 'has_issues' ? 'selected' : '' }}>Bermasalah</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div class="flex gap-2">
             <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">

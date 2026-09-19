@@ -25,14 +25,14 @@
             <div class="space-y-4 text-xs">
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1.5">Penerima Pesan *</label>
-                    <select name="receiver_id" required class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                    <x-searchable-select name="receiver_id" placeholder="-- Pilih Pengguna Tujuan --" required>
                         <option value="">-- Pilih Pengguna Tujuan --</option>
                         @foreach($users as $u)
                         <option value="{{ $u->id }}" {{ (old('receiver_id') == $u->id || (isset($selectedUser) && $selectedUser->id == $u->id)) ? 'selected' : '' }}>
                             {{ $u->name }} ({{ ucfirst($u->role) }}) - {{ $u->email }}
                         </option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('receiver_id') <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span> @enderror
                 </div>
 

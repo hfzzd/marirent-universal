@@ -24,12 +24,12 @@
 
             <div x-show="mode === 'existing'">
                 <label class="block text-[12px] font-semibold text-navy-700 mb-1">Pilih Pelanggan *</label>
-                <select name="user_id" x-show="mode === 'existing'" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                <x-searchable-select name="user_id" placeholder="Pilih akun pelanggan">
                     <option value="">-- Pilih akun pelanggan --</option>
                     @foreach($customers as $c)
                     <option value="{{ $c->id }}" {{ old('user_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->phone ?? $c->email }})</option>
                     @endforeach
-                </select>
+                </x-searchable-select>
             </div>
 
             <div x-show="mode === 'new'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -57,7 +57,7 @@
             </div>
             <input type="hidden" name="item_kind" :value="kind">
 
-            <select name="item_id" id="item_id" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <x-searchable-select name="item_id" id="item_id" placeholder="Pilih unit tersedia" required>
                 <option value="">-- Pilih unit tersedia --</option>
                 @foreach($vehicles->where('category.slug', 'mobil') as $v)
                 <option value="{{ $v->id }}" data-kind="mobil">{{ $v->name }} - Rp {{ number_format($v->daily_price, 0, ',', '.') }}/hari {{ $v->license_plate ? '(' . $v->license_plate . ')' : '' }}</option>
@@ -83,7 +83,7 @@
                 @foreach($instruments as $m)
                 <option value="{{ $m->id }}" data-kind="musik">{{ $m->name }} - Rp {{ number_format($m->daily_price, 0, ',', '.') }}/hari</option>
                 @endforeach
-            </select>
+            </x-searchable-select>
         </div>
 
         {{-- Detail Sewa --}}
@@ -92,20 +92,20 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Tipe Sewa *</label>
-                    <select name="rental_type" x-model="rentalType" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    <x-searchable-select name="rental_type" placeholder="Pilih tipe sewa" x-model="rentalType">
                         @foreach(['daily' => 'Harian', 'hourly' => 'Per Jam', 'weekly' => 'Mingguan', 'monthly' => 'Bulanan'] as $val => $label)
                         <option value="{{ $val }}">{{ $label }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Driver (opsional, kendaraan)</label>
-                    <select name="driver_id" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    <x-searchable-select name="driver_id" placeholder="Tanpa driver / lepas kunci">
                         <option value="">Tanpa driver / lepas kunci</option>
                         @foreach($drivers as $d)
                         <option value="{{ $d->id }}" {{ old('driver_id') == $d->id ? 'selected' : '' }}>{{ $d->user?->name ?? 'Driver #' . $d->id }} ({{ ucfirst(str_replace('_', ' ', $d->status)) }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
 
                 <div class="sm:col-span-2">
@@ -206,11 +206,11 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Status Pembayaran Awal</label>
-                    <select name="payment_status" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    <x-searchable-select name="payment_status" placeholder="Status pembayaran awal">
                         <option value="unpaid" {{ old('payment_status') == 'unpaid' ? 'selected' : '' }}>Belum Bayar</option>
                         <option value="partial" {{ old('payment_status') == 'partial' ? 'selected' : '' }}>DP / Sebagian</option>
                         <option value="paid" {{ old('payment_status') == 'paid' ? 'selected' : '' }}>Lunas Langsung</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Jatuh Tempo Pembayaran</label>

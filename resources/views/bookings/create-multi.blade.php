@@ -17,12 +17,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Tipe Sewa *</label>
-                    <select name="rental_type" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    <x-searchable-select name="rental_type" placeholder="Pilih tipe sewa" required>
                         <option value="daily" {{ old('rental_type')=='daily'?'selected':'' }}>Harian</option>
                         <option value="hourly" {{ old('rental_type')=='hourly'?'selected':'' }}>Per Jam</option>
                         <option value="weekly" {{ old('rental_type')=='weekly'?'selected':'' }}>Mingguan</option>
                         <option value="monthly" {{ old('rental_type')=='monthly'?'selected':'' }}>Bulanan</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Mulai *</label>
@@ -36,10 +36,10 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Rencana Pembayaran *</label>
-                    <select name="payment_plan" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    <x-searchable-select name="payment_plan" placeholder="Pilih rencana pembayaran" required>
                         <option value="full">Bayar Penuh</option>
                         <option value="dp50">DP 50%</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Foto KTP *</label>

@@ -52,30 +52,30 @@
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tipe Unit *</label>
-                    <select name="item_type" x-model="type" @change="onTypeChange()" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                    <x-searchable-select name="item_type" placeholder="Pilih tipe unit" x-model="type" @change="onTypeChange()" required>
                         @foreach($typeLabels as $val => $label)
                         <option value="{{ $val }}" {{ ($modalType ?? 'hp') === $val ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking *</label>
-                    <select name="booking_id" x-model="bookingId" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                    <x-searchable-select name="booking_id" placeholder="Pilih Booking" x-model="bookingId" required>
                         <option value="">Pilih Booking</option>
                         @foreach($modalBookings as $b)
                         <option value="{{ $b->id }}" data-type="{{ $typeToClass[class_basename($b->item_type ?? '')] ?? '' }}">{{ $b->booking_code }} - {{ $b->item_type ? class_basename($b->item_type) : '-' }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     <p x-show="filteredBookings === 0" class="text-amber-600 text-[12px] mt-2"><i class="fas fa-info-circle mr-1"></i> Tidak ada booking ongoing untuk tipe ini.</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Saat Ini *</label>
-                        <select name="original_item_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50" x-html="itemOptions"></select>
+                        <x-searchable-select name="original_item_id" placeholder="Pilih Unit" required x-html="itemOptions"></x-searchable-select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Pengganti *</label>
-                        <select name="replacement_item_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50" x-html="itemOptions"></select>
+                        <x-searchable-select name="replacement_item_id" placeholder="Pilih Unit" required x-html="itemOptions"></x-searchable-select>
                     </div>
                 </div>
                 <div>
@@ -156,12 +156,12 @@ function itemQuickForm() {
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</label>
-            <select name="status" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[140px]">
+            <x-searchable-select name="status" placeholder="Semua" size="sm" wrapClass="min-w-[140px]">
                 <option value="">Semua</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
                 <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div class="flex gap-2">
             <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">

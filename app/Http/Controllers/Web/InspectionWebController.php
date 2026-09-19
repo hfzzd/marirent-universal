@@ -55,6 +55,19 @@ class InspectionWebController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('booking', function ($bq) use ($search) {
+                    $bq->where('booking_code', 'like', $search)
+                        ->orWhereHas('vehicle', fn($vq) => $vq->where('name', 'like', $search))
+                        ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $search));
+                })
+                    ->orWhereHas('vehicle', fn($vq) => $vq->where('name', 'like', $search))
+                    ->orWhereHas('inspector', fn($iq) => $iq->where('name', 'like', $search));
+            });
+        }
+
         // Driver melihat laporannya sendiri, sisanya lihat semua sesuai merchant
         $inspections = $query->latest()->paginate(15)->withQueryString();
 

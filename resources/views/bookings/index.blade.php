@@ -31,6 +31,30 @@
     @endif
 </div>
 
+{{-- Pencarian --}}
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form action="{{ route('bookings.index') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
+        <div class="flex-1 w-full">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-[11px]"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Kode booking, nama unit, nama pengguna..."
+                    class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
+            @if(request('search'))
+            <a href="{{ route('bookings.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
+                <i class="fas fa-times text-[10px]"></i> Reset
+            </a>
+            @endif
+        </div>
+    </form>
+</div>
+
 <div class="flex items-center gap-2 mb-5 flex-wrap">
     @php
         $statusLabels = [

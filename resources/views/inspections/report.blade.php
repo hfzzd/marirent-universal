@@ -34,14 +34,14 @@
                 <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"><i class="fas fa-calendar-check text-blue-500 text-sm"></i></div>
                 Pilih Perjalanan
             </h3>
-            <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-400 transition bg-gray-50/50">
+            <x-searchable-select name="booking_id" placeholder="Pilih booking yang sedang berjalan" required>
                 <option value="">Pilih booking yang sedang berjalan</option>
                 @foreach($bookings as $b)
                 <option value="{{ $b->id }}" {{ old('booking_id') == $b->id ? 'selected' : '' }}>
                     {{ $b->booking_code }} — {{ $b->vehicle?->name ?? '-' }} ({{ $b->vehicle?->license_plate ?? '-' }})
                 </option>
                 @endforeach
-            </select>
+            </x-searchable-select>
             @error('booking_id')<p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>@enderror
         </div>
 

@@ -48,7 +48,17 @@ class BookingWebController extends Controller
             $query->where('status', $request->status);
         }
 
-        $bookings = $query->latest()->paginate(15);
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('booking_code', 'like', $search)
+                    ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $search))
+                    ->orWhereHas('vehicle', fn($vq) => $vq->where('name', 'like', $search))
+                    ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', $search));
+            });
+        }
+
+        $bookings = $query->latest()->paginate(15)->withQueryString();
 
         return view('bookings.index', compact('bookings'));
     }

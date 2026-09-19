@@ -121,8 +121,18 @@
 </div>
 
 {{-- HISTORY --}}
-<div class="flex items-center justify-between mb-4">
+<div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
     <h3 class="text-[14px] font-bold text-navy-800"><i class="fas fa-history text-sky-500 mr-2"></i>Riwayat Absensi</h3>
+    <form action="{{ route('attendance.index') }}" method="GET" class="flex items-center gap-2">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Tanggal (mis. 2026-09-19) / status..."
+            class="border border-gray-200 rounded-lg px-3 py-2 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white w-full sm:w-64">
+        <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[12px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
+        @if(request('search'))
+        <a href="{{ route('attendance.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2 rounded-lg text-[12px] font-medium transition border border-red-100 flex-shrink-0">
+            <i class="fas fa-times text-[10px]"></i>
+        </a>
+        @endif
+    </form>
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">

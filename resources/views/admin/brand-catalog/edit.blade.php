@@ -22,11 +22,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kategori *</label>
-                    <select name="item_type" id="item_type" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all hover:border-gray-300">
+                    <x-searchable-select name="item_type" placeholder="Pilih Kategori" id="item_type" required>
                         @foreach($typeLabels as $key => $label)
                         <option value="{{ $key }}" {{ old('item_type', $photo->item_type) == $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nama Brand *</label>

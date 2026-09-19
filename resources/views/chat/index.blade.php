@@ -40,6 +40,15 @@
                     </div>
                 </div>
             </div>
+            {{-- Search Conversation --}}
+            <form action="{{ route('chat.index') }}" method="GET" class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari percakapan..."
+                    class="w-full border border-gray-200 rounded-xl pl-9 pr-8 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50">
+                @if(request('search'))
+                <a href="{{ route('chat.index') }}" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs" title="Reset pencarian"><i class="fas fa-times"></i></a>
+                @endif
+            </form>
         </div>
 
         {{-- Conversations Scroll Area --}}

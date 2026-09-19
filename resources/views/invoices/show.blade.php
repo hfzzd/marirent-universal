@@ -116,13 +116,13 @@
                     </div>
                     <div>
                         <label class="block text-xs text-navy-500 mb-1">Metode *</label>
-                        <select name="method" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                        <x-searchable-select name="method" placeholder="Pilih metode" required>
                             <option value="transfer">Transfer Bank</option>
                             <option value="ewallet">E-Wallet</option>
                             <option value="cash">Cash</option>
                             <option value="credit_card">Kartu Kredit</option>
                             <option value="other">Lainnya</option>
-                        </select>
+                        </x-searchable-select>
                     </div>
                     <div>
                         <label class="block text-xs text-navy-500 mb-1">No. Referensi</label>

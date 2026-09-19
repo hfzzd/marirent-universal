@@ -19,12 +19,12 @@
         <div class="flex-1">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode rental, nama pelanggan..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
         </div>
-        <select name="status" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-navy-700 focus:outline-none pr-8">
+<x-searchable-select name="status" placeholder="Semua Status" size="sm">
             <option value="">Semua Status</option>
-            @foreach(['pending' => 'Pending', 'confirmed' => 'Dikonfirmasi', 'ongoing' => 'Aktif', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan'] as $val => $label)
+            @foreach([ 'pending' => 'Pending', 'confirmed' => 'Dikonfirmasi', 'ongoing' => 'Aktif', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan'] as $val => $label)
                 <option value="{{ $val }}" {{ request('status') === $val ? 'selected' : '' }}>{{ $label }}</option>
             @endforeach
-        </select>
+        </x-searchable-select>
         <button class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-sky-500/25">Filter</button>
     </div>
 </form>

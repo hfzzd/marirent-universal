@@ -22,11 +22,21 @@
     <div class="flex gap-2 mb-4 flex-wrap">
         @php $tabs = ['all' => 'Semua', 'commission' => 'Komisi', 'subscription' => 'Subscription', 'active' => 'Aktif', 'overdue' => 'Menunggak']; @endphp
         @foreach($tabs as $key => $label)
-        <a href="{{ route('superadmin.subscriptions', ['status' => $key]) }}"
+        <a href="{{ route('superadmin.subscriptions', array_merge(request()->query(), ['status' => $key])) }}"
            class="px-4 py-2 rounded-xl text-[12px] font-semibold border transition {{ ($status ?? 'all') === $key ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-navy-600 border-gray-200 hover:border-sky-300' }}">
             {{ $label }}
         </a>
         @endforeach
+        <form action="{{ route('superadmin.subscriptions') }}" method="GET" class="flex items-center gap-2 ml-auto">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari toko / email owner..."
+                class="border border-gray-200 rounded-lg px-3 py-2 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white w-full sm:w-56">
+            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[12px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
+            @if(request('search'))
+            <a href="{{ route('superadmin.subscriptions') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2 rounded-lg text-[12px] font-medium transition border border-red-100 flex-shrink-0">
+                <i class="fas fa-times text-[10px]"></i>
+            </a>
+            @endif
+        </form>
     </div>
 
     <div class="glass-card rounded-2xl border border-gray-100 overflow-hidden">

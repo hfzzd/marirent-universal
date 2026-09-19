@@ -10,12 +10,12 @@
                 @if($isSuperadmin)
                 <div>
                     <label class="block text-sm font-medium text-navy-700 mb-1">Asal Company *</label>
-                    <select name="company_id" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    <x-searchable-select name="company_id" placeholder="-- Pilih company --" required>
                         <option value="">-- Pilih company --</option>
                         @foreach($companies as $c)
                         <option value="{{ $c->id }}" {{ old('company_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->city ?? '-' }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('company_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 @endif
@@ -71,12 +71,12 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-navy-700 mb-1">Tipe SIM</label>
-                            <select name="license_type" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                            <x-searchable-select name="license_type" placeholder="-- Pilih --" size="sm">
                                 <option value="">-- Pilih --</option>
                                 @foreach(['A','B1','B2','C'] as $t)
                                 <option value="{{ $t }}" {{ old('license_type') == $t ? 'selected' : '' }}>{{ $t }}</option>
                                 @endforeach
-                            </select>
+                            </x-searchable-select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-navy-700 mb-1">Masa Berlaku SIM</label>

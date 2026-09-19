@@ -105,12 +105,12 @@
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Kategori</label>
-                <select name="category" class="border border-gray-200 rounded-2xl px-4 py-3 text-[13px] focus:ring-0 focus:border-sky-400 outline-none bg-gray-50/50 min-w-[170px] transition-all duration-300 hover:border-gray-300 cursor-pointer">
+                <x-searchable-select name="category" placeholder="Semua Kategori" size="sm" wrapClass="min-w-[170px]">
                     <option value="">Semua Kategori</option>
                     @foreach($catList as $cat)
                     <option value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'selected' : '' }}>{{ $cat->name }}</option>
                     @endforeach
-                </select>
+                </x-searchable-select>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Harga Maks</label>

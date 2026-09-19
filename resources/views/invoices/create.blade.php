@@ -29,13 +29,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1">Pilih Pelanggan *</label>
-                    <select name="user_id" required x-model="userId" @change="recalc()"
-                            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    <x-searchable-select name="user_id" placeholder="-- Pilih pelanggan --" required x-model="userId" @change="recalc()">
                         <option value="">-- Pilih pelanggan --</option>
                         @foreach($customers as $c)
                         <option value="{{ $c->id }}" {{ old('user_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->email }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     <p class="text-[11px] text-gray-400 mt-1"><i class="fas fa-circle-info mr-1"></i> Semua sewa dalam satu invoice harus milik pelanggan yang sama.</p>
                 </div>
             </div>

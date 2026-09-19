@@ -33,10 +33,10 @@
             @csrf
             <div>
                 <label class="block text-[11px] font-semibold text-navy-600 mb-1">Plan</label>
-                <select name="billing_plan" class="border border-gray-200 bg-gray-50/50 rounded-xl px-3 py-2 text-[12px] focus:ring-2 focus:ring-sky-500/30 outline-none">
+                <x-searchable-select name="billing_plan" placeholder="Pilih plan" size="sm">
                     <option value="subscription" {{ $merchant->billing_plan === 'subscription' ? 'selected' : '' }}>Subscription (flat bulanan)</option>
                     <option value="commission" {{ $merchant->billing_plan === 'commission' ? 'selected' : '' }}>Komisi per transaksi (10%)</option>
-                </select>
+                </x-searchable-select>
             </div>
             <div>
                 <label class="block text-[11px] font-semibold text-navy-600 mb-1">Fee Bulanan (Rp) — subscription</label>

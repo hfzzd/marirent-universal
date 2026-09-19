@@ -7,12 +7,12 @@
         <form action="{{ route('salaries.index') }}" method="GET" class="flex gap-2 flex-wrap items-end">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama driver..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-52">
             @if(isset($companies) && $companies->isNotEmpty())
-            <select name="company_id" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
+            <x-searchable-select name="company_id" placeholder="Semua Company" size="sm">
                 <option value="">Semua Company</option>
                 @foreach($companies as $c)
                 <option value="{{ $c->id }}" {{ request('company_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->city ?? '-' }})</option>
                 @endforeach
-            </select>
+            </x-searchable-select>
             @endif
             <input type="month" name="period_month" value="{{ request('period_month') }}" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
             @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif

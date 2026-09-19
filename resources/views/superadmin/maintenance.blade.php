@@ -28,33 +28,33 @@
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipe</label>
-            <select name="type" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[130px]">
+            <x-searchable-select name="type" placeholder="Semua" size="sm" wrapClass="min-w-[130px]">
                 <option value="">Semua</option>
                 <option value="routine" {{ request('type') == 'routine' ? 'selected' : '' }}>Rutin</option>
                 <option value="repair" {{ request('type') == 'repair' ? 'selected' : '' }}>Perbaikan</option>
                 <option value="inspection" {{ request('type') == 'inspection' ? 'selected' : '' }}>Inspeksi</option>
                 <option value="emergency" {{ request('type') == 'emergency' ? 'selected' : '' }}>Darurat</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</label>
-            <select name="status" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[130px]">
+            <x-searchable-select name="status" placeholder="Semua" size="sm" wrapClass="min-w-[130px]">
                 <option value="">Semua</option>
                 <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Terjadwal</option>
                 <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>Proses</option>
                 <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Selesai</option>
                 <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Prioritas</label>
-            <select name="priority" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[130px]">
+            <x-searchable-select name="priority" placeholder="Semua" size="sm" wrapClass="min-w-[130px]">
                 <option value="">Semua</option>
                 <option value="low" {{ request('priority') == 'low' ? 'selected' : '' }}>Rendah</option>
                 <option value="medium" {{ request('priority') == 'medium' ? 'selected' : '' }}>Sedang</option>
                 <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>Tinggi</option>
                 <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>Mendesak</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div class="flex gap-2">
             <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
@@ -184,31 +184,31 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Kendaraan *</label>
-                    <select name="vehicle_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    <x-searchable-select name="vehicle_id" placeholder="Pilih Kendaraan" required>
                         <option value="">Pilih Kendaraan</option>
                         @foreach($vehicles as $v)
                         <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->brand }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tipe *</label>
-                        <select name="type" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                        <x-searchable-select name="type" placeholder="Pilih tipe" required>
                             <option value="routine">Rutin</option>
                             <option value="repair">Perbaikan</option>
                             <option value="inspection">Inspeksi</option>
                             <option value="emergency">Darurat</option>
-                        </select>
+                        </x-searchable-select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Prioritas *</label>
-                        <select name="priority" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                        <x-searchable-select name="priority" placeholder="Pilih prioritas" required>
                             <option value="low">Rendah</option>
                             <option value="medium" selected>Sedang</option>
                             <option value="high">Tinggi</option>
                             <option value="urgent">Mendesak</option>
-                        </select>
+                        </x-searchable-select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">

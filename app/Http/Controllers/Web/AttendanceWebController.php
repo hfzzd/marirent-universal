@@ -10,13 +10,21 @@ use Illuminate\Support\Facades\Auth;
 
 class AttendanceWebController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $driver = Driver::where('user_id', Auth::id())->firstOrFail();
 
-        $attendances = Attendance::where('driver_id', $driver->id)
-            ->latest('date')
-            ->paginate(15);
+        $query = Attendance::where('driver_id', $driver->id);
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('date', 'like', $search)
+                    ->orWhere('status', 'like', $search);
+            });
+        }
+
+        $attendances = $query->latest('date')->paginate(15)->withQueryString();
 
         $today = now()->toDateString();
         $todayAttendance = Attendance::where('driver_id', $driver->id)

@@ -20,7 +20,25 @@ class SuperadminController extends Controller
     {
         $status = $request->input('status', 'all');
 
-        return view('superadmin.monitoring', compact('status'));
+        $query = Booking::with(['user', 'vehicle', 'category']);
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('booking_code', 'like', $search)
+                    ->orWhereHas('vehicle', fn($vq) => $vq->where('name', 'like', $search))
+                    ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $search))
+                    ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', $search));
+            });
+        }
+
+        $bookings = $query->latest()->paginate(25)->withQueryString();
+
+        return view('superadmin.monitoring', compact('status', 'bookings'));
     }
 
     /**
@@ -75,9 +93,19 @@ class SuperadminController extends Controller
         ));
     }
 
-    public function absen()
+    public function absen(Request $request)
     {
-        $drivers = \App\Models\Driver::with('user')->where('is_active', true)->get();
+        $query = \App\Models\Driver::with('user')->where('is_active', true);
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('license_number', 'like', $search)
+                    ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $search)->orWhere('email', 'like', $search));
+            });
+        }
+
+        $drivers = $query->get();
         return view('superadmin.absen', compact('drivers'));
     }
 
@@ -139,6 +167,16 @@ class SuperadminController extends Controller
 
         if ($status !== 'all') {
             $query->where('status', $status);
+        }
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)
+                    ->orWhere('slug', 'like', $search)
+                    ->orWhere('city', 'like', $search)
+                    ->orWhereHas('owner', fn($uq) => $uq->where('name', 'like', $search)->orWhere('email', 'like', $search));
+            });
         }
 
         $merchants = $query->orderBy('created_at', 'desc')->get();
@@ -330,6 +368,17 @@ class SuperadminController extends Controller
         $query = \App\Models\DemoRequest::query();
         if ($status !== 'all') {
             $query->where('status', $status);
+        }
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)
+                    ->orWhere('business_name', 'like', $search)
+                    ->orWhere('phone', 'like', $search)
+                    ->orWhere('email', 'like', $search)
+                    ->orWhere('notes', 'like', $search);
+            });
         }
 
         $demos = $query->latest()->paginate(15)->withQueryString();

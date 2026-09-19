@@ -10,19 +10,19 @@
                 @if($isSuperadmin)
                 <div>
                     <label class="block text-sm font-medium text-navy-700 mb-1">Company *</label>
-                    <select name="company_id" required onchange="window.location.href='{{ route('salaries.create') }}?company_id=' + this.value" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    <x-searchable-select name="company_id" placeholder="-- Pilih company --" required onchange="window.location.href='{{ route('salaries.create') }}?company_id=' + this.value">
                         <option value="">-- Pilih company --</option>
                         @foreach($companies as $c)
                         <option value="{{ $c->id }}" {{ $selectedCompanyId == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->city ?? '-' }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('company_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 @endif
 
                 <div>
                     <label class="block text-sm font-medium text-navy-700 mb-1">Driver / Karyawan *</label>
-                    <select name="driver_id" required x-model="driverId" @change="loadDriver()" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-sky-500">
+                    <x-searchable-select name="driver_id" placeholder="Pilih Driver / Karyawan" required x-model="driverId" @change="loadDriver()">
                         <option value="">Pilih Driver / Karyawan</option>
                         @foreach($drivers as $d)
                         <option value="{{ $d->id }}" data-name="{{ $d->user?->name }}" data-position="{{ $d->position ?? 'Driver' }}"
@@ -31,7 +31,7 @@
                             <span class="text-gray-400">({{ $d->position ?? 'Driver' }} - Rp {{ number_format($d->daily_salary,0,',','.') }}/hari)</span>
                         </option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('driver_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 

@@ -88,22 +88,18 @@
                     </div>
                     <div class="p-6">
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking <span class="text-red-400">*</span></label>
-                        <div class="relative">
-                            <select name="booking_id" x-model="bookingId" @change="onBookingChange()" required
-                                class="w-full appearance-none border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-[13px] font-medium text-navy-800 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all hover:border-sky-300 cursor-pointer">
-                                <option value="">— Pilih Booking —</option>
-                                @foreach($bookings as $b)
-                                <option value="{{ $b->id }}"
-                                    data-code="{{ $b->booking_code }}"
-                                    data-vehicle="{{ $b->vehicle?->name ?? '-' }}"
-                                    data-plate="{{ $b->vehicle?->license_plate ?? '' }}"
-                                    data-price="{{ (float) $b->final_price }}"
-                                    data-status="{{ $b->status }}"
-                                    {{ $selectedBookingId === (string) $b->id ? 'selected' : '' }}>{{ $b->booking_code }} · {{ $b->vehicle?->name ?? '-' }} @if($b->status === 'ongoing')(sedang berjalan)@endif</option>
-                                @endforeach
-                            </select>
-                            <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[11px] pointer-events-none"></i>
-                        </div>
+                        <x-searchable-select name="booking_id" placeholder="Pilih Booking" required x-model="bookingId" @change="onBookingChange()">
+                            <option value="">— Pilih Booking —</option>
+                            @foreach($bookings as $b)
+                            <option value="{{ $b->id }}"
+                                data-code="{{ $b->booking_code }}"
+                                data-vehicle="{{ $b->vehicle?->name ?? '-' }}"
+                                data-plate="{{ $b->vehicle?->license_plate ?? '' }}"
+                                data-price="{{ (float) $b->final_price }}"
+                                data-status="{{ $b->status }}"
+                                {{ $selectedBookingId === (string) $b->id ? 'selected' : '' }}>{{ $b->booking_code }} · {{ $b->vehicle?->name ?? '-' }} @if($b->status === 'ongoing')(sedang berjalan)@endif</option>
+                            @endforeach
+                        </x-searchable-select>
                         @if($bookings->isEmpty())
                         <div class="flex items-start gap-2 mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
                             <i class="fas fa-triangle-exclamation text-amber-500 text-[12px] mt-0.5"></i>
@@ -136,20 +132,16 @@
                     <div class="p-6 space-y-4">
                         <div>
                             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Pilih Unit <span class="text-red-400">*</span></label>
-                            <div class="relative">
-                                <select name="replacement_vehicle_id" x-model="vehicleId" @change="onVehicleChange()" required
-                                    class="w-full appearance-none border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-[13px] font-medium text-navy-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-gray-50/50 transition-all hover:border-emerald-300 cursor-pointer">
-                                    <option value="">— Pilih Unit Pengganti —</option>
-                                    @foreach($vehicles as $v)
-                                    <option value="{{ $v->id }}"
-                                        data-name="{{ $v->name }}"
-                                        data-cat="{{ $v->category?->name ?? '-' }}"
-                                        data-price="{{ (float) $v->daily_price }}"
-                                        data-plate="{{ $v->license_plate ?? '' }}">{{ $v->name }} ({{ $v->category?->name ?? '-' }}) - Rp {{ number_format($v->daily_price,0,',','.') }}/hari</option>
-                                    @endforeach
-                                </select>
-                                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[11px] pointer-events-none"></i>
-                            </div>
+                            <x-searchable-select name="replacement_vehicle_id" placeholder="Pilih Unit Pengganti" required x-model="vehicleId" @change="onVehicleChange()">
+                                <option value="">— Pilih Unit Pengganti —</option>
+                                @foreach($vehicles as $v)
+                                <option value="{{ $v->id }}"
+                                    data-name="{{ $v->name }}"
+                                    data-cat="{{ $v->category?->name ?? '-' }}"
+                                    data-price="{{ (float) $v->daily_price }}"
+                                    data-plate="{{ $v->license_plate ?? '' }}">{{ $v->name }} ({{ $v->category?->name ?? '-' }}) - Rp {{ number_format($v->daily_price,0,',','.') }}/hari</option>
+                                @endforeach
+                            </x-searchable-select>
                             @error('replacement_vehicle_id')<p class="text-red-500 text-[11px] mt-1.5 flex items-center gap-1"><i class="fas fa-circle-exclamation text-[10px]"></i>{{ $message }}</p>@enderror
                         </div>
                         <div>

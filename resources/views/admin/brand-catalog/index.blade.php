@@ -19,11 +19,21 @@
     </div>
 
     {{-- Filters --}}
-    <div class="flex gap-2 mb-6 flex-wrap">
-        <a href="{{ route('admin.brand-catalog.index') }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !$activeType ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">Semua</a>
+    <div class="flex gap-2 mb-3 flex-wrap items-center">
+        <a href="{{ route('admin.brand-catalog.index', array_merge(request()->query(), ['item_type' => null])) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ !$activeType ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">Semua</a>
         @foreach($typeLabels as $key => $label)
-        <a href="{{ route('admin.brand-catalog.index', ['item_type' => $key]) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $activeType == $key ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">{{ $label }}</a>
+        <a href="{{ route('admin.brand-catalog.index', array_merge(request()->query(), ['item_type' => $key])) }}" class="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition {{ $activeType == $key ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">{{ $label }}</a>
         @endforeach
+        <form action="{{ route('admin.brand-catalog.index') }}" method="GET" class="flex items-center gap-2 ml-auto">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama brand..."
+                class="border border-gray-200 rounded-lg px-3 py-2 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white w-full sm:w-56">
+            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[12px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
+            @if(request('search'))
+            <a href="{{ route('admin.brand-catalog.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2 rounded-lg text-[12px] font-medium transition border border-red-100 flex-shrink-0">
+                <i class="fas fa-times text-[10px]"></i>
+            </a>
+            @endif
+        </form>
     </div>
 
     {{-- Brand Groups --}}

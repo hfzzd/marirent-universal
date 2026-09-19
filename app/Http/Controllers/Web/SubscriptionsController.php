@@ -46,6 +46,16 @@ class SubscriptionsController extends Controller
             ];
         })->values();
 
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $rows = $rows->filter(function ($row) use ($search) {
+                return str_contains(
+                    strtolower($row->merchant->name . ' ' . ($row->owner?->email ?? '')),
+                    $search
+                );
+            })->values();
+        }
+
         $counts = (object) [
             'all' => Merchant::count(),
             'commission' => Merchant::where('billing_plan', 'commission')->count(),

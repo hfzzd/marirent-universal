@@ -78,6 +78,13 @@ class BrandCatalogPhotoController extends Controller
             $allBrands = $allBrands->whereIn('item_type', $allowedTypes);
         }
 
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $allBrands = $allBrands->filter(function ($brandData) use ($search) {
+                return str_contains(strtolower($brandData['brand']), $search);
+            })->values();
+        }
+
         $typeLabels = $this->typeLabels();
 
         return view('admin.brand-catalog.index', [

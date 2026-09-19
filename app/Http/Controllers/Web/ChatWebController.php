@@ -31,6 +31,13 @@ class ChatWebController extends Controller
                 ];
             });
 
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $conversations = $conversations->filter(function ($conv) use ($search) {
+                return str_contains(strtolower($conv['other_user']['name'] ?? ''), $search);
+            })->values();
+        }
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['conversations' => $conversations]);
         }

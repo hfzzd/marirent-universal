@@ -13,9 +13,33 @@
     </div>
     <div class="flex flex-wrap gap-2">
         @foreach(['all' => 'Semua', 'pending' => 'Menunggu', 'contacted' => 'Dihubungi', 'scheduled' => 'Terjadwal', 'done' => 'Selesai', 'cancelled' => 'Batal'] as $key => $label)
-        <a href="{{ route('superadmin.demo-requests', ['status' => $key]) }}" class="px-3.5 py-2 rounded-xl text-[12px] font-bold transition {{ $status === $key ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">{{ $label }}</a>
+        <a href="{{ route('superadmin.demo-requests', array_merge(request()->query(), ['status' => $key])) }}" class="px-3.5 py-2 rounded-xl text-[12px] font-bold transition {{ $status === $key ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300' }}">{{ $label }}</a>
         @endforeach
     </div>
+</div>
+
+{{-- Pencarian --}}
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form action="{{ route('superadmin.demo-requests') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
+        <div class="flex-1 w-full">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-[11px]"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama pemohon, bisnis, telepon, email..."
+                    class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
+            @if(request('search'))
+            <a href="{{ route('superadmin.demo-requests') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
+                <i class="fas fa-times text-[10px]"></i> Reset
+            </a>
+            @endif
+        </div>
+    </form>
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden border border-sky-100/50 shadow-sm">
@@ -63,11 +87,11 @@
                             <form method="POST" action="{{ route('superadmin.demo-requests.update', $demo) }}" class="flex items-center gap-1.5">
                                 @csrf
                                 @method('PUT')
-                                <select name="status" class="border border-gray-200 rounded-xl px-2.5 py-2 text-[12px] font-semibold focus:ring-2 focus:ring-sky-500 outline-none bg-white">
+                                <x-searchable-select name="status" placeholder="Pilih status" size="sm">
                                     @foreach(['pending' => 'Menunggu', 'contacted' => 'Dihubungi', 'scheduled' => 'Terjadwal', 'done' => 'Selesai', 'cancelled' => 'Batal'] as $key => $label)
                                     <option value="{{ $key }}" {{ $demo->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach
-                                </select>
+                                </x-searchable-select>
                                 <button type="submit" class="btn-primary text-white w-8 h-8 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center" title="Simpan status"><i class="fas fa-check"></i></button>
                             </form>
                         </div>

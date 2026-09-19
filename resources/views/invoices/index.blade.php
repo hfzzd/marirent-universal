@@ -33,14 +33,14 @@
         @if(!$isUser)
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipe</label>
-            <select name="type" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[140px]">
+            <x-searchable-select name="type" placeholder="Semua Tipe" size="sm" wrapClass="min-w-[140px]">
                 <option value="">Semua Tipe</option>
                 <option value="rental" {{ request('type') == 'rental' ? 'selected' : '' }}>Sewa</option>
                 <option value="driver_salary" {{ request('type') == 'driver_salary' ? 'selected' : '' }}>Gaji Driver</option>
                 <option value="replacement" {{ request('type') == 'replacement' ? 'selected' : '' }}>Penggantian</option>
                 <option value="damage" {{ request('type') == 'damage' ? 'selected' : '' }}>Kerusakan</option>
                 <option value="other" {{ request('type') == 'other' ? 'selected' : '' }}>Lainnya</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Dari Tanggal</label>

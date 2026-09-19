@@ -72,13 +72,13 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Metode Pembayaran</label>
-                    <select name="method" x-model="method" class="w-full border border-gray-200 bg-gray-50/50 rounded-xl px-3 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 outline-none">
+                    <x-searchable-select name="method" placeholder="Pilih metode" x-model="method">
                         <option value="transfer">Transfer Bank</option>
                         <option value="ewallet">E-Wallet</option>
                         <option value="cash">Tunai</option>
                         <option value="credit_card">Kartu Kredit</option>
                         <option value="other">Lainnya</option>
-                    </select>
+                    </x-searchable-select>
                     @error('method') <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>

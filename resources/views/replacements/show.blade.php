@@ -197,11 +197,11 @@
                         @csrf
                         <div>
                             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Status Baru</label>
-                            <select name="status" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                            <x-searchable-select name="status" placeholder="Pilih Status" required>
                                 <option value="pending" {{ $replacement->status === 'pending' ? 'selected' : '' }}>Pending</option>
                                 <option value="approved" {{ $replacement->status === 'approved' ? 'selected' : '' }}>Disetujui</option>
                                 <option value="rejected" {{ $replacement->status === 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                            </select>
+                            </x-searchable-select>
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Catatan Admin</label>

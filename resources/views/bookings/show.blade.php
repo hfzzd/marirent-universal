@@ -193,14 +193,14 @@
                             @csrf
                             <div>
                                 <label class="block text-[11px] font-semibold text-navy-700 mb-1">Pilih Driver *</label>
-                                <select name="driver_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 bg-white">
+                                <x-searchable-select name="driver_id" placeholder="Pilih driver tersedia" required>
                                     <option value="">-- Pilih driver tersedia --</option>
                                     @foreach($availableDrivers as $d)
                                     <option value="{{ $d->id }}" {{ $booking->driver_id == $d->id ? 'selected' : '' }}>
                                         {{ $d->user->name ?? ('#' . $d->id) }} ({{ $d->status == 'off_duty' ? 'Tersedia' : $d->status }})
                                     </option>
                                     @endforeach
-                                </select>
+                                </x-searchable-select>
                                 @if($availableDrivers->isEmpty())
                                 <p class="text-[11px] text-red-500 mt-1">Tidak ada driver tersedia untuk unit ini.</p>
                                 @endif
@@ -340,12 +340,12 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-bold text-navy-700 mb-1">Kendaraan Pengganti *</label>
-                                <select name="replacement_vehicle_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white">
+                                <x-searchable-select name="replacement_vehicle_id" placeholder="Pilih unit tersedia" required>
                                     <option value="">-- Pilih unit tersedia --</option>
                                     @foreach($swappableVehicles as $v)
                                     <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->category?->name ?? '-' }}) - Rp {{ number_format($v->daily_price, 0, ',', '.') }}/hari</option>
                                     @endforeach
-                                </select>
+                                </x-searchable-select>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-navy-700 mb-1">Alasan</label>

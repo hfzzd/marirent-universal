@@ -74,23 +74,23 @@
 
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking *</label>
-                    <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all hover:border-gray-300">
+                    <x-searchable-select name="booking_id" placeholder="Pilih Booking" required>
                         <option value="">Pilih Booking</option>
                         @foreach($modalBookings as $b)
                         <option value="{{ $b['id'] }}">{{ $b['label'] }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('booking_id') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Pengganti *</label>
-                    <select name="replacement_vehicle_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50 transition-all hover:border-gray-300">
+                    <x-searchable-select name="replacement_vehicle_id" placeholder="Pilih Unit Pengganti" required>
                         <option value="">Pilih Unit Pengganti</option>
                         @foreach($modalVehicles as $v)
                         <option value="{{ $v['id'] }}">{{ $v['label'] }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                     @error('replacement_vehicle_id') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                 </div>
 

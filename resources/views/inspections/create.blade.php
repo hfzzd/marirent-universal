@@ -46,7 +46,7 @@
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-navy-600 mb-1.5">Booking *</label>
-                            <select name="booking_id" x-model="selectedBookingId" @change="detectScope()" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50">
+                            <x-searchable-select name="booking_id" placeholder="Pilih Booking" x-model="selectedBookingId" @change="detectScope()" required>
                                 <option value="">Pilih Booking</option>
                                 @foreach($bookings as $b)
                                 <option value="{{ $b->id }}"
@@ -58,7 +58,7 @@
                                     {{ $b->booking_code }} - {{ $b->vehicle?->name ?? $b->bookingItems->first()?->item_type ?? ($b->category?->name ?? '-') }}
                                 </option>
                                 @endforeach
-                            </select>
+                            </x-searchable-select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-navy-600 mb-1.5">Tipe Inspeksi *</label>
@@ -96,12 +96,12 @@
                     {{-- Item Selector --}}
                     <div>
                         <label class="block text-xs font-medium text-navy-600 mb-1.5">Kendaraan *</label>
-                        <select name="inspection_item_id" x-model="selectedItemId" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-400 transition bg-gray-50/50">
+                        <x-searchable-select name="inspection_item_id" placeholder="Pilih Kendaraan" x-model="selectedItemId" required>
                             <option value="">Pilih Kendaraan</option>
                             <template x-for="v in vehicles" :key="v.id">
                                 <option :value="v.id" x-text="v.name + ' (' + (v.category?.name || '-') + ')'"></option>
                             </template>
-                        </select>
+                        </x-searchable-select>
                     </div>
 
                     <div class="mt-4">

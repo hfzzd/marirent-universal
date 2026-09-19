@@ -20,6 +20,30 @@
     <span class="text-[11px] text-gray-400 bg-white border border-gray-200 px-3 py-2 rounded-xl"><i class="far fa-clock mr-1"></i> {{ now()->translatedFormat('d M Y H:i') }}</span>
 </div>
 
+{{-- Pencarian --}}
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form action="{{ route('superadmin.monitoring') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
+        <div class="flex-1 w-full">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-[11px]"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Kode booking, nama unit, nama pengguna..."
+                    class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
+            @if(request('search'))
+            <a href="{{ route('superadmin.monitoring') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
+                <i class="fas fa-times text-[10px]"></i> Reset
+            </a>
+            @endif
+        </div>
+    </form>
+</div>
+
 {{-- Datasheet --}}
 <div class="glass-card rounded-2xl overflow-hidden">
     <div class="px-5 py-4 border-b border-sky-100/50 flex items-center justify-between">
@@ -45,13 +69,6 @@
                 </tr>
             </thead>
             <tbody>
-                @php
-                    $query = \App\Models\Booking::with(['user', 'vehicle', 'category']);
-                    if ($activeStatus !== 'all') {
-                        $query->where('status', $activeStatus);
-                    }
-                    $bookings = $query->latest()->paginate(25);
-                @endphp
                 @forelse($bookings as $i => $b)
                 <tr class="border-b border-sky-50/50 last:border-0 hover:bg-sky-50/30 transition cursor-pointer" onclick="window.location='{{ route('bookings.show', $b) }}'">
                     <td class="py-2.5 px-3 text-gray-400 sticky left-0 bg-white/80 backdrop-blur-sm">{{ $bookings->firstItem() + $i }}</td>

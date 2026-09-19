@@ -6,19 +6,19 @@
     <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
         <form action="{{ route('drivers.index') }}" method="GET" class="flex gap-2 flex-wrap">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama / email / SIM..." class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none w-full sm:w-60">
-            <select name="status" onchange="this.form.submit()" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
+            <x-searchable-select name="status" placeholder="Semua Status" size="sm" onchange="this.form.submit()">
                 <option value="">Semua Status</option>
                 @foreach(['off_duty','on_duty','on_trip','active','inactive'] as $s)
                 <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_',' ',$s)) }}</option>
                 @endforeach
-            </select>
+            </x-searchable-select>
             @if(isset($companies) && $companies->isNotEmpty())
-            <select name="company_id" onchange="this.form.submit()" class="border border-gray-200 rounded-lg px-3 py-2 text-[13px] bg-white outline-none">
+            <x-searchable-select name="company_id" placeholder="Semua Company" size="sm" onchange="this.form.submit()">
                 <option value="">Semua Company</option>
                 @foreach($companies as $c)
                 <option value="{{ $c->id }}" {{ request('company_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->city ?? '-' }})</option>
                 @endforeach
-            </select>
+            </x-searchable-select>
             @endif
             <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-[13px] transition flex-shrink-0"><i class="fas fa-search text-gray-500"></i></button>
             @if(request()->hasAny(['search','status','company_id']))

@@ -32,11 +32,11 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Kategori *</label>
-                    <select name="category_id" required class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                    <x-searchable-select name="category_id" placeholder="Pilih kategori" required size="sm">
                         @foreach($categories as $c)
                         <option value="{{ $c->id }}" {{ old('category_id', $vehicle->category_id) == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Merek</label>
@@ -64,20 +64,20 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Transmisi</label>
-                    <select name="transmission" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                    <x-searchable-select name="transmission" placeholder="Pilih" size="sm">
                         <option value="">Pilih</option>
                         <option value="automatic" {{ old('transmission', $vehicle->transmission) == 'automatic' ? 'selected' : '' }}>Matic (Automatic)</option>
                         <option value="manual" {{ old('transmission', $vehicle->transmission) == 'manual' ? 'selected' : '' }}>Manual</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Bahan Bakar</label>
-                    <select name="fuel_type" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                    <x-searchable-select name="fuel_type" placeholder="Pilih bahan bakar" size="sm">
                         <option value="gasoline" {{ old('fuel_type', $vehicle->fuel_type) == 'gasoline' ? 'selected' : '' }}>Bensin</option>
                         <option value="diesel" {{ old('fuel_type', $vehicle->fuel_type) == 'diesel' ? 'selected' : '' }}>Diesel</option>
                         <option value="electric" {{ old('fuel_type', $vehicle->fuel_type) == 'electric' ? 'selected' : '' }}>Listrik</option>
                         <option value="hybrid" {{ old('fuel_type', $vehicle->fuel_type) == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Tarif Sewa per Hari (Rp) *</label>
@@ -93,21 +93,21 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Status Ketersediaan</label>
-                    <select name="status" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                    <x-searchable-select name="status" placeholder="Pilih status" size="sm">
                         <option value="available" {{ old('status', $vehicle->status) == 'available' ? 'selected' : '' }}>Tersedia</option>
                         <option value="rented" {{ old('status', $vehicle->status) == 'rented' ? 'selected' : '' }}>Disewa</option>
                         <option value="maintenance" {{ old('status', $vehicle->status) == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
                         <option value="reserved" {{ old('status', $vehicle->status) == 'reserved' ? 'selected' : '' }}>Direservasi</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block font-semibold text-navy-700 mb-1">Kondisi Fisik</label>
-                    <select name="condition" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-white">
+                    <x-searchable-select name="condition" placeholder="Pilih kondisi" size="sm">
                         <option value="excellent" {{ old('condition', $vehicle->condition) == 'excellent' ? 'selected' : '' }}>Sangat Baik</option>
                         <option value="good" {{ old('condition', $vehicle->condition) == 'good' ? 'selected' : '' }}>Baik</option>
                         <option value="fair" {{ old('condition', $vehicle->condition) == 'fair' ? 'selected' : '' }}>Cukup</option>
                         <option value="poor" {{ old('condition', $vehicle->condition) == 'poor' ? 'selected' : '' }}>Kurang</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block font-semibold text-navy-700 mb-1">Ganti Foto (Opsional)</label>

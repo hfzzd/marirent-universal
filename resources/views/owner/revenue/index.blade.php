@@ -80,22 +80,22 @@
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Kategori</label>
-            <select name="category_id" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50 min-w-[140px]">
+            <x-searchable-select name="category_id" placeholder="Semua Kategori" size="sm" wrapClass="min-w-[140px]">
                 <option value="">Semua Kategori</option>
                 @foreach($categories as $cat)
                 <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                 @endforeach
-            </select>
+            </x-searchable-select>
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</label>
-            <select name="status" class="border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 outline-none bg-gray-50/50">
+            <x-searchable-select name="status" placeholder="Semua Status" size="sm">
                 <option value="">Semua Status</option>
                 <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                 <option value="sent" {{ request('status') == 'sent' ? 'selected' : '' }}>Terkirim</option>
                 <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Lunas</option>
                 <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Sebagian</option>
-            </select>
+            </x-searchable-select>
         </div>
         <div class="flex gap-2">
             <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">

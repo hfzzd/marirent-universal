@@ -11,7 +11,14 @@ class NotificationWebController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $notifications = $user->notifications()->latest()->paginate(20);
+        $query = $user->notifications();
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $query->where('data', 'like', $search);
+        }
+
+        $notifications = $query->latest()->paginate(20)->withQueryString();
 
         return view('notifications.index', compact('notifications'));
     }

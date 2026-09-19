@@ -79,11 +79,11 @@
             <div class="flex items-center justify-between mb-6">
                 <h3 class="font-bold text-secondary text-lg">Pendapatan Bulanan</h3>
                 <form method="GET" action="{{ route('dashboard') }}">
-                    <select name="year" onchange="this.form.submit()" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none">
+                    <x-searchable-select name="year" placeholder="Tahun" size="sm" onchange="this.form.submit()">
                         @foreach([date('Y'), date('Y')-1, date('Y')-2] as $y)
                         <option value="{{ $y }}" {{ (int)$selectedYear === (int)$y ? 'selected' : '' }}>{{ $y }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </form>
             </div>
             <div class="h-64 flex items-end justify-between space-x-2 px-4">

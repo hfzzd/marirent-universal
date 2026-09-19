@@ -53,12 +53,12 @@
                         </div>
                         <div>
                             <label class="block text-[12px] font-bold text-navy-700 mb-1.5">Jam Demo <span class="text-red-500">*</span></label>
-                            <select name="preferred_time" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition bg-white">
+                            <x-searchable-select name="preferred_time" placeholder="Pilih jam" required>
                                 <option value="">— Pilih jam —</option>
                                 @foreach(['09.00 – 10.00', '10.00 – 11.00', '11.00 – 12.00', '13.00 – 14.00', '14.00 – 15.00', '15.00 – 16.00', '16.00 – 17.00'] as $jam)
                                 <option value="{{ $jam }}" {{ old('preferred_time') === $jam ? 'selected' : '' }}>{{ $jam }} WIB</option>
                                 @endforeach
-                            </select>
+                            </x-searchable-select>
                             @error('preferred_time')<p class="text-red-500 text-[12px] mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div class="md:col-span-2">

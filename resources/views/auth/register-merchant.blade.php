@@ -167,12 +167,12 @@
 
                     <div class="mb-3.5">
                         <label class="block text-[13px] font-semibold text-navy-700 mb-1.5">Kategori Produk <span class="text-gray-300 font-normal">(opsional)</span></label>
-                        <select name="category_id" class="w-full border border-gray-200 bg-gray-50/50 rounded-xl px-4 py-3 text-[13px] outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 focus:bg-white">
+                        <x-searchable-select name="category_id" placeholder="-- Pilih Kategori --">
                             <option value="">-- Pilih Kategori --</option>
                             @foreach($categories as $cat)
                             <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                             @endforeach
-                        </select>
+                        </x-searchable-select>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-3.5">

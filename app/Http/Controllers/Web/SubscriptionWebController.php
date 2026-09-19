@@ -13,12 +13,22 @@ use Illuminate\Support\Facades\Notification;
 
 class SubscriptionWebController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $merchant = $this->resolveMerchant();
         abort_unless($merchant, 403);
 
         $subscriptions = $merchant->subscriptions()->with('verifiedBy')->get();
+
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $subscriptions = $subscriptions->filter(function ($sub) use ($search) {
+                return str_contains(
+                    strtolower((string) $sub->id . ' ' . ($sub->method ?? '') . ' ' . $sub->status),
+                    $search
+                );
+            })->values();
+        }
 
         return view('subscriptions.index', compact('merchant', 'subscriptions'));
     }

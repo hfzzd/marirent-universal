@@ -1,11 +1,35 @@
 ﻿@extends('layouts.dashboard')
 @section('page-title', 'Riwayat Inspeksi')
 @section('content')
+{{-- Pencarian --}}
+<div class="glass-card rounded-2xl p-4 mb-5 border border-sky-100/50 shadow-sm">
+    <form action="{{ route('inspections.index') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-end">
+        <div class="flex-1 w-full">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cari</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-[11px]"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Kode booking, nama unit, nama pengguna/inspector..."
+                    class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
+            @if(request('search'))
+            <a href="{{ route('inspections.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
+                <i class="fas fa-times text-[10px]"></i> Reset
+            </a>
+            @endif
+        </div>
+    </form>
+</div>
+
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
     <div class="flex gap-2 flex-wrap">
-        <a href="{{ route('inspections.index') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ !request('type') ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Semua</a>
-        <a href="{{ route('inspections.index', ['type' => 'pre_rental']) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ request('type') == 'pre_rental' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Pre-Rental</a>
-        <a href="{{ route('inspections.index', ['type' => 'post_rental']) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ request('type') == 'post_rental' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-amber-300 hover:text-amber-600' }}">Post-Rental</a>
+        <a href="{{ route('inspections.index', array_merge(request()->query(), ['type' => null])) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ !request('type') ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Semua</a>
+        <a href="{{ route('inspections.index', array_merge(request()->query(), ['type' => 'pre_rental'])) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ request('type') == 'pre_rental' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600' }}">Pre-Rental</a>
+        <a href="{{ route('inspections.index', array_merge(request()->query(), ['type' => 'post_rental'])) }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {{ request('type') == 'post_rental' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-amber-300 hover:text-amber-600' }}">Post-Rental</a>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         @if(in_array(auth()->user()->role, ['admin', 'owner'], true))
@@ -43,29 +67,29 @@
                 <input type="hidden" name="scope" value="kendaraan">
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking *</label>
-                    <select name="booking_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                    <x-searchable-select name="booking_id" placeholder="Pilih Booking" required>
                         <option value="">Pilih Booking</option>
                         @foreach($modalBookings as $b)
                         <option value="{{ $b->id }}">{{ $b->booking_code }} - {{ $b->vehicle?->name ?? ($b->category?->name ?? '-') }} ({{ $b->user?->name ?? '-' }})</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tipe *</label>
-                        <select name="type" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                        <x-searchable-select name="type" placeholder="Pilih Tipe" required>
                             <option value="pre_rental">Pre-Rental (awal)</option>
                             <option value="post_rental">Post-Rental (akhir)</option>
-                        </select>
+                        </x-searchable-select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Kendaraan *</label>
-                        <select name="inspection_item_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
+                        <x-searchable-select name="inspection_item_id" placeholder="Pilih Unit" required>
                             <option value="">Pilih Unit</option>
                             @foreach($modalVehicles as $v)
                             <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->license_plate ?? '-' }})</option>
                             @endforeach
-                        </select>
+                        </x-searchable-select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">

@@ -106,9 +106,7 @@
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Booking <span class="text-red-400">*</span></label>
-                            <div class="relative">
-                                <select name="booking_id" x-model="bookingId" @change="onBookingChange()" required
-                                    class="w-full appearance-none border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-[13px] font-medium text-navy-800 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none bg-gray-50/50 transition-all hover:border-violet-300 cursor-pointer">
+                            <x-searchable-select name="booking_id" placeholder="Pilih Booking" x-model="bookingId" @change="onBookingChange()" required>
                                     <option value="">— Pilih Booking —</option>
                                     @foreach($bookings as $b)
                                     <option value="{{ $b->id }}"
@@ -118,9 +116,7 @@
                                         data-status="{{ $b->status }}"
                                         {{ (string) old('booking_id') === (string) $b->id ? 'selected' : '' }}>{{ $b->booking_code }} - {{ $b->item_type ? class_basename($b->item_type) : '-' }} @if($b->status === 'ongoing')(sedang berjalan)@endif</option>
                                     @endforeach
-                                </select>
-                                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[11px] pointer-events-none"></i>
-                            </div>
+                                </x-searchable-select>
                             @if($bookings->isEmpty())
                             <div class="flex items-start gap-2 mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
                                 <i class="fas fa-triangle-exclamation text-amber-500 text-[12px] mt-0.5"></i>
@@ -152,16 +148,12 @@
                     <div class="p-6 space-y-4">
                         <div>
                             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Saat Ini <span class="text-red-400">*</span></label>
-                            <div class="relative">
-                                <select name="original_item_id" x-model="origId" @change="onItemChange()" required
-                                    class="w-full appearance-none border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-[13px] font-medium text-navy-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-gray-50/50 transition-all hover:border-emerald-300 cursor-pointer">
+                            <x-searchable-select name="original_item_id" placeholder="Pilih Unit Saat Ini" x-model="origId" @change="onItemChange()" required>
                                     <option value="">— Pilih Unit Saat Ini —</option>
                                     @foreach($items as $item)
                                     <option value="{{ $item->id }}" data-name="{{ $item->name }}" data-brand="{{ $item->brand }}" data-price="{{ (float) $item->daily_price }}" {{ (string) old('original_item_id') === (string) $item->id ? 'selected' : '' }}>{{ $item->name }} ({{ $item->brand }}) - Rp {{ number_format($item->daily_price,0,',','.') }}/hari</option>
                                     @endforeach
-                                </select>
-                                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[11px] pointer-events-none"></i>
-                            </div>
+                                </x-searchable-select>
                             @error('original_item_id')<p class="text-red-500 text-[11px] mt-1.5 flex items-center gap-1"><i class="fas fa-circle-exclamation text-[10px]"></i>{{ $message }}</p>@enderror
                         </div>
                         <div class="flex justify-center -my-1">
@@ -169,16 +161,12 @@
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Unit Pengganti <span class="text-red-400">*</span></label>
-                            <div class="relative">
-                                <select name="replacement_item_id" x-model="replId" @change="onItemChange()" required
-                                    class="w-full appearance-none border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-[13px] font-medium text-navy-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-gray-50/50 transition-all hover:border-emerald-300 cursor-pointer">
+                            <x-searchable-select name="replacement_item_id" placeholder="Pilih Unit Pengganti" x-model="replId" @change="onItemChange()" required>
                                     <option value="">— Pilih Unit Pengganti —</option>
                                     @foreach($items as $item)
                                     <option value="{{ $item->id }}" data-name="{{ $item->name }}" data-brand="{{ $item->brand }}" data-price="{{ (float) $item->daily_price }}" {{ (string) old('replacement_item_id') === (string) $item->id ? 'selected' : '' }}>{{ $item->name }} ({{ $item->brand }}) - Rp {{ number_format($item->daily_price,0,',','.') }}/hari</option>
                                     @endforeach
-                                </select>
-                                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[11px] pointer-events-none"></i>
-                            </div>
+                                </x-searchable-select>
                             @error('replacement_item_id')<p class="text-red-500 text-[11px] mt-1.5 flex items-center gap-1"><i class="fas fa-circle-exclamation text-[10px]"></i>{{ $message }}</p>@enderror
                             @error('item_type')<p class="text-red-500 text-[11px] mt-1.5 flex items-center gap-1"><i class="fas fa-circle-exclamation text-[10px]"></i>{{ $message }}</p>@enderror
                         </div>

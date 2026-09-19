@@ -56,12 +56,12 @@
 
                 <div x-show="withDriver" x-cloak>
                     <label class="text-sm font-medium text-navy-800 block mb-1.5">Pilih Driver</label>
-                    <select name="driver_id" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 pr-8">
+                    <x-searchable-select name="driver_id" placeholder="Pilih Driver">
                         <option value="">Pilih Driver</option>
                         @foreach($drivers as $driver)
                             <option value="{{ $driver->id }}">{{ $driver->user->name ?? 'Driver #' . $driver->id }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
 
                 <div>

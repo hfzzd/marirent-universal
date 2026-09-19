@@ -41,12 +41,12 @@
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Kategori *</label>
-                    <select name="category_id" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                    <x-searchable-select name="category_id" placeholder="Pilih Kategori" required>
                         <option value="">Pilih Kategori</option>
                         @foreach($categories as $c)
                         <option value="{{ $c->id }}" {{ old('category_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                         @endforeach
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Merek</label>
@@ -167,14 +167,14 @@
                 @if($type == 'musik')
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Tipe Alat Musik</label>
-                    <select name="instrument_type" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                    <x-searchable-select name="instrument_type" placeholder="Pilih tipe alat musik">
                         <option value="gitar" {{ old('instrument_type', 'gitar') == 'gitar' ? 'selected' : '' }}>Gitar</option>
                         <option value="keyboard" {{ old('instrument_type') == 'keyboard' ? 'selected' : '' }}>Keyboard</option>
                         <option value="drum" {{ old('instrument_type') == 'drum' ? 'selected' : '' }}>Drum</option>
                         <option value="bass" {{ old('instrument_type') == 'bass' ? 'selected' : '' }}>Bass</option>
                         <option value="ukulele" {{ old('instrument_type') == 'ukulele' ? 'selected' : '' }}>Ukulele</option>
                         <option value="lainnya" {{ old('instrument_type') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Model Alat Musik</label>
@@ -220,19 +220,19 @@
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Status</label>
-                    <select name="status" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                    <x-searchable-select name="status" placeholder="Pilih status" size="sm">
                         <option value="available" {{ old('status', 'available') == 'available' ? 'selected' : '' }}>Tersedia</option>
                         <option value="maintenance" {{ old('status') == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div>
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Kondisi</label>
-                    <select name="condition" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                    <x-searchable-select name="condition" placeholder="Pilih kondisi" size="sm">
                         <option value="excellent" {{ old('condition', 'good') == 'excellent' ? 'selected' : '' }}>Sangat Baik</option>
                         <option value="good" {{ old('condition', 'good') == 'good' ? 'selected' : '' }}>Baik</option>
                         <option value="fair" {{ old('condition') == 'fair' ? 'selected' : '' }}>Cukup</option>
                         <option value="poor" {{ old('condition') == 'poor' ? 'selected' : '' }}>Kurang</option>
-                    </select>
+                    </x-searchable-select>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Foto Barang</label>
