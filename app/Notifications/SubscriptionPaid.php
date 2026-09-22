@@ -30,8 +30,10 @@ class SubscriptionPaid extends Notification
                 number_format((float) $this->subscription->amount, 0, ',', '.'),
                 $merchant?->subscription_until?->format('d M Y') ?? '-'
             ),
-            'url' => url('/subscriptions/history'),
+            'url' => route('subscriptions.index'),
             'type' => 'subscription_paid',
+            'subscription_id' => $this->subscription->id,
+            'merchant_id' => $merchant?->id,
         ]);
     }
 

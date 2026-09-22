@@ -65,7 +65,19 @@ class Invoice extends Model
 
     public function isOverdue(): bool
     {
-        return $this->status !== 'paid' && $this->due_date->isPast();
+        if ($this->status === 'paid' || $this->status === 'cancelled') {
+            return false;
+        }
+
+        if (!$this->due_date) {
+            return false;
+        }
+
+        try {
+            return $this->due_date->isPast();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function getRemainingAmount(): float

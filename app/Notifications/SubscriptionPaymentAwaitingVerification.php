@@ -31,8 +31,10 @@ class SubscriptionPaymentAwaitingVerification extends Notification
                 $this->subscription->period_start?->format('d M Y'),
                 $this->subscription->period_end?->format('d M Y')
             ),
-            'url' => $merchant ? url("/superadmin/subscriptions/{$merchant->id}") : null,
+            'url' => $merchant ? route('superadmin.subscriptions.show', $merchant) : null,
             'type' => 'subscription_payment_awaiting_verification',
+            'subscription_id' => $this->subscription->id,
+            'merchant_id' => $merchant?->id,
         ]);
     }
 

@@ -26,7 +26,7 @@ class SubscriptionOverdue extends Notification
                 'Tagihan subscription %s belum dibayar dan telah melewati jatuh tempo. Akun toko tidak dapat digunakan sampai pembayaran lunas.',
                 $this->merchant->name ?? 'toko Anda'
             ),
-            'url' => url('/subscriptions/due'),
+            'url' => route('subscriptions.notice'),
             'type' => 'subscription_overdue',
             'merchant_id' => $this->merchant->id,
         ]);

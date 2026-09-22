@@ -59,7 +59,15 @@ class ProcessSubscriptions extends Command
                 continue;
             }
 
-            $daysLeft = (int) now()->startOfDay()->diffInDays(Carbon::parse($bill->period_end)->startOfDay());
+            $end = Carbon::parse($bill->period_end)->startOfDay();
+            $today = now()->startOfDay();
+
+            // Hanya kirim H-7/H-3/H-1/H0 sebelum jatuh tempo, bukan setelah lewat.
+            if ($end->lt($today)) {
+                continue;
+            }
+
+            $daysLeft = $today->diffInDays($end);
 
             if (!in_array($daysLeft, [7, 3, 1, 0], true)) {
                 continue;

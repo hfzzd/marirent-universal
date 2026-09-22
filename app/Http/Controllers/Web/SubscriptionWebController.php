@@ -16,7 +16,12 @@ class SubscriptionWebController extends Controller
     public function index(Request $request)
     {
         $merchant = $this->resolveMerchant();
-        abort_unless($merchant, 403);
+
+        // Superadmin / akun tanpa merchant: jangan 403 mentah, arahkan ke dashboard.
+        if (!$merchant) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Halaman subscription hanya untuk akun merchant (owner/admin).');
+        }
 
         $subscriptions = $merchant->subscriptions()->with('verifiedBy')->get();
 
@@ -86,10 +91,17 @@ class SubscriptionWebController extends Controller
         $user = Auth::user();
         $svc = app(SubscriptionService::class);
         $merchant = $svc->merchantForUser($user);
-        abort_unless($merchant, 403);
 
-        $bill = $svc->currentBill($merchant);
-        abort_unless($bill, 404);
+        if (!$merchant) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Akun Anda tidak terhubung ke merchant manapun.');
+        }
+
+        $bill = $svc->ensureCurrentBill($merchant);
+        if (!$bill) {
+            return redirect()->route('subscriptions.index')
+                ->with('error', 'Tidak ada tagihan yang perlu dibayar.');
+        }
 
         $validated = $request->validate([
             'method' => 'required|in:cash,transfer,ewallet,credit_card,other',

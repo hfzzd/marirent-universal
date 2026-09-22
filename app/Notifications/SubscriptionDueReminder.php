@@ -32,7 +32,7 @@ class SubscriptionDueReminder extends Notification
                 $this->amount,
                 $this->dueDate
             ),
-            'url' => url('/subscriptions/history'),
+            'url' => route('subscriptions.index'),
             'type' => 'subscription_due_reminder',
             'merchant_id' => $this->merchant->id,
         ]);

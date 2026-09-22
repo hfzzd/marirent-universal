@@ -96,8 +96,10 @@ class SubscriptionService
     public function currentBill(Merchant $merchant): ?MerchantSubscription
     {
         return $merchant->subscriptions()
+            ->reorder()
             ->whereIn('status', ['pending', 'overdue'])
             ->orderBy('period_start')
+            ->orderBy('id')
             ->first();
     }
 
@@ -135,6 +137,7 @@ class SubscriptionService
     /**
      * Aktifkan plan subscription untuk merchant: set plan, fee, buat tagihan pertama.
      * Merchant mendapat waktu satu bulan untuk membayar tagihan pertama.
+     * Idempoten: jika sudah ada tagihan unpaid, pakai ulang agar tidak duplikat.
      */
     public function pivotToSubscription(Merchant $merchant, float $fee): MerchantSubscription
     {
@@ -146,7 +149,13 @@ class SubscriptionService
             'subscription_until' => now()->addMonth(),
         ]);
 
-        return $this->generateNextBill($merchant->fresh());
+        $fresh = $merchant->fresh();
+
+        if ($existing = $this->currentBill($fresh)) {
+            return $existing;
+        }
+
+        return $this->generateNextBill($fresh);
     }
 
     /**
@@ -162,13 +171,15 @@ class SubscriptionService
 
     /**
      * Verifikasi pembayaran tagihan -> perpanjang akses merchant & buat tagihan berikutnya.
+     * Idempoten: verifikasi ulang tagihan lunas tidak membuat tagihan ganda.
      */
     public function verifyPayment(MerchantSubscription $subscription, ?int $verifiedBy = null): Merchant
     {
         $merchant = $subscription->merchant;
+        $alreadyPaid = $subscription->isPaid();
 
-        DB::transaction(function () use ($subscription, $verifiedBy, $merchant) {
-            if (!$subscription->isPaid()) {
+        DB::transaction(function () use ($subscription, $verifiedBy, $merchant, $alreadyPaid) {
+            if (!$alreadyPaid) {
                 $subscription->update([
                     'status' => 'paid',
                     'paid_at' => now(),
@@ -177,13 +188,48 @@ class SubscriptionService
                 ]);
             }
 
-            $newUntil = $subscription->period_end->copy()->endOfDay();
+            $subscription->refresh();
+            $periodEnd = $subscription->period_end ? Carbon::parse($subscription->period_end)->endOfDay() : now()->endOfDay();
+
+            // Jika tagihan sudah lewat masa (habis masa), beri akses 1 bulan dari sekarang
+            // agar 1x bayar langsung memulihkan akses. Jika belum lewat, ikuti period_end.
+            if ($periodEnd->isPast()) {
+                $newUntil = now()->addMonth()->endOfDay();
+            } else {
+                $newUntil = $periodEnd->copy();
+            }
+
             if (!$merchant->subscription_until || $newUntil->gt($merchant->subscription_until)) {
                 $merchant->update(['subscription_until' => $newUntil]);
             }
 
-            $previousStart = $subscription->period_start ?: now();
-            $this->generateNextBill($merchant, $previousStart->copy()->addMonth());
+            // Tagihan berikutnya: kontinyu dari periode saat ini.
+            // Jika habis masa (period_end lewat), mulai dari masa aktif baru
+            // agar tidak menumpuk arrears yang sudah lewat.
+            $previousStart = $subscription->period_start ? Carbon::parse($subscription->period_start) : now();
+            $candidateNext = $previousStart->copy()->addMonth()->startOfDay();
+            $freshUntil = $merchant->fresh()->subscription_until
+                ? Carbon::parse($merchant->fresh()->subscription_until)->startOfDay()
+                : null;
+
+            if ($periodEnd->isPast() && $freshUntil) {
+                $nextStart = $freshUntil->copy()->startOfDay();
+            } else {
+                $nextStart = $candidateNext;
+            }
+
+            // Cegah tagihan ganda: abaikan invoice yang sedang diverifikasi,
+            // periode bersinggungan di batas tanggal dianggap kontinyu (bukan overlap).
+            $nextEnd = $nextStart->copy()->addMonth();
+            $overlapExists = MerchantSubscription::where('merchant_id', $merchant->id)
+                ->where('id', '!=', $subscription->id)
+                ->where('period_start', '<', $nextEnd->toDateString())
+                ->where('period_end', '>', $nextStart->toDateString())
+                ->exists();
+
+            if (!$overlapExists) {
+                $this->generateNextBill($merchant, $nextStart);
+            }
         });
 
         return $merchant->fresh();
@@ -191,8 +237,12 @@ class SubscriptionService
 
     public function rejectPayment(MerchantSubscription $subscription, string $reason): void
     {
+        $isExpired = $subscription->period_end
+            ? Carbon::parse($subscription->period_end)->startOfDay()->lt(now()->startOfDay())
+            : false;
+
         $subscription->update([
-            'status' => 'pending',
+            'status' => $isExpired ? 'overdue' : 'pending',
             'rejection_reason' => $reason,
         ]);
     }

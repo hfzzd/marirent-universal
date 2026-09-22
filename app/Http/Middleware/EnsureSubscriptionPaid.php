@@ -24,8 +24,8 @@ class EnsureSubscriptionPaid
 
         $routeName = $request->route() ? $request->route()->getName() : null;
 
-        if ($request->expectsJson()) {
-            if ($routeName && str_starts_with($routeName, 'api.subscriptions.')) {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            if ($this->isAllowedApiRequest($request, $routeName)) {
                 return $next($request);
             }
 
@@ -41,8 +41,35 @@ class EnsureSubscriptionPaid
             return $next($request);
         }
 
+        // Hindari redirect loop jika sudah di halaman notice/due.
+        if ($request->is('subscriptions/*')) {
+            return $next($request);
+        }
+
         return redirect()->route('subscriptions.notice')
             ->with('error', 'Akun Anda diblokir karena tagihan subscription belum dibayar. Silakan selesaikan pembayaran billing terlebih dahulu.');
+    }
+
+    /**
+     * Endpoint API yang tetap bisa diakses saat menunggak agar
+     * aplikasi mobile / semua perangkat tetap bisa bayar, cek status,
+     * baca notifikasi, profil, dan logout.
+     */
+    private function isAllowedApiRequest(Request $request, ?string $routeName): bool
+    {
+        if ($routeName && (
+            str_starts_with($routeName, 'api.subscriptions.')
+            || str_starts_with($routeName, 'api.notifications')
+            || in_array($routeName, ['api.me', 'api.profile', 'api.logout'], true)
+        )) {
+            return true;
+        }
+
+        $path = trim($request->path(), '/');
+
+        return str_starts_with($path, 'api/subscriptions')
+            || str_starts_with($path, 'api/notifications')
+            || in_array($path, ['api/logout', 'api/me', 'api/profile'], true);
     }
 
     private function isAllowedWebRoute(?string $routeName): bool

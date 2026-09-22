@@ -24,15 +24,15 @@ Route::get('/vehicles/{slug}', [VehicleController::class, 'show']);
 Route::get('/categories', [VehicleController::class, 'categories']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/logout', [AuthController::class, 'logout'])->name('api.logout');
+    Route::get('/me', [AuthController::class, 'me'])->name('api.me');
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->name('api.profile');
 
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('api.dashboard');
 
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read']);
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('api.notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('api.notifications.read');
 
     Route::apiResource('bookings', BookingController::class)->only(['index', 'store'])->names([
         'index' => 'api.bookings.index',
@@ -89,5 +89,6 @@ Route::middleware('auth:sanctum')->group(function () {
     ]);
 
     Route::get('/subscriptions/due', [SubscriptionController::class, 'due'])->name('api.subscriptions.due');
+    Route::get('/subscriptions/history', [SubscriptionController::class, 'history'])->name('api.subscriptions.history');
     Route::post('/subscriptions/pay', [SubscriptionController::class, 'pay'])->name('api.subscriptions.pay');
 });

@@ -66,7 +66,11 @@
                 <h2 class="text-2xl font-bold text-navy-900">INVOICE</h2>
                 <p class="text-sm font-semibold text-sky-600 mt-1">{{ $invoice->invoice_number }}</p>
                 <p class="text-xs text-gray-400 mt-1">Tanggal: {{ $invoice->created_at->format('d/m/Y') }}</p>
-                <p class="text-xs text-gray-400">Jatuh Tempo: {{ $invoice->due_date->format('d/m/Y') }}</p>
+                <p class="text-xs text-gray-400">Jatuh Tempo: {{ $invoice->due_date?->format('d/m/Y') ?? '-' }}</p>
+                @php $printCat = $invoice->category?->name ?? $invoice->booking?->vehicle?->category?->name ?? $invoice->booking?->category?->name ?? null; @endphp
+                @if($printCat)
+                <p class="text-xs font-bold text-sky-600 mt-1">Kategori: {{ $printCat }} (1 invoice = 1 kategori)</p>
+                @endif
                 @php
                     $statusLabel = match($invoice->status) {
                         'paid' => 'LUNAS',

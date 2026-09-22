@@ -30,6 +30,15 @@
                     class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-[12px] focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none bg-gray-50/50">
             </div>
         </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Kategori (1 invoice = 1 kategori)</label>
+            <x-searchable-select name="category_id" placeholder="Semua Kategori" size="sm" wrapClass="min-w-[170px]">
+                <option value="">Semua Kategori</option>
+                @foreach(($categories ?? collect()) as $cat)
+                <option value="{{ $cat->id }}" {{ (string) request('category_id') === (string) $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                @endforeach
+            </x-searchable-select>
+        </div>
         @if(!$isUser)
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipe</label>
@@ -55,7 +64,7 @@
             <button type="submit" class="btn-primary text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold shadow-sm">
                 <i class="fas fa-filter mr-1"></i> Filter
             </button>
-            @if(request()->hasAny(['search','type','status','date_from','date_to','user_id']))
+            @if(request()->hasAny(['search','type','status','date_from','date_to','user_id','category_id']))
             <a href="{{ route('invoices.index') }}" class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2.5 rounded-xl text-[12px] font-medium transition border border-red-100">
                 <i class="fas fa-times text-[10px]"></i> Reset
             </a>
@@ -93,6 +102,7 @@
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Nomor Invoice</th>
                     @if(!$isUser)
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Tipe</th>
+                    <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Kategori</th>
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Pengguna</th>
                     @else
                     <th class="text-left py-3 px-5 text-gray-400 font-semibold text-[11px] uppercase tracking-wider">Booking</th>
@@ -115,7 +125,7 @@
                     @if(!$isUser)
                     <td class="py-3 px-5 text-[12px] text-navy-600">
                         @php
-                            $invCategory = $inv->booking?->vehicle?->category?->slug ?? $inv->booking?->category?->slug ?? null;
+                            $invCategory = $inv->category?->slug ?? $inv->booking?->vehicle?->category?->slug ?? $inv->booking?->category?->slug ?? null;
                             $invTypeIcon = match($invCategory) {
                                 'mobil' => ['icon' => 'fa-car', 'color' => 'text-sky-500'],
                                 'motor' => ['icon' => 'fa-motorcycle', 'color' => 'text-amber-500'],
@@ -141,6 +151,13 @@
                             @else <span>Lainnya</span>
                             @endif
                         </div>
+                    </td>
+                    <td class="py-3 px-5">
+                        @php $invCatName = $inv->category?->name ?? $inv->booking?->vehicle?->category?->name ?? $inv->booking?->category?->name ?? '-'; @endphp
+                        <span class="px-2 py-1 rounded-full text-[11px] font-bold bg-sky-100 text-sky-700 whitespace-nowrap">{{ $invCatName }}</span>
+                        @if($inv->bookings->count() > 0)
+                        <p class="text-[10px] text-gray-400 mt-1">{{ $inv->bookings->count() + ($inv->booking_id ? 1 : 0) }} booking digabung</p>
+                        @endif
                     </td>
                     <td class="py-3 px-5 text-navy-700">{{ $inv->user?->name }}</td>
                     @else
@@ -236,7 +253,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ $isUser ? '7' : '8' }}" class="py-14 text-center">
+                    <td colspan="{{ $isUser ? '7' : '9' }}" class="py-14 text-center">
                         <div class="flex flex-col items-center gap-3">
                             <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center">
                                 <i class="fas fa-file-invoice text-sky-300 text-2xl"></i>

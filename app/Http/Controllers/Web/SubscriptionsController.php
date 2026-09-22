@@ -75,7 +75,12 @@ class SubscriptionsController extends Controller
     {
         $svc = app(SubscriptionService::class);
         $merchant->load(['owner', 'subscriptions.verifiedBy', 'subscriptions.merchant']);
-        $subscriptions = $merchant->subscriptions;
+        $subscriptions = $merchant->subscriptions()
+            ->reorder()
+            ->orderByDesc('period_start')
+            ->orderByDesc('id')
+            ->with(['verifiedBy', 'merchant'])
+            ->get();
 
         return view('superadmin.subscriptions.show', compact('merchant', 'subscriptions', 'svc'));
     }
@@ -116,6 +121,20 @@ class SubscriptionsController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        if (($merchant->billing_plan ?? 'commission') !== 'subscription') {
+            return back()->with('error', 'Ubah plan ke SUBSCRIPTION dulu sebelum membuat tagihan manual untuk ' . $merchant->name . '.');
+        }
+
+        $overlap = MerchantSubscription::where('merchant_id', $merchant->id)
+            ->whereIn('status', ['pending', 'overdue'])
+            ->where('period_start', '<=', $validated['period_end'])
+            ->where('period_end', '>=', $validated['period_start'])
+            ->exists();
+
+        if ($overlap) {
+            return back()->with('error', 'Periode tagihan bertabrakan dengan tagihan aktif yang belum dibayar.');
+        }
+
         MerchantSubscription::create([
             'merchant_id' => $merchant->id,
             'period_start' => $validated['period_start'],
@@ -139,7 +158,9 @@ class SubscriptionsController extends Controller
         $userIds = app(SubscriptionService::class)->getAccountUserIds($merchant);
         Notification::send(User::whereIn('id', $userIds)->get(), new SubscriptionPaid($subscription->fresh()));
 
-        return back()->with('success', 'Pembayaran subscription ' . $merchant->name . ' diverifikasi. Akses aktif hingga ' . $merchant->subscription_until->format('d M Y'));
+        $until = $merchant->subscription_until?->format('d M Y') ?? '-';
+
+        return back()->with('success', 'Pembayaran subscription ' . $merchant->name . ' diverifikasi. Akses aktif hingga ' . $until);
     }
 
     public function reject(Request $request, MerchantSubscription $subscription)

@@ -477,7 +477,53 @@ class BookingWebController extends Controller
 
     private function createBookingInvoice(Booking $booking, array $relatedBookings = []): Invoice
     {
+        $svc = app(\App\Services\InvoiceService::class);
+
+        // Multi-item dengan beda kategori -> pecah 1 invoice per kategori.
+        $related = $relatedBookings !== [] ? collect($relatedBookings) : collect([$booking]);
+        if ($related->count() > 1) {
+            $grouped = $related->groupBy(fn($b) => $svc->resolveCategoryId($b) ?? ('null-' . $b->id));
+            if ($grouped->count() > 1) {
+                $primary = null;
+                foreach ($grouped as $catId => $group) {
+                    $rep = $group->contains($booking) ? $booking : $group->first();
+                    $inv = $this->createSingleCategoryInvoice($rep, $group->all());
+                    if ($group->contains($booking) || $primary === null) {
+                        if ($group->contains($booking)) {
+                            $primary = $inv;
+                        } elseif ($primary === null) {
+                            $primary = $inv;
+                        }
+                    }
+                }
+                return $primary;
+            }
+            $related = $related->values()->all();
+            return $this->createSingleCategoryInvoice($booking, $related);
+        }
+
+        // Single booking: gabung ke invoice terbuka 1 kategori yang sama bila ada.
+        $single = $related->first() ?? $booking;
+        if (($single->payment_status ?? 'unpaid') === 'unpaid') {
+            try {
+                $open = $svc->findOpenInvoiceFor($single);
+                if ($open) {
+                    return $svc->appendBooking($open, $single);
+                }
+            } catch (\Throwable) {
+                // fallback: buat invoice baru
+            }
+        }
+
         $related = $relatedBookings !== [] ? $relatedBookings : [$booking];
+
+        return $this->createSingleCategoryInvoice($booking, $related);
+    }
+
+    private function createSingleCategoryInvoice(Booking $booking, array $relatedBookings): Invoice
+    {
+        $related = $relatedBookings;
+        $svc = app(\App\Services\InvoiceService::class);
         $subtotal = collect($related)->sum(fn($b) => (float) $b->final_price);
 
         $owner = null;
@@ -499,6 +545,17 @@ class BookingWebController extends Controller
             $owner = User::where('role', 'superadmin')->orderBy('id')->first();
         }
 
+        // 1 kategori = 1 invoice: ambil kategori dominan dari grup.
+        $categoryId = $svc->resolveCategoryId($booking);
+        if (!$categoryId) {
+            foreach ($related as $b) {
+                $categoryId = $svc->resolveCategoryId($b);
+                if ($categoryId) {
+                    break;
+                }
+            }
+        }
+
         $paidAmount = $booking->payment_status === 'paid' ? $subtotal : 0;
         $status = $booking->payment_status === 'paid' ? 'paid' : 'sent';
 
@@ -518,7 +575,7 @@ class BookingWebController extends Controller
             'booking_id' => $booking->id,
             'user_id' => $booking->user_id,
             'owner_id' => $owner?->id,
-            'category_id' => $booking->category_id,
+            'category_id' => $categoryId,
             'type' => 'rental',
             'subtotal' => $subtotal,
             'tax_amount' => 0,
@@ -861,6 +918,10 @@ class BookingWebController extends Controller
 
         if (in_array($itemKind, ['mobil', 'motor'])) {
             $item = Vehicle::findOrFail($itemId);
+            $vehicleCat = $item->category?->slug;
+            if (($itemKind === 'mobil' && $vehicleCat !== 'mobil') || ($itemKind === 'motor' && $vehicleCat !== 'motor')) {
+                return back()->with('error', 'Jenis kendaraan tidak sesuai kategori unit yang dipilih.')->withInput();
+            }
             $vehicleId = $item->id;
         } elseif ($itemKind === 'kamera') {
             $item = Camera::findOrFail($itemId);

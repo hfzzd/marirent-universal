@@ -15,7 +15,7 @@ class InvoiceWebController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['booking', 'booking.vehicle', 'booking.vehicle.category', 'booking.category', 'user', 'items', 'payments' => fn ($q) => $q->where('status', 'pending')]);
+        $query = Invoice::with(['booking', 'booking.vehicle', 'booking.vehicle.category', 'booking.category', 'bookings.vehicle.category', 'bookings.category', 'category', 'user', 'items', 'payments' => fn ($q) => $q->where('status', 'pending')]);
 
         $user = Auth::user();
         if ($user->role === 'user') {
@@ -67,10 +67,20 @@ class InvoiceWebController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
+        if ($request->category_id) {
+            $catId = (int) $request->category_id;
+            $query->where(function ($q) use ($catId) {
+                $q->where('category_id', $catId)
+                  ->orWhereHas('booking', fn($bq) => $bq->where('category_id', $catId))
+                  ->orWhereHas('bookings', fn($bq) => $bq->where('category_id', $catId));
+            });
+        }
+
         $invoices = $query->latest()->paginate(15);
         $customers = User::where('role', 'user')->get();
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
 
-        return view('invoices.index', compact('invoices', 'customers'));
+        return view('invoices.index', compact('invoices', 'customers', 'categories'));
     }
 
     public function create()
@@ -83,9 +93,7 @@ class InvoiceWebController extends Controller
 
         $query = Booking::whereIn('status', ['confirmed', 'ongoing', 'completed'])
             ->where('payment_status', '!=', 'paid')
-            ->whereDoesntHave('invoice')
-            ->whereDoesntHave('invoices')
-            ->with(['vehicle', 'category', 'user']);
+            ->with(['vehicle.category', 'category', 'user', 'invoice.payments', 'invoice.bookings', 'invoices.payments', 'invoices.bookings']);
 
         if (Auth::user()->isMerchantStaff()) {
             $query->ownedByMerchant(Auth::user()->merchantId());
@@ -93,19 +101,51 @@ class InvoiceWebController extends Controller
 
         $bookings = $query->get();
 
-        $eligible = $bookings->map(function ($b) {
-            return [
+        $svc = app(\App\Services\InvoiceService::class);
+        $eligible = collect();
+        $skipped = 0;
+        foreach ($bookings as $b) {
+            $elig = $svc->isEligibleForMerge($b);
+            if (!$elig['ok']) {
+                $skipped++;
+                continue;
+            }
+            $catId = $svc->resolveCategoryId($b) ?? $b->category_id;
+            $cat = $b->category ?? ($b->vehicle?->category ?? null);
+            // Fallback nama item untuk booking non-kendaraan
+            $itemName = null;
+            try {
+                $itemName = $b->item?->name;
+            } catch (\Throwable) {
+            }
+            $soloInv = null;
+            if (!empty($elig['solo_invoice_id'])) {
+                $soloInv = \App\Models\Invoice::find($elig['solo_invoice_id']);
+            }
+            if ((float) $b->final_price <= 0) {
+                continue;
+            }
+            $eligible->push([
                 'id' => $b->id,
                 'user_id' => $b->user_id,
+                'user_name' => $b->user?->name ?? '-',
                 'code' => $b->booking_code,
-                'unit' => $b->vehicle->name ?? ($b->category->name ?? '-'),
+                'unit' => $b->vehicle->name ?? $itemName ?? ($cat->name ?? '-'),
+                'category_id' => $catId,
+                'category_name' => $cat->name ?? 'Lainnya',
+                'category_slug' => $cat->slug ?? '-',
                 'period' => ($b->start_date ? $b->start_date->format('d M Y') : '?') . ' - ' . ($b->end_date ? $b->end_date->format('d M Y') : '?'),
                 'days' => $b->start_date && $b->end_date ? max(1, $b->start_date->diffInDays($b->end_date)) : 0,
                 'price' => (float) $b->final_price,
-            ];
-        })->filter(fn($e) => $e['price'] > 0)->values();
+                'has_invoice' => (bool) ($elig['has_invoice'] ?? false),
+                'invoice_number' => $soloInv?->invoice_number,
+            ]);
+        }
+        $eligible = $eligible->values();
 
-        return view('invoices.create', compact('customers', 'eligible'));
+        $groupedEligible = $eligible->groupBy('category_name');
+
+        return view('invoices.create', compact('customers', 'eligible', 'groupedEligible', 'skipped'));
     }
 
     public function store(Request $request)
@@ -124,65 +164,51 @@ class InvoiceWebController extends Controller
             'notes' => 'nullable|string|max:2000',
         ]);
 
-        $bookings = Booking::whereIn('id', $validated['booking_ids'])->with(['vehicle', 'category'])->get();
+        $bookings = Booking::whereIn('id', $validated['booking_ids'])->with(['vehicle.category', 'category', 'user', 'invoice.payments', 'invoices.payments'])->get();
+        if ($bookings->count() !== count(array_unique($validated['booking_ids']))) {
+            return back()->with('error', 'Sebagian booking tidak ditemukan.')->withInput();
+        }
         foreach ($bookings as $b) {
-            if ($b->invoice || $b->invoices()->exists()) {
-                return back()->with('error', 'Booking ' . $b->booking_code . ' sudah memiliki invoice. Pilih booking lain.')->withInput();
+            if ((int) $b->user_id !== (int) $validated['user_id']) {
+                return back()->with('error', 'Booking ' . $b->booking_code . ' milik pelanggan berbeda. 1 invoice hanya untuk 1 pelanggan.')->withInput();
             }
         }
-        $ownerId = Auth::user()->merchantId() ?? Auth::id();
 
-        $subtotal = $bookings->sum('final_price');
-        $taxPercent = $validated['tax_percent'] ?? 0;
-        $taxAmount = round($subtotal * $taxPercent / 100, 2);
-        $discountAmount = $validated['discount_amount'] ?? 0;
-        $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
-
-        $invoice = Invoice::create([
-            'invoice_number' => Invoice::generateInvoiceNumber('rental'),
-            'booking_id' => $bookings->first()->id,
-            'user_id' => $validated['user_id'],
-            'owner_id' => $ownerId,
-            'type' => 'rental',
-            'subtotal' => $subtotal,
-            'tax_amount' => $taxAmount,
-            'discount_amount' => $discountAmount,
-            'total_amount' => $totalAmount,
-            'paid_amount' => 0,
-            'due_amount' => $totalAmount,
-            'status' => 'draft',
-            'due_date' => $validated['due_date'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($bookings as $b) {
-            $vehicleName = $b->vehicle->name ?? ($b->category->name ?? '-');
-            $days = max(1, $b->start_date->diffInDays($b->end_date));
-            InvoiceItem::create([
-                'invoice_id' => $invoice->id,
-                'description' => "Sewa {$vehicleName} ({$b->booking_code}) - {$days} hari",
-                'quantity' => 1,
-                'unit_price' => (float) $b->final_price,
-                'total_price' => (float) $b->final_price,
-            ]);
+        // Validasi 1 kategori = 1 invoice (mobil ke mobil, motor ke motor, dst).
+        $svc = app(\App\Services\InvoiceService::class);
+        $check = $svc->validateMergeable($bookings);
+        if (!$check['ok']) {
+            return back()->with('error', $check['message'])->withInput();
         }
 
-        $invoice->bookings()->attach($bookings->pluck('id'));
+        $ownerId = $check['owner_id'] ?? Auth::user()->merchantId() ?? Auth::id();
 
-        return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice gabungan berhasil dibuat dengan ' . $bookings->count() . ' booking.');
+        try {
+            $invoice = $svc->consolidateBookings($bookings, [
+                'tax_percent' => $validated['tax_percent'] ?? 0,
+                'discount_amount' => $validated['discount_amount'] ?? 0,
+                'due_date' => $validated['due_date'],
+                'notes' => $validated['notes'] ?? null,
+                'owner_id' => $ownerId,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice gabungan berhasil dibuat dengan ' . $bookings->count() . ' booking 1 kategori. Invoice solo lama yang belum dibayar digabung otomatis.');
     }
 
     public function show(Invoice $invoice)
     {
         $this->authorizeInvoiceAccess($invoice);
-        $invoice->load(['booking', 'booking.vehicle', 'booking.bookingItems', 'booking.category', 'user', 'owner', 'items', 'payments']);
+        $invoice->load(['booking', 'booking.vehicle.category', 'booking.bookingItems', 'booking.category', 'bookings.vehicle.category', 'bookings.category', 'category', 'user', 'owner', 'items', 'payments']);
         return view('invoices.show', compact('invoice'));
     }
 
     public function print(Invoice $invoice)
     {
         $this->authorizeInvoiceAccess($invoice);
-        $invoice->load(['booking', 'booking.vehicle', 'booking.bookingItems', 'booking.category', 'user', 'owner', 'items', 'payments']);
+        $invoice->load(['booking', 'booking.vehicle.category', 'booking.bookingItems', 'booking.category', 'bookings.vehicle.category', 'bookings.category', 'category', 'user', 'owner', 'items', 'payments']);
         return view('invoices.print', compact('invoice'));
     }
 

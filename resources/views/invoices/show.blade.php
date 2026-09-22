@@ -9,6 +9,10 @@
             <div>
                 <h2 class="text-2xl font-bold text-navy-900">{{ $invoice->invoice_number }}</h2>
                 <p class="text-sm text-navy-500 mt-1">Dibuat: {{ $invoice->created_at->format('d M Y H:i') }}</p>
+                @php $showCat = $invoice->category?->name ?? $invoice->booking?->vehicle?->category?->name ?? $invoice->booking?->category?->name ?? null; @endphp
+                @if($showCat)
+                <span class="inline-block mt-2 px-3 py-1 rounded-full text-[12px] font-bold bg-sky-100 text-sky-700"><i class="fas fa-tag mr-1"></i> Kategori: {{ $showCat }} — 1 invoice = 1 kategori</span>
+                @endif
             </div>
             <div class="text-right flex flex-col items-end gap-2">
                 <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-xs font-semibold transition shadow-sm">
@@ -32,9 +36,25 @@
             </div>
             <div class="text-right">
                 <p class="text-xs text-navy-500 mb-1">Jatuh Tempo</p>
-                <p class="font-bold text-navy-800">{{ $invoice->due_date->format('d M Y') }}</p>
+                <p class="font-bold text-navy-800">{{ $invoice->due_date?->format('d M Y') ?? '-' }}</p>
                 @if($invoice->booking)
-                <p class="text-sm text-navy-500 mt-1">Booking: <a href="{{ route('bookings.show', $invoice->booking) }}" class="text-sky-600 hover:underline">{{ $invoice->booking->booking_code }}</a></p>
+                <p class="text-sm text-navy-500 mt-1">Booking utama: <a href="{{ route('bookings.show', $invoice->booking) }}" class="text-sky-600 hover:underline">{{ $invoice->booking->booking_code }}</a></p>
+                @endif
+                @if($invoice->relationLoaded('bookings') || $invoice->bookings()->exists())
+                @php $linked = $invoice->bookings; @endphp
+                @if($linked->count())
+                <div class="mt-2 text-[12px] text-navy-500">
+                    <p class="font-semibold">Booking tergabung ({{ $linked->count() + ($invoice->booking ? 1 : 0) }} booking, 1 kategori):</p>
+                    <div class="flex flex-wrap gap-1.5 justify-end mt-1">
+                        @if($invoice->booking)
+                        <a href="{{ route('bookings.show', $invoice->booking) }}" class="px-2 py-0.5 rounded-full bg-gray-100 hover:bg-sky-100 text-sky-700 font-mono">{{ $invoice->booking->booking_code }}</a>
+                        @endif
+                        @foreach($linked as $lb)
+                        <a href="{{ route('bookings.show', $lb) }}" class="px-2 py-0.5 rounded-full bg-gray-100 hover:bg-sky-100 text-sky-700 font-mono">{{ $lb->booking_code }}</a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
                 @endif
             </div>
         </div>

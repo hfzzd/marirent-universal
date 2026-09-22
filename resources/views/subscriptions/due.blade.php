@@ -55,13 +55,13 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('subscriptions.pay') }}" enctype="multipart/form-data" x-data="{ method: 'transfer' }">
+        <form method="POST" action="{{ route('subscriptions.pay') }}" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                <div>
+                <div class="min-w-0">
                     <label class="block text-[12px] font-semibold text-navy-700 mb-1.5">Metode Pembayaran</label>
-                    <x-searchable-select name="method" placeholder="Pilih metode" x-model="method">
-                        <option value="transfer">Transfer Bank</option>
+                    <x-searchable-select name="method" placeholder="Pilih metode" wrapClass="w-full">
+                        <option value="transfer" selected>Transfer Bank</option>
                         <option value="ewallet">E-Wallet</option>
                         <option value="cash">Tunai</option>
                         <option value="credit_card">Kartu Kredit</option>
