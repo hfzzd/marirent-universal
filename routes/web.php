@@ -36,7 +36,7 @@ Route::get('/', [PublicController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [PublicController::class, 'about'])->name('about');
 Route::get('/produk', [PublicController::class, 'products'])->name('products');
 Route::get('/kontak', [PublicController::class, 'contact'])->name('contact');
-Route::post('/kontak', [ContactWebController::class, 'submit'])->name('contact.submit');
+Route::post('/kontak', [ContactWebController::class, 'submit'])->name('contact.submit')->middleware('throttle:5,1');
 Route::get('/vehicle/{slug}', [PublicController::class, 'show'])->name('public.vehicle');
 Route::get('/item/{type}/{slug}', [PublicController::class, 'showItem'])->name('public.item');
 Route::get('/brands', [PublicController::class, 'brands'])->name('public.brands');
@@ -44,15 +44,15 @@ Route::get('/brand/{type}/{brand}', [PublicController::class, 'brand'])->name('p
 Route::get('/store/{slug}', [PublicController::class, 'store'])->name('public.store');
 Route::get('/stores', [PublicController::class, 'stores'])->name('public.stores');
 Route::get('/jadwal-demo', [PublicController::class, 'demo'])->name('demo');
-Route::post('/jadwal-demo', [PublicController::class, 'storeDemo'])->name('demo.store');
-Route::post('/newsletter/subscribe', [PublicController::class, 'subscribeNewsletter'])->name('newsletter.subscribe');
+Route::post('/jadwal-demo', [PublicController::class, 'storeDemo'])->name('demo.store')->middleware('throttle:5,1');
+Route::post('/newsletter/subscribe', [PublicController::class, 'subscribeNewsletter'])->name('newsletter.subscribe')->middleware('throttle:5,1');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1');
 Route::get('/register-merchant', [AuthController::class, 'showRegisterMerchant'])->name('register.merchant');
-Route::post('/register-merchant', [AuthController::class, 'registerMerchant'])->name('register.merchant.store');
+Route::post('/register-merchant', [AuthController::class, 'registerMerchant'])->middleware('throttle:3,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->prefix('dashboard')->group(function () {
@@ -98,6 +98,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ChatWebController::class, 'index'])->name('chat.index');
         Route::post('/{conversation}/send', [ChatWebController::class, 'send'])->name('chat.send');
         Route::get('/{conversation}/messages', [ChatWebController::class, 'fetchMessages'])->name('chat.messages');
+        
+        // Quick Replies
+        Route::get('/quick-replies', [ChatWebController::class, 'quickReplies'])->name('chat.quick-replies');
+        Route::post('/quick-replies', [ChatWebController::class, 'storeQuickReply'])->name('chat.quick-replies.store');
+        Route::put('/quick-replies/{quickReply}', [ChatWebController::class, 'updateQuickReply'])->name('chat.quick-replies.update');
+        Route::delete('/quick-replies/{quickReply}', [ChatWebController::class, 'deleteQuickReply'])->name('chat.quick-replies.delete');
     });
 
     // Contacts Directory
