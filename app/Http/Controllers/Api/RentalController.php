@@ -14,6 +14,21 @@ use Illuminate\Validation\ValidationException;
 
 class RentalController extends Controller
 {
+    private function canAccessRental(Rental $rental, $user): bool
+    {
+        if ($user->role === 'superadmin') {
+            return true;
+        }
+        if ($user->role === 'user') {
+            return (int) $rental->user_id === (int) $user->id;
+        }
+        if (in_array($user->role, ['owner', 'admin'], true)) {
+            $ownerId = $user->role === 'owner' ? $user->id : $user->merchantId();
+            return $ownerId !== 0 && (int) ($rental->vehicle?->owner_id ?? 0) === $ownerId;
+        }
+        return false;
+    }
+
     public function index(Request $request)
     {
         try {
@@ -22,6 +37,9 @@ class RentalController extends Controller
 
             if ($user->role === 'user') {
                 $query->where('user_id', $user->id);
+            } elseif (in_array($user->role, ['owner', 'admin'], true)) {
+                $ownerId = $user->role === 'owner' ? $user->id : $user->merchantId();
+                $query->whereHas('vehicle', fn($q) => $q->where('owner_id', $ownerId));
             }
 
             if ($request->filled('status')) {
@@ -146,7 +164,7 @@ class RentalController extends Controller
         }
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         try {
             $rental = Rental::with(['vehicle', 'user', 'driver', 'vehicleReplacements'])->find($id);
@@ -159,14 +177,7 @@ class RentalController extends Controller
                 ], 404);
             }
 
-            $user = auth()->user();
-            if ($user->role === 'user' && $rental->user_id !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                    'data' => null,
-                ], 403);
-            }
+            abort_unless($this->canAccessRental($rental, $request->user()), 403);
 
             return response()->json([
                 'success' => true,
@@ -182,7 +193,7 @@ class RentalController extends Controller
         }
     }
 
-    public function cancel($id, Request $request)
+    public function cancel(Request $request, $id)
     {
         try {
             $rental = Rental::find($id);
@@ -195,14 +206,7 @@ class RentalController extends Controller
                 ], 404);
             }
 
-            $user = $request->user();
-            if ($user->role === 'user' && $rental->user_id !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access',
-                    'data' => null,
-                ], 403);
-            }
+            abort_unless($this->canAccessRental($rental, $request->user()), 403);
 
             if (! in_array($rental->status, ['pending', 'confirmed'])) {
                 return response()->json([
@@ -245,11 +249,11 @@ class RentalController extends Controller
         }
     }
 
-    public function confirm($id)
+    public function confirm(Request $request, $id)
     {
         try {
-            $user = auth()->user();
-            if (! in_array($user->role, ['superadmin', 'owner'])) {
+            $user = $request->user();
+            if (! in_array($user->role, ['superadmin', 'owner', 'admin'], true)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Only admins can confirm rentals',
@@ -266,6 +270,8 @@ class RentalController extends Controller
                     'data' => null,
                 ], 404);
             }
+
+            abort_unless($this->canAccessRental($rental, $user), 403);
 
             if ($rental->status !== 'pending') {
                 return response()->json([
@@ -291,11 +297,11 @@ class RentalController extends Controller
         }
     }
 
-    public function complete($id)
+    public function complete(Request $request, $id)
     {
         try {
-            $user = auth()->user();
-            if (! in_array($user->role, ['superadmin', 'owner'])) {
+            $user = $request->user();
+            if (! in_array($user->role, ['superadmin', 'owner', 'admin'], true)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Only admins can complete rentals',
@@ -312,6 +318,8 @@ class RentalController extends Controller
                     'data' => null,
                 ], 404);
             }
+
+            abort_unless($this->canAccessRental($rental, $user), 403);
 
             if (! in_array($rental->status, ['confirmed', 'ongoing'])) {
                 return response()->json([
@@ -348,8 +356,8 @@ class RentalController extends Controller
     public function replaceVehicle(Request $request, $id)
     {
         try {
-            $user = auth()->user();
-            if (! in_array($user->role, ['superadmin', 'owner'])) {
+            $user = $request->user();
+            if (! in_array($user->role, ['superadmin', 'owner', 'admin'], true)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Only admins can replace rental vehicles',
@@ -381,6 +389,8 @@ class RentalController extends Controller
                     'data' => null,
                 ], 404);
             }
+
+            abort_unless($this->canAccessRental($rental, $user), 403);
 
             $replacementVehicle = Vehicle::find($request->replacement_vehicle_id);
 
