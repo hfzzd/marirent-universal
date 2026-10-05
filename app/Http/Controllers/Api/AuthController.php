@@ -8,6 +8,8 @@ use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -19,7 +21,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed|regex:/[A-Z]/|regex:/[a-z]/|regex:/[0-9]/',
             'phone' => 'nullable|string|max:30|unique:users,phone',
         ]);
 
@@ -59,6 +61,20 @@ class AuthController extends Controller
             $value = \App\Support\Phone::normalize($identifier);
         }
 
+        $throttleKey = 'api_login:'.Str::lower($identifier);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 10)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Terlalu banyak percobaan login. Coba lagi dalam {$seconds} detik.",
+                'error_code' => 'too_many_attempts',
+                'retry_after' => $seconds,
+            ], 429);
+        }
+
+        RateLimiter::hit($throttleKey, 300);
+
         $user = User::where($field, $value)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -79,6 +95,8 @@ class AuthController extends Controller
                 'redirect_to' => '/api/subscriptions/due',
             ], 403);
         }
+
+        RateLimiter::clear($throttleKey);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
