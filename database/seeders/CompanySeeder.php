@@ -520,7 +520,7 @@ class CompanySeeder extends Seeder
     {
         $letters = 'ABCDEFGHJKLMNPRSTUVWXYZ';
         do {
-            $plate = $region . ' ' . mt_rand(1000, 9999) . ' ' . $letters[mt_rand(0, 23)] . $letters[mt_rand(0, 23)];
+            $plate = $region . ' ' . mt_rand(1000, 9999) . ' ' . $letters[mt_rand(0, 22)] . $letters[mt_rand(0, 22)];
         } while (\App\Models\Vehicle::where('license_plate', $plate)->exists());
         return $plate;
     }
