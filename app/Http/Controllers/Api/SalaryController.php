@@ -13,7 +13,18 @@ class SalaryController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = DriverSalary::with(['driver.user', 'owner', 'invoice']);
+
+        if ($user->role === 'owner') {
+            $query->where('owner_id', $user->id);
+        } elseif ($user->role === 'admin') {
+            $query->where('owner_id', $user->merchantId());
+        } elseif ($user->role === 'driver') {
+            $query->whereHas('driver', fn($q) => $q->where('user_id', $user->id));
+        } else {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
 
         if ($request->driver_id) {
             $query->where('driver_id', $request->driver_id);
@@ -54,7 +65,19 @@ class SalaryController extends Controller
             ], 422);
         }
 
-        $validated['owner_id'] = $request->user()->id;
+        $user = $request->user();
+        if (!in_array($user->role, ['superadmin', 'owner', 'admin'], true)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $driver = Driver::findOrFail($validated['driver_id']);
+        $ownerId = $user->role === 'owner' ? $user->id : ($user->role === 'admin' ? $user->merchantId() : $driver->owner_id);
+
+        if ($user->role !== 'superadmin' && (int) $driver->owner_id !== (int) $ownerId) {
+            return response()->json(['success' => false, 'message' => 'Driver tidak ditemukan di merchant anda'], 403);
+        }
+
+        $validated['owner_id'] = $ownerId;
         $validated['base_salary'] = $validated['base_salary'] ?? 0;
         $validated['trip_bonus'] = $validated['trip_bonus'] ?? 0;
         $validated['overtime_pay'] = $validated['overtime_pay'] ?? 0;
@@ -68,14 +91,33 @@ class SalaryController extends Controller
         ], 201);
     }
 
-    public function show(DriverSalary $salary)
+    private function canAccessSalary(DriverSalary $salary, $user): bool
     {
+        if ($user->role === 'superadmin') {
+            return true;
+        }
+        if ($user->role === 'owner') {
+            return (int) $salary->owner_id === (int) $user->id;
+        }
+        if ($user->role === 'admin') {
+            return (int) $salary->owner_id === (int) $user->merchantId();
+        }
+        if ($user->role === 'driver') {
+            return (int) $salary->driver?->user_id === (int) $user->id;
+        }
+        return false;
+    }
+
+    public function show(Request $request, DriverSalary $salary)
+    {
+        abort_unless($this->canAccessSalary($salary, $request->user()), 403);
         $salary->load(['driver.user', 'owner', 'invoice']);
         return response()->json(['success' => true, 'data' => $salary]);
     }
 
-    public function approve(DriverSalary $salary)
+    public function approve(Request $request, DriverSalary $salary)
     {
+        abort_unless($this->canAccessSalary($salary, $request->user()), 403);
         $salary->update(['status' => 'approved']);
 
         $driver = $salary->driver;
@@ -120,8 +162,9 @@ class SalaryController extends Controller
         ]);
     }
 
-    public function pay(DriverSalary $salary)
+    public function pay(Request $request, DriverSalary $salary)
     {
+        abort_unless($this->canAccessSalary($salary, $request->user()), 403);
         if ($salary->status !== 'approved') {
             return response()->json(['success' => false, 'message' => 'Gaji harus disetujui dulu'], 422);
         }
