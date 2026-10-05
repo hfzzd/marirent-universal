@@ -11,6 +11,7 @@ use App\Notifications\SubscriptionPaid;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class SubscriptionsController extends Controller
@@ -153,6 +154,17 @@ class SubscriptionsController extends Controller
             return back()->with('error', 'Tagihan ini sudah diverifikasi.');
         }
 
+        Log::info('subscription_verify', [
+            'merchant_id' => $subscription->merchant_id,
+            'merchant_name' => $subscription->merchant?->name,
+            'subscription_id' => $subscription->id,
+            'amount' => $subscription->amount,
+            'period_start' => $subscription->period_start,
+            'period_end' => $subscription->period_end,
+            'verified_by' => Auth::id(),
+            'ip' => request()->ip(),
+        ]);
+
         $merchant = app(SubscriptionService::class)->verifyPayment($subscription, Auth::id());
 
         $userIds = app(SubscriptionService::class)->getAccountUserIds($merchant);
@@ -167,6 +179,16 @@ class SubscriptionsController extends Controller
     {
         $validated = $request->validate([
             'rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        Log::info('subscription_reject', [
+            'merchant_id' => $subscription->merchant_id,
+            'merchant_name' => $subscription->merchant?->name,
+            'subscription_id' => $subscription->id,
+            'amount' => $subscription->amount,
+            'rejected_by' => Auth::id(),
+            'reason' => $validated['rejection_reason'],
+            'ip' => request()->ip(),
         ]);
 
         app(SubscriptionService::class)->rejectPayment($subscription, $validated['rejection_reason']);
