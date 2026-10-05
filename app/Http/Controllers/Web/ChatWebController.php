@@ -8,6 +8,7 @@ use App\Models\ChatMessage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ChatWebController extends Controller
 {
@@ -19,22 +20,13 @@ class ChatWebController extends Controller
             ->orWhere('user_two_id', $userId)
             ->with(['userOne', 'userTwo', 'latestMessage'])
             ->orderByDesc('last_message_at')
-            ->get()
-            ->map(function ($conv) use ($userId) {
-                $other = $conv->otherUser($userId);
-                $unread = $conv->messages()->where('sender_id', '!=', $userId)->where('is_read', false)->count();
-                return [
-                    'id' => $conv->id,
-                    'other_user' => $other ? ['name' => $other->name] : null,
-                    'latest_message' => $conv->latestMessage ? ['message' => $conv->latestMessage->message] : null,
-                    'unread_count' => $unread,
-                ];
-            });
+            ->get();
 
         if ($request->filled('search')) {
             $search = strtolower($request->search);
-            $conversations = $conversations->filter(function ($conv) use ($search) {
-                return str_contains(strtolower($conv['other_user']['name'] ?? ''), $search);
+            $conversations = $conversations->filter(function ($conv) use ($search, $userId) {
+                $other = $conv->otherUser($userId);
+                return str_contains(strtolower($other->name ?? ''), $search);
             })->values();
         }
 
@@ -55,7 +47,7 @@ class ChatWebController extends Controller
                 $activeConversation->load(['userOne', 'userTwo', 'messages.sender']);
             }
         } elseif ($conversations->isNotEmpty()) {
-            $activeConversation = Conversation::where('id', $conversations->first()['id'])
+            $activeConversation = Conversation::where('id', $conversations->first()->id)
                 ->with(['userOne', 'userTwo', 'messages.sender'])
                 ->first();
         }
@@ -91,6 +83,33 @@ class ChatWebController extends Controller
         ]);
 
         $conversation->update(['last_message_at' => now()]);
+
+        // Broadcast & Notify
+        event(new \App\Events\ChatMessageSent($message));
+        $receiver = $conversation->otherUser($userId);
+        $receiver->notify(new \App\Notifications\NewChatMessage($message));
+
+        // Auto-responder: if receiver is offline, send quick reply
+        $presenceKey = 'user_presence_' . $receiver->id;
+        $isOnline = Cache::get($presenceKey);
+        
+        if (!$isOnline && $receiver->isMerchantStaff()) {
+            $autoReply = \App\Models\QuickReply::where('user_id', $receiver->id)
+                ->where('shortcut', 'auto')
+                ->first();
+            
+            if ($autoReply) {
+                $autoMessage = ChatMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'sender_id' => $receiver->id,
+                    'message' => $autoReply->reply,
+                    'is_read' => false,
+                ]);
+                
+                $conversation->update(['last_message_at' => now()]);
+                event(new \App\Events\ChatMessageSent($autoMessage));
+            }
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -137,5 +156,61 @@ class ChatWebController extends Controller
             });
 
         return response()->json(['messages' => $messages]);
+    }
+
+    public function quickReplies(Request $request)
+    {
+        $userId = Auth::id();
+        $replies = \App\Models\QuickReply::where('user_id', $userId)
+            ->orderBy('shortcut')
+            ->get(['shortcut', 'reply']);
+
+        return response()->json(['quick_replies' => $replies]);
+    }
+
+    public function storeQuickReply(Request $request)
+    {
+        $userId = Auth::id();
+        $validated = $request->validate([
+            'shortcut' => 'required|string|max:50|unique:quick_replies,shortcut,NULL,id,user_id,'.$userId,
+            'reply' => 'required|string|max:500',
+        ]);
+
+        $reply = \App\Models\QuickReply::create([
+            'user_id' => $userId,
+            'shortcut' => $validated['shortcut'],
+            'reply' => $validated['reply'],
+        ]);
+
+        return response()->json(['success' => true, 'reply' => $reply]);
+    }
+
+    public function updateQuickReply(Request $request, \App\Models\QuickReply $reply)
+    {
+        $userId = Auth::id();
+        if ($reply->user_id !== $userId) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'shortcut' => 'sometimes|required|string|max:50|unique:quick_replies,shortcut,'.$reply->id.',id,user_id,'.$userId,
+            'reply' => 'sometimes|required|string|max:500',
+        ]);
+
+        $reply->update($validated);
+
+        return response()->json(['success' => true, 'reply' => $reply]);
+    }
+
+    public function deleteQuickReply(\App\Models\QuickReply $reply)
+    {
+        $userId = Auth::id();
+        if ($reply->user_id !== $userId) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $reply->delete();
+
+        return response()->json(['success' => true]);
     }
 }
