@@ -170,7 +170,7 @@ class DashboardController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:30|unique:users,phone,' . $user->id,
             'address' => 'nullable|string|max:500',
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:max_width=500,max_height=500',
         ]);
 
         if ($request->hasFile('avatar')) {

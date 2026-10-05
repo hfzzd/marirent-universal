@@ -201,7 +201,7 @@ class SuperadminController extends Controller
             'phone' => 'nullable|string|max:30|unique:users,phone',
             'category_id' => 'nullable|exists:categories,id',
             'store_name' => 'required|string|max:120',
-            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:max_width=1000,max_height=1000',
             'city' => 'nullable|string|max:80',
             'address' => 'nullable|string|max:255',
             'bank_name' => 'nullable|string|max:80',
@@ -305,7 +305,7 @@ class SuperadminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
-            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:max_width=1000,max_height=1000',
             'phone' => 'nullable|string|max:30',
             'company_email' => 'nullable|email|max:120',
             'website' => 'nullable|url|max:120',
