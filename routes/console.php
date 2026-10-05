@@ -53,3 +53,12 @@ Schedule::command('logs:clean --days=30')
     ->at('02:00')
     ->name('clean-old-logs')
     ->appendOutputTo(storage_path('logs/scheduler.log'));
+
+/**
+ * Cek dan broadcast status online/offline user setiap menit.
+ */
+Schedule::command('presence:check')
+    ->everyMinute()
+    ->name('presence-check')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/scheduler.log'));

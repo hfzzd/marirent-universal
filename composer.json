@@ -8,8 +8,10 @@
         "php": "^8.2",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^11.0",
+        "laravel/reverb": "^1.12",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "minishlink/web-push": "^11.0",
         "spatie/laravel-permission": "^6.0"
     },
     "require-dev": {
