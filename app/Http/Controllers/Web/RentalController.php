@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Rental;
 use App\Models\Vehicle;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class RentalController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -150,11 +152,7 @@ class RentalController extends Controller
         $rental = Rental::with('user', 'vehicle', 'driver.user')
             ->findOrFail($id);
 
-        $user = Auth::user();
-
-        if ($user->isUser() && $rental->user_id !== $user->id) {
-            abort(403, 'Anda tidak memiliki akses ke data ini.');
-        }
+        $this->authorize('view', $rental);
 
         return view('rentals.show', compact('rental'));
     }
@@ -162,11 +160,7 @@ class RentalController extends Controller
     public function edit($id)
     {
         $rental = Rental::findOrFail($id);
-        $user = Auth::user();
-
-        if ($user->isUser() && $rental->user_id !== $user->id) {
-            abort(403, 'Anda tidak memiliki akses ke data ini.');
-        }
+        $this->authorize('update', $rental);
 
         if (!in_array($rental->status, ['pending', 'confirmed'])) {
             return back()->with('error', 'Sewa tidak dapat diedit pada status saat ini.');
@@ -187,11 +181,7 @@ class RentalController extends Controller
     public function update(Request $request, $id)
     {
         $rental = Rental::findOrFail($id);
-        $user = Auth::user();
-
-        if ($user->isUser() && $rental->user_id !== $user->id) {
-            abort(403, 'Anda tidak memiliki akses ke data ini.');
-        }
+        $this->authorize('update', $rental);
 
         if (!in_array($rental->status, ['pending', 'confirmed'])) {
             return back()->with('error', 'Sewa tidak dapat diperbarui pada status saat ini.');
@@ -257,11 +247,7 @@ class RentalController extends Controller
     public function cancel(Request $request, $id)
     {
         $rental = Rental::findOrFail($id);
-        $user = Auth::user();
-
-        if ($user->isUser() && $rental->user_id !== $user->id) {
-            abort(403, 'Anda tidak memiliki akses ke data ini.');
-        }
+        $this->authorize('cancel', $rental);
 
         if (in_array($rental->status, ['completed', 'cancelled'])) {
             return back()->with('error', 'Sewa tidak dapat dibatalkan pada status saat ini.');
