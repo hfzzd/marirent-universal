@@ -472,13 +472,13 @@
                     <i class="fas fa-exclamation-circle mr-2 text-red-400"></i> {{ session('error') }}
                 </div>
             @endif
-            @if($errors->any())
-                <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-[13px] animate-slide-up shadow-sm">
-                    @foreach($errors->all() as $error)
-                        <div>{{ $error }}</div>
-                    @endforeach
-                </div>
-            @endif
+             @if(isset($errors) && $errors->any())
+                 <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-[13px] animate-slide-up shadow-sm">
+                     @foreach($errors->all() as $error)
+                         <div>{{ $error }}</div>
+                     @endforeach
+                 </div>
+             @endif
 
             @php
                 $pendingMerchant = auth()->user()?->isOwner() ? \App\Models\Merchant::where('user_id', auth()->id())->where('status', 'pending')->first() : null;
