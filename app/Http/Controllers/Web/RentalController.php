@@ -107,45 +107,69 @@ class RentalController extends Controller
         ]);
 
         try {
-            $vehicle = Vehicle::findOrFail($request->vehicle_id);
+            $rental = DB::transaction(function () use ($request) {
+                $vehicle = Vehicle::where('id', $request->vehicle_id)->lockForUpdate()->firstOrFail();
 
-            $startDate = \Carbon\Carbon::parse($request->start_date);
-            $endDate = \Carbon\Carbon::parse($request->end_date);
-            $totalDays = max(1, $startDate->diffInDays($endDate));
+                if ($vehicle->status !== 'available') {
+                    throw new \Exception('Kendaraan tidak tersedia');
+                }
 
-            $dailyRate = $vehicle->daily_price;
-            $subtotal = $dailyRate * $totalDays;
-            $driverFee = 0;
+                $hasConflict = $vehicle->rentals()
+                    ->whereNotIn('status', ['cancelled'])
+                    ->where(function ($query) use ($request) {
+                        $query->whereBetween('start_date', [$request->start_date, $request->end_date])
+                            ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
+                            ->orWhere(function ($q) use ($request) {
+                                $q->where('start_date', '<=', $request->start_date)
+                                    ->where('end_date', '>=', $request->end_date);
+                            });
+                    })
+                    ->exists();
 
-            if ($request->boolean('with_driver') && $request->filled('driver_id')) {
-                $driver = Driver::findOrFail($request->driver_id);
-                $driverFee = $driver->daily_salary * $totalDays;
-            }
+                if ($hasConflict) {
+                    throw new \Exception('Kendaraan sudah disewa untuk rentang tanggal yang dipilih');
+                }
 
-            $tax = $subtotal * 0.11;
-            $totalAmount = $subtotal + $driverFee + $tax;
+                $startDate = \Carbon\Carbon::parse($request->start_date);
+                $endDate = \Carbon\Carbon::parse($request->end_date);
+                $totalDays = max(1, $startDate->diffInDays($endDate));
 
-            $rental = Rental::create([
-                'user_id'           => Auth::id(),
-                'vehicle_id'        => $vehicle->id,
-                'driver_id'         => $request->driver_id,
-                'category_type'     => $vehicle->category->name ?? 'Mobil',
-                'start_date'        => $request->start_date,
-                'end_date'          => $request->end_date,
-                'pickup_location'   => $request->pickup_location,
-                'dropoff_location'  => $request->dropoff_location,
-                'purpose'           => $request->purpose,
-                'with_driver'       => $request->boolean('with_driver'),
-                'status'            => 'pending',
-                'daily_rate'        => $dailyRate,
-                'total_days'        => $totalDays,
-                'subtotal'          => $subtotal,
-                'driver_fee'        => $driverFee,
-                'discount'          => 0,
-                'tax'               => $tax,
-                'total_amount'      => $totalAmount,
-                'notes'             => $request->notes,
-            ]);
+                $dailyRate = $vehicle->daily_price;
+                $subtotal = $dailyRate * $totalDays;
+                $driverFee = 0;
+
+                if ($request->boolean('with_driver') && $request->filled('driver_id')) {
+                    $driver = Driver::findOrFail($request->driver_id);
+                    $driverFee = $driver->daily_salary * $totalDays;
+                }
+
+                $tax = $subtotal * 0.11;
+                $totalAmount = $subtotal + $driverFee + $tax;
+
+                $rental = Rental::create([
+                    'user_id'           => Auth::id(),
+                    'vehicle_id'        => $vehicle->id,
+                    'driver_id'         => $request->driver_id,
+                    'category_type'     => $vehicle->category->name ?? 'Mobil',
+                    'start_date'        => $request->start_date,
+                    'end_date'          => $request->end_date,
+                    'pickup_location'   => $request->pickup_location,
+                    'dropoff_location'  => $request->dropoff_location,
+                    'purpose'           => $request->purpose,
+                    'with_driver'       => $request->boolean('with_driver'),
+                    'status'            => 'pending',
+                    'daily_rate'        => $dailyRate,
+                    'total_days'        => $totalDays,
+                    'subtotal'          => $subtotal,
+                    'driver_fee'        => $driverFee,
+                    'discount'          => 0,
+                    'tax'               => $tax,
+                    'total_amount'      => $totalAmount,
+                    'notes'             => $request->notes,
+                ]);
+
+                return $rental;
+            });
 
             return redirect()->route('rentals.show', $rental->id)
                 ->with('success', 'Sewa berhasil dibuat. Menunggu konfirmasi.');

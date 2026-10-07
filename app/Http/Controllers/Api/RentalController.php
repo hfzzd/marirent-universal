@@ -76,6 +76,14 @@ class RentalController extends Controller
 
     public function store(Request $request)
     {
+        $idempotencyKey = $request->header('Idempotency-Key');
+        if ($idempotencyKey) {
+            $cached = \Illuminate\Support\Facades\Cache::get('idempotency:rental:' . $idempotencyKey);
+            if ($cached) {
+                return response()->json($cached['data'], $cached['status']);
+            }
+        }
+
         try {
             $validator = Validator::make($request->all(), [
                 'vehicle_id' => 'required|exists:vehicles,id',
@@ -95,72 +103,75 @@ class RentalController extends Controller
                 ], 422);
             }
 
-            $vehicle = Vehicle::findOrFail($request->vehicle_id);
+            $rental = DB::transaction(function () use ($request) {
+                $vehicle = Vehicle::where('id', $request->vehicle_id)->lockForUpdate()->firstOrFail();
 
-            if ($vehicle->status !== 'available') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vehicle is not available',
-                    'data' => null,
-                ], 422);
-            }
+                if ($vehicle->status !== 'available') {
+                    throw new \Exception('Vehicle is not available', 422);
+                }
 
-            $hasConflict = $vehicle->rentals()
-                ->whereNotIn('status', ['cancelled'])
-                ->where(function ($query) use ($request) {
-                    $query->whereBetween('start_date', [$request->start_date, $request->end_date])
-                        ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
-                        ->orWhere(function ($q) use ($request) {
-                            $q->where('start_date', '<=', $request->start_date)
-                                ->where('end_date', '>=', $request->end_date);
-                        });
-                })
-                ->exists();
+                $hasConflict = $vehicle->rentals()
+                    ->whereNotIn('status', ['cancelled'])
+                    ->where(function ($query) use ($request) {
+                        $query->whereBetween('start_date', [$request->start_date, $request->end_date])
+                            ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
+                            ->orWhere(function ($q) use ($request) {
+                                $q->where('start_date', '<=', $request->start_date)
+                                    ->where('end_date', '>=', $request->end_date);
+                            });
+                    })
+                    ->exists();
 
-            if ($hasConflict) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vehicle is already rented for the selected dates',
-                    'data' => null,
-                ], 422);
-            }
+                if ($hasConflict) {
+                    throw new \Exception('Vehicle is already rented for the selected dates', 422);
+                }
 
-            $days = max(1, Carbon::parse($request->start_date)->diffInDays($request->end_date));
-            $totalAmount = (float) $vehicle->daily_price * $days;
+                $days = max(1, Carbon::parse($request->start_date)->diffInDays($request->end_date));
+                $totalAmount = (float) $vehicle->daily_price * $days;
 
-            $rental = Rental::create([
-                'user_id' => $request->user()->id,
-                'vehicle_id' => $request->vehicle_id,
-                'driver_id' => $request->driver_id,
-                'category_type' => $vehicle->category->name ?? null,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
-                'pickup_location' => $request->pickup_location,
-                'dropoff_location' => $request->dropoff_location,
-                'with_driver' => false,
-                'status' => 'pending',
-                'daily_rate' => $vehicle->daily_price,
-                'total_days' => $days,
-                'subtotal' => $totalAmount,
-                'total_amount' => $totalAmount,
-                'notes' => $request->notes,
-            ]);
+                $rental = Rental::create([
+                    'user_id' => $request->user()->id,
+                    'vehicle_id' => $request->vehicle_id,
+                    'driver_id' => $request->driver_id,
+                    'category_type' => $vehicle->category->name ?? null,
+                    'start_date' => $request->start_date,
+                    'end_date' => $request->end_date,
+                    'pickup_location' => $request->pickup_location,
+                    'dropoff_location' => $request->dropoff_location,
+                    'with_driver' => false,
+                    'status' => 'pending',
+                    'daily_rate' => $vehicle->daily_price,
+                    'total_days' => $days,
+                    'subtotal' => $totalAmount,
+                    'total_amount' => $totalAmount,
+                    'notes' => $request->notes,
+                ]);
 
-            $rental->load(['vehicle', 'user']);
+                $rental->load(['vehicle', 'user']);
+                return $rental;
+            });
 
-            return response()->json([
+            $responsePayload = [
                 'success' => true,
                 'message' => 'Rental created successfully',
                 'data' => $rental,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
+            ];
 
+            if ($idempotencyKey) {
+                \Illuminate\Support\Facades\Cache::put('idempotency:rental:' . $idempotencyKey, [
+                    'status' => 201,
+                    'data' => $responsePayload,
+                ], now()->addMinutes(10));
+            }
+
+            return response()->json($responsePayload, 201);
+        } catch (\Exception $e) {
+            $code = $e->getCode() === 422 ? 422 : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create rental',
+                'message' => $e->getMessage() ?: 'Failed to create rental',
                 'data' => null,
-            ], 500);
+            ], $code);
         }
     }
 
