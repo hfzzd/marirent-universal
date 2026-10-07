@@ -37,12 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('bookings', BookingController::class)->only(['index', 'store'])->names([
         'index' => 'api.bookings.index',
         'store' => 'api.bookings.store',
-    ]);
+    ])->middleware('throttle:10,1');
     Route::get('/bookings/{bookingCode}', [BookingController::class, 'show']);
-    Route::post('/bookings/{bookingCode}/confirm', [BookingController::class, 'confirm']);
-    Route::post('/bookings/{bookingCode}/start', [BookingController::class, 'startTrip']);
-    Route::post('/bookings/{bookingCode}/complete', [BookingController::class, 'complete']);
-    Route::post('/bookings/{bookingCode}/cancel', [BookingController::class, 'cancel']);
+    Route::post('/bookings/{bookingCode}/confirm', [BookingController::class, 'confirm'])->middleware('throttle:10,1');
+    Route::post('/bookings/{bookingCode}/start', [BookingController::class, 'startTrip'])->middleware('throttle:10,1');
+    Route::post('/bookings/{bookingCode}/complete', [BookingController::class, 'complete'])->middleware('throttle:10,1');
+    Route::post('/bookings/{bookingCode}/cancel', [BookingController::class, 'cancel'])->middleware('throttle:10,1');
 
     Route::apiResource('drivers', DriverController::class)->names([
         'index' => 'api.drivers.index',

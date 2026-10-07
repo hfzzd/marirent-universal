@@ -202,22 +202,22 @@ Route::middleware(['auth', 'role:superadmin,admin,owner'])->prefix('motors')->gr
 Route::middleware(['auth', 'role:superadmin,admin,owner,driver,staff,user,inspector'])->prefix('bookings')->group(function () {
     Route::get('/', [BookingWebController::class, 'index'])->name('bookings.index');
     Route::get('/create', [BookingWebController::class, 'create'])->name('bookings.create');
-    Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store');
+    Route::post('/', [BookingWebController::class, 'store'])->name('bookings.store')->middleware('throttle:10,1');
     Route::get('/create-item/{type}/{item}', [BookingWebController::class, 'createItem'])->name('bookings.create-item');
-    Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item');
+    Route::post('/store-item/{type}', [BookingWebController::class, 'storeItem'])->name('bookings.store-item')->middleware('throttle:10,1');
     Route::get('/create-multi', [BookingWebController::class, 'createMulti'])->name('bookings.create-multi');
-    Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi');
-    Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp');
-    Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel');
+    Route::post('/store-multi', [BookingWebController::class, 'storeMulti'])->name('bookings.store-multi')->middleware('throttle:10,1');
+    Route::post('/{booking}/ktp', [BookingWebController::class, 'uploadKtp'])->name('bookings.upload-ktp')->middleware('throttle:10,1');
+    Route::post('/{booking}/cancel', [BookingWebController::class, 'cancel'])->name('bookings.cancel')->middleware('throttle:10,1');
     Route::get('/manual-create', [BookingWebController::class, 'manualCreate'])->name('bookings.manual-create');
-    Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store');
-    Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle');
-    Route::post('/{booking}/reschedule', [BookingWebController::class, 'reschedule'])->name('bookings.reschedule');
-    Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm');
-    Route::post('/{booking}/start-trip', [BookingWebController::class, 'startTrip'])->name('bookings.start');
-    Route::post('/{booking}/complete', [BookingWebController::class, 'complete'])->name('bookings.complete');
-    Route::post('/{booking}/assign-driver', [BookingWebController::class, 'assignDriver'])->name('bookings.assign-driver');
-    Route::post('/{booking}/remove-driver', [BookingWebController::class, 'removeDriver'])->name('bookings.remove-driver');
+    Route::post('/manual-store', [BookingWebController::class, 'manualStore'])->name('bookings.manual-store')->middleware('throttle:10,1');
+    Route::post('/{booking}/replace-vehicle', [BookingWebController::class, 'replaceVehicle'])->name('bookings.replace-vehicle')->middleware('throttle:10,1');
+    Route::post('/{booking}/reschedule', [BookingWebController::class, 'reschedule'])->name('bookings.reschedule')->middleware('throttle:10,1');
+    Route::post('/{booking}/confirm', [BookingWebController::class, 'confirm'])->name('bookings.confirm')->middleware('throttle:10,1');
+    Route::post('/{booking}/start-trip', [BookingWebController::class, 'startTrip'])->name('bookings.start')->middleware('throttle:10,1');
+    Route::post('/{booking}/complete', [BookingWebController::class, 'complete'])->name('bookings.complete')->middleware('throttle:10,1');
+    Route::post('/{booking}/assign-driver', [BookingWebController::class, 'assignDriver'])->name('bookings.assign-driver')->middleware('throttle:10,1');
+    Route::post('/{booking}/remove-driver', [BookingWebController::class, 'removeDriver'])->name('bookings.remove-driver')->middleware('throttle:10,1');
     Route::get('/{booking}', [BookingWebController::class, 'show'])->name('bookings.show');
 });
 
