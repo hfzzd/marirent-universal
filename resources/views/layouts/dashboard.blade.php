@@ -404,14 +404,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                     {{-- Notification Bell --}}
-                    <div class="relative" x-data="{ notifOpen: false, notifCount: 0 }" x-init="
-                        fetch('{{ route('notifications.unread-count') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
-                            .then(r => r.json()).then(d => notifCount = d.count);
-                        setInterval(() => {
-                            fetch('{{ route('notifications.unread-count') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
-                                .then(r => r.json()).then(d => notifCount = d.count);
-                        }, 30000);
-                    ">
+                    <div class="relative" id="notif-bell" x-data="{ notifOpen: false, notifCount: 0 }">
                         <button type="button" @click="notifOpen = !notifOpen" class="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-sky-50 transition" aria-label="Notifikasi">
                             <i class="fas fa-bell text-navy-500 text-sm"></i>
                             <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak></span>
@@ -574,6 +567,31 @@
                     el.textContent = prefix + current.toLocaleString('id-ID') + suffix;
                 }, 25);
             });
+
+            // Initialize notification count
+            const notifBell = document.getElementById('notif-bell');
+            if (notifBell && typeof Alpine !== 'undefined') {
+                fetch('{{ route('notifications.unread-count') }}', { 
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } 
+                })
+                .then(r => r.json())
+                .then(d => {
+                    Alpine.store('notifBell') || (Alpine.store('notifBell', {}));
+                    const data = Alpine.$data(notifBell);
+                    if (data) data.notifCount = d.count;
+                });
+                
+                setInterval(() => {
+                    fetch('{{ route('notifications.unread-count') }}', { 
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } 
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        const data = Alpine.$data(notifBell);
+                        if (data) data.notifCount = d.count;
+                    });
+                }, 30000);
+            }
         });
     </script>
 
