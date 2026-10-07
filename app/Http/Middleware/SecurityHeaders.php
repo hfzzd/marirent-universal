@@ -26,7 +26,7 @@ class SecurityHeaders
         $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
         $response->headers->set('Content-Security-Policy',
             "default-src 'self'; " .
-            "script-src 'self' 'nonce-{$nonce}'; " .
+            "script-src 'self' 'nonce-{$nonce}' 'unsafe-inline' https://cdn.jsdelivr.net; " .
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; " .
             "img-src 'self' data: https: https://{s}.tile.openstreetmap.org; " .
             "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com; " .
