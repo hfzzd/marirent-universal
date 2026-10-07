@@ -236,7 +236,7 @@
     </div>
 
     {{-- LOADER SCRIPT --}}
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             const icon = document.getElementById('mobileMenuIcon');
@@ -305,7 +305,7 @@
         });
     </script>
 
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         function cookieConsent() {
             return {
                 visible: false,

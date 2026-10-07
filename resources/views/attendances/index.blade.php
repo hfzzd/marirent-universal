@@ -190,7 +190,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     setInterval(() => {
         const el = document.getElementById('clock');
         if (el) {

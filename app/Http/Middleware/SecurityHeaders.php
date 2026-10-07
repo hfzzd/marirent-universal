@@ -27,10 +27,10 @@ class SecurityHeaders
         $response->headers->set('Content-Security-Policy',
             "default-src 'self'; " .
             "script-src 'self' 'nonce-{$nonce}'; " .
-            "style-src 'self' 'nonce-{$nonce}'; " .
-            "img-src 'self' data: https:; " .
-            "font-src 'self' data:; " .
-            "connect-src 'self' ws: wss:; " .
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; " .
+            "img-src 'self' data: https: https://{s}.tile.openstreetmap.org; " .
+            "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com; " .
+            "connect-src 'self' ws: wss: https://nominatim.openstreetmap.org; " .
             "frame-ancestors 'self'; " .
             "base-uri 'self'; " .
             "form-action 'self'"

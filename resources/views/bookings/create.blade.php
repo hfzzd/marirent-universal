@@ -352,7 +352,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function previewKTP(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -371,7 +371,7 @@ function cancelKTP() {
 }
 </script>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function bookingApp() {
     const hourlyPrice = {{ $vehicle->hourly_price ?? 0 }};
     const dailyPrice = {{ $vehicle->daily_price }};

@@ -34,7 +34,7 @@
 <body class="bg-gray-50 min-h-screen">
     @yield('body')
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
         }

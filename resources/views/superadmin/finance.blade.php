@@ -219,7 +219,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     // Bar Chart - Revenue vs Expense
     const barCtx = document.getElementById('financeBarChart');
     if (barCtx) {

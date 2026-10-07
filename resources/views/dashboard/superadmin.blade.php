@@ -602,7 +602,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Revenue Chart
     const revCtx = document.getElementById('dadminRevenueChart');

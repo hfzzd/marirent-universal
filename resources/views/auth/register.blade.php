@@ -180,7 +180,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     document.getElementById('registerForm').addEventListener('submit', function() {
         const btn = document.getElementById('registerBtn');
         btn.classList.add('is-loading');

@@ -316,7 +316,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function imageGallery() {
     return {
         mainImage: '{{ $vehicle->image ? asset('storage/' . $vehicle->image) : '' }}',

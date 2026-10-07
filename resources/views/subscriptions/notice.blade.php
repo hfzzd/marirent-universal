@@ -153,7 +153,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     // Once-guard submit (cegah double-submit yang memicu 419)
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('noticePayForm');

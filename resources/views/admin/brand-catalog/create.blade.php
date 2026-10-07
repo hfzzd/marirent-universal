@@ -68,7 +68,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 const brandData = @json($existingBrands);
 const brandList = document.getElementById('brand-list');
 const typeSelect = document.getElementById('item_type');

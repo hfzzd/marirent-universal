@@ -184,7 +184,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     // Alpine event to fill login form from demo buttons
     document.addEventListener('fill-login', (e) => {
         const form = document.getElementById('loginForm');

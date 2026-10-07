@@ -171,7 +171,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 const backToTopBtn = document.getElementById('backToTop');
 window.addEventListener('scroll', () => {
     if (backToTopBtn) backToTopBtn.classList.toggle('visible', window.scrollY > 400);

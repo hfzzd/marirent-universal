@@ -100,7 +100,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function itemQuickForm() {
     const itemsByType = @json($modalItemsByType ?? []);
     return {
@@ -286,7 +286,7 @@ function itemQuickForm() {
     </div>
 </div>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function openReturnModal(id, bookingCode, itemName) {
     document.getElementById('returnForm').action = '{{ url("item-replacements") }}/' + id + '/return';
     document.getElementById('returnBookingCode').textContent = 'Booking: ' + bookingCode;

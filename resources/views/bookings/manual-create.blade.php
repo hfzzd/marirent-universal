@@ -256,7 +256,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function manualBooking() {
     return {
         mode: '{{ old('customer_mode', 'existing') }}',

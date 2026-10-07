@@ -92,7 +92,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function salaryForm() {
     const opts = Array.from(document.querySelectorAll('[name="driver_id"] option')).filter(o => o.value);
     const map = {};

@@ -507,7 +507,7 @@
         </main>
     </div>
 
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         function isSidebarOpen() {
             return !document.getElementById('sidebar')?.classList.contains('-translate-x-full');
         }
@@ -578,7 +578,7 @@
     </script>
 
     @stack('scripts')
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         // Notification dropdown fetcher
         document.addEventListener('DOMContentLoaded', function() {
             const notifList = document.getElementById('notif-dropdown-list');

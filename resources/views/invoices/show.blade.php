@@ -252,7 +252,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function initRejectModals() {
     return {
         @foreach($invoice->payments as $p)

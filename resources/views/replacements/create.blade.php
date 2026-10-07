@@ -309,7 +309,7 @@
     </form>
 </div>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function previewPhoto(input, previewId, emptyId) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();

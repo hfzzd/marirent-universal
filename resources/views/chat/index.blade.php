@@ -181,7 +181,7 @@
 
 @if($activeConversation)
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('chatMessagesContainer');
     const form = document.getElementById('chatSendForm');

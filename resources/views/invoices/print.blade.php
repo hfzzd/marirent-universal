@@ -35,7 +35,7 @@
         </a>
     </div>
 
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         function printAgreement() {
             document.body.classList.add('print-agreement');
             window.print();

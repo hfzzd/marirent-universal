@@ -655,7 +655,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function previewKTP(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();

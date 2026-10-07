@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Str;
+
 return [
 
     'driver' => env('SESSION_DRIVER', 'file'),
@@ -20,13 +22,16 @@ return [
 
     'lottery' => [2, 100],
 
-    'cookie' => [
-        'name' => env('SESSION_COOKIE', 'XSRF-TOKEN'),
-        'path' => env('SESSION_COOKIE_PATH', '/'),
-        'domain' => env('SESSION_COOKIE_DOMAIN'),
-        'secure' => env('SESSION_COOKIE_SECURE', false),
-        'http_only' => env('SESSION_COOKIE_HTTP_ONLY', true),
-        'same_site' => env('SESSION_COOKIE_SAME_SITE', 'lax'),
-    ],
+    'cookie' => env('SESSION_COOKIE', Str::slug(env('APP_NAME', 'laravel'), '_').'_session'),
+
+    'path' => env('SESSION_PATH', '/'),
+
+    'domain' => env('SESSION_DOMAIN'),
+
+    'secure' => env('SESSION_SECURE_COOKIE', false),
+
+    'http_only' => env('SESSION_HTTP_ONLY', true),
+
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
 ];

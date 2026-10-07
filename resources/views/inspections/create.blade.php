@@ -306,7 +306,7 @@
     </form>
 </div>
 
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
 function inspectionForm() {
     return {
         selectedBookingId: '{{ isset($booking) && $booking ? $booking->id : '' }}',
