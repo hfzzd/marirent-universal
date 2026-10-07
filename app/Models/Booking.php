@@ -105,6 +105,16 @@ class Booking extends Model
         }
     }
 
+    public function getKtpUrl(): ?string
+    {
+        if (!$this->ktp_photo) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('private')
+            ->temporaryUrl($this->ktp_photo, now()->addHours(2));
+    }
+
     public function scopeUpcoming($query)
     {
         return $query->where('start_date', '>', now())->whereIn('status', ['pending', 'confirmed']);

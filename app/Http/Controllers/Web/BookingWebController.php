@@ -194,7 +194,7 @@ class BookingWebController extends Controller
 
         $ktpPath = null;
         if ($request->hasFile('ktp_photo')) {
-            $ktpPath = $request->file('ktp_photo')->store('ktp', 'public');
+            $ktpPath = $request->file('ktp_photo')->store('ktp', 'private');
         }
 
         $booking = Booking::create([
@@ -327,7 +327,7 @@ class BookingWebController extends Controller
 
         $totalPrice = $subtotal + $insuranceFee + $accessoriesCost + $urgencyFee + $depositAmount;
 
-        $ktpPath = $request->file('ktp_photo')->store('ktp', 'public');
+        $ktpPath = $request->file('ktp_photo')->store('ktp', 'private');
 
         $category = $item->category;
 
@@ -699,7 +699,7 @@ class BookingWebController extends Controller
             }
         }
 
-        $ktpPath = $request->file('ktp_photo')->store('ktp', 'public');
+        $ktpPath = $request->file('ktp_photo')->store('ktp', 'private');
 
         $booking = Booking::create([
             'booking_code' => Booking::generateBookingCode(),
@@ -1527,7 +1527,7 @@ class BookingWebController extends Controller
             'ktp_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $path = $request->file('ktp_photo')->store('ktp', 'public');
+        $path = $request->file('ktp_photo')->store('ktp', 'private');
         $booking->update(['ktp_photo' => $path]);
 
         return back()->with('success', 'Foto KTP berhasil diunggah');
