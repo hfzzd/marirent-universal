@@ -57,6 +57,10 @@ class MerchantScope implements Scope
 
         $merchantId = $user->merchantIdForIsolation();
         if ($merchantId === null) {
+            // Default-deny: jika user dalam konteks merchant (bukan superadmin/guest/publik)
+            // tetapi merchant id null, tolak akses penuh agar tidak fail-open.
+            // Menambahkan filter 1=0 untuk membatasi query kosong.
+            $builder->whereRaw('1 = 0');
             return;
         }
 

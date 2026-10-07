@@ -48,16 +48,23 @@ class RentalController extends Controller
         } elseif ($user->isMerchantStaff()) {
             $ownerId = $user->merchantId();
             $catId = $user->merchantCategoryId();
-            $query->whereHas('vehicle', function ($q) use ($ownerId, $catId) {
-                if ($ownerId) $q->where('owner_id', $ownerId);
-                if ($catId) $q->where('category_id', $catId);
-            });
+            if (!$ownerId) {
+                // Default-deny: merchant staff tanpa merchant id tidak boleh melihat data apa pun.
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereHas('vehicle', function ($q) use ($ownerId, $catId) {
+                    $q->where('owner_id', $ownerId);
+                    if ($catId) $q->where('category_id', $catId);
+                });
+            }
         } elseif ($user->isInspector()) {
             $merchantId = $user->merchantIdForIsolation();
             if ($merchantId) {
                 $query->whereHas('vehicle', function ($q) use ($merchantId) {
                     $q->where('owner_id', $merchantId);
                 });
+            } else {
+                $query->whereRaw('1 = 0');
             }
         }
 
