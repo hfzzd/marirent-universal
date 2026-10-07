@@ -22,6 +22,7 @@ use App\Http\Controllers\Web\ContactDirectoryWebController;
 use App\Http\Controllers\Web\MaintenanceController;
 use App\Http\Controllers\Web\OwnerRevenueController;
 use App\Http\Controllers\Web\MerchantProfileController;
+use App\Http\Controllers\Web\Auth\TwoFactorController;
 
 use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\NotificationWebController;
@@ -54,6 +55,17 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 Route::get('/register-merchant', [AuthController::class, 'showRegisterMerchant'])->name('register.merchant');
 Route::post('/register-merchant', [AuthController::class, 'registerMerchant'])->middleware('throttle:3,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard/2fa/verify', [TwoFactorController::class, 'showVerify'])->name('2fa.verify');
+    Route::post('/dashboard/2fa/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:5,1');
+});
+
+Route::middleware(['auth', 'role:admin,owner'])->prefix('dashboard/2fa')->group(function () {
+    Route::get('/setup', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
+    Route::post('/enable', [TwoFactorController::class, 'enable'])->middleware('throttle:5,1')->name('2fa.enable');
+    Route::post('/disable', [TwoFactorController::class, 'disable'])->middleware('throttle:5,1')->name('2fa.disable');
+});
 
 Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

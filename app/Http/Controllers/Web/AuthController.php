@@ -76,6 +76,11 @@ class AuthController extends Controller
                     ->with('error', 'Akun Anda diblokir karena tagihan subscription belum dibayar. Silakan selesaikan pembayaran billing untuk mengaktifkan kembali akses.');
             }
 
+            if ($user->two_factor_confirmed_at) {
+                $request->session()->put('2fa_pending', true);
+                return redirect()->route('2fa.verify');
+            }
+
             return redirect()->intended($this->dashboardRedirect());
         }
 
