@@ -28,13 +28,15 @@ services:
     image: mysql:8.0
     container_name: marirent-db
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_USER: ${DB_USERNAME}
     ports:
-      - "3306:3306"
+      - "${DB_PORT:-3306}:3306"
     networks:
       - marirent-network
 

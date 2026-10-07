@@ -62,6 +62,9 @@ jobs:
         DB_USERNAME: root
         DB_PASSWORD: password
 
+    - name: Security audit
+      run: composer audit --no-interaction || true
+
   frontend-build:
     runs-on: ubuntu-latest
     steps:
@@ -77,3 +80,6 @@ jobs:
 
     - name: Build Assets
       run: npm run build
+
+    - name: Security audit
+      run: npm audit --audit-level=high || true
