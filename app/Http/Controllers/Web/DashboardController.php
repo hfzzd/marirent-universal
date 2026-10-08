@@ -100,7 +100,7 @@ class DashboardController extends Controller
         ));
     }
 
-    private function superadminDashboard()
+     private function superadminDashboard()
     {
         // Monitoring scheduler data
         $overdueBookings = \App\Models\Booking::where('status', 'ongoing')
@@ -127,13 +127,70 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        // Monthly revenue (last 6 months)
+        $monthlyRevenue = \App\Models\Invoice::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, SUM(paid_amount) as total")
+            ->where('status', 'paid')
+            ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
+            ->where('created_at', '<=', now()->endOfMonth())
+            ->groupBy('month')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->map(fn($m) => ['label' => \Carbon\Carbon::parse($m->month)->translatedFormat('M Y'), 'value' => (float) $m->total]);
+
+        // Monthly bookings (last 6 months)
+        $monthlyBookings = collect(range(5, 0))->map(fn($i) => [
+            'label' => now()->subMonths($i)->translatedFormat('M Y'),
+            'value' => \App\Models\Booking::whereYear('created_at', now()->subMonths($i)->year)
+                ->whereMonth('created_at', now()->subMonths($i)->month)->count()
+        ]);
+
+        // Category counts for superadmin
+        $mobilCount = \App\Models\Vehicle::whereHas('category', fn($q) => $q->where('slug', 'mobil'))->count();
+        $motorCount = \App\Models\Vehicle::whereHas('category', fn($q) => $q->where('slug', 'motor'))->count();
+        $kameraCount = \App\Models\Camera::count();
+        $tendaCount = \App\Models\CampingEquipment::count();
+        $hpCount = \App\Models\Phone::count();
+
+        // General stats
+        $totalUsers = \App\Models\User::count();
+        $totalVehicles = \App\Models\Vehicle::count();
+        $totalBookings = \App\Models\Booking::count();
+        $pendingBookings = \App\Models\Booking::where('status', 'pending')->count();
+        $ongoingBookings = \App\Models\Booking::where('status', 'ongoing')->count();
+        $completedBookings = \App\Models\Booking::where('status', 'completed')->count();
+        $cancelledBookings = \App\Models\Booking::where('status', 'cancelled')->count();
+
+        $revenueThisMonth = \App\Models\Invoice::where('status', 'paid')->whereMonth('created_at', now()->month)->sum('total_amount');
+        $revenueLastMonth = \App\Models\Invoice::where('status', 'paid')->whereMonth('created_at', now()->subMonth()->month)->sum('total_amount');
+        $revenueChange = $revenueLastMonth > 0 ? round((($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100) : 0;
+        $totalRevenue = \App\Models\Invoice::where('status', 'paid')->sum('total_amount');
+
+        $activeDrivers = \App\Models\Driver::where('status', 'on_trip')->count();
+        $totalDrivers = \App\Models\Driver::count();
+
+        $availableVehicles = \App\Models\Vehicle::where('status', 'available')->count();
+        $rentedVehicles = \App\Models\Vehicle::where('status', 'rented')->count();
+        $maintenanceCount = \App\Models\Vehicle::where('status', 'maintenance')->count();
+
+        $recentBookings = \App\Models\Booking::with(['user', 'vehicle', 'category'])->latest()->limit(6)->get();
+        $driversOnTrip = \App\Models\Driver::with(['user', 'bookings' => fn($q) => $q->where('status', 'ongoing')->with('vehicle')])
+            ->where('status', 'on_trip')->limit(4)->get();
+
+        $totalInspectors = \App\Models\User::where('role', 'inspector')->count();
+
         $driverOngoingCount = \App\Models\Driver::where('status', 'on_trip')->count();
         $pendingReplacementCount = \App\Models\VehicleReplacement::where('status', 'pending')->count();
         $pendingItemReplacementCount = \App\Models\ItemReplacement::where('status', 'pending')->count();
+        $totalAllProducts = $mobilCount + $motorCount + $kameraCount + $tendaCount + $hpCount;
 
         return view('dashboard.superadmin', compact(
             'overdueBookings', 'pendingPayments', 'upcomingBookings',
-            'maintenanceVehicles', 'driverOngoingCount', 'pendingReplacementCount', 'pendingItemReplacementCount'
+            'maintenanceVehicles', 'driverOngoingCount', 'pendingReplacementCount', 'pendingItemReplacementCount',
+            'monthlyRevenue', 'mobilCount', 'motorCount', 'kameraCount', 'tendaCount', 'hpCount',
+            'monthlyBookings', 'totalUsers', 'totalVehicles', 'totalBookings', 'pendingBookings', 'ongoingBookings',
+            'completedBookings', 'cancelledBookings', 'revenueThisMonth', 'revenueLastMonth', 'revenueChange',
+            'totalRevenue', 'activeDrivers', 'totalDrivers', 'availableVehicles', 'rentedVehicles', 'maintenanceCount',
+            'recentBookings', 'driversOnTrip', 'totalInspectors', 'totalAllProducts'
         ));
     }
 
