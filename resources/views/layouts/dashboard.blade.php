@@ -7,10 +7,6 @@
     <meta name="robots" content="noindex, nofollow">
 
     {{-- Fonts & Icons --}}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-    {{-- Vite (Tailwind + Custom CSS + JS bundle) --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @yield('styles')
@@ -404,17 +400,20 @@
                 </div>
                 <div class="flex items-center gap-3">
                     {{-- Notification Bell --}}
-                    <div class="relative" x-data="{ notifOpen: false, notifCount: 0 }" x-init="
-                        fetch('{{ route('notifications.unread-count') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
-                            .then(r => r.json()).then(d => notifCount = d.count);
-                        setInterval(() => {
+                    <div class="relative" x-data="{ notifOpen: false, notifCount: 0, notifError: false }" x-init="
+                        const loadNotif = () => {
                             fetch('{{ route('notifications.unread-count') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
-                                .then(r => r.json()).then(d => notifCount = d.count);
-                        }, 30000);
+                                .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+                                .then(d => { notifCount = d.count; notifError = false; })
+                                .catch(() => { notifError = true; });
+                        };
+                        loadNotif();
+                        setInterval(loadNotif, 30000);
                     ">
                         <button type="button" @click="notifOpen = !notifOpen" class="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-sky-50 transition" aria-label="Notifikasi">
                             <i class="fas fa-bell text-navy-500 text-sm"></i>
-                            <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak></span>
+                            <span x-show="notifError" class="absolute -top-1 -right-1 bg-amber-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak title="Notifikasi gagal dimuat">!</span>
+                            <span x-show="!notifError && notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm" x-cloak></span>
                         </button>
                         <div x-show="notifOpen" @click.away="notifOpen = false" x-transition class="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
                             <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
@@ -440,7 +439,7 @@
                             </div>
                             <i class="fas fa-chevron-down text-[10px] text-navy-400 hidden sm:block"></i>
                         </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
+                        <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-slide-up" x-cloak>
                             <div class="px-4 py-2 border-b border-gray-100">
                                 <p class="text-[13px] font-semibold text-navy-800">{{ auth()->user()->name }}</p>
                                 <p class="text-[11px] text-gray-400">{{ auth()->user()->email }}</p>
@@ -578,41 +577,5 @@
     </script>
 
     @stack('scripts')
-    <script>
-        // Notification dropdown fetcher
-        document.addEventListener('DOMContentLoaded', function() {
-            const notifList = document.getElementById('notif-dropdown-list');
-            if (notifList) {
-                fetch('{{ route("notifications.index") }}', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
-                }).then(r => r.text()).then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const cards = doc.querySelectorAll('.glass-card');
-                    if (cards.length === 0) {
-                        notifList.innerHTML = '<div class="px-4 py-6 text-center text-gray-400 text-[12px]"><i class="fas fa-bell-slash text-gray-300 mb-1"></i><br>Belum ada notifikasi</div>';
-                        return;
-                    }
-                    notifList.innerHTML = '';
-                    cards.forEach((card, i) => {
-                        if (i >= 5) return;
-                        const title = card.querySelector('h4')?.textContent || '';
-                        const msg = card.querySelector('p')?.textContent || '';
-                        const time = card.querySelector('.whitespace-nowrap')?.textContent || '';
-                        const link = card.querySelector('a[href*="bookings"]')?.href || '#';
-                        const unread = card.querySelector('.bg-sky-500') !== null;
-                        notifList.innerHTML += '<a href="' + link + '" class="block px-4 py-3 hover:bg-sky-50 transition border-b border-gray-50 last:border-0">' +
-                            '<div class="flex items-start gap-2">' +
-                            (unread ? '<span class="w-2 h-2 rounded-full bg-sky-500 mt-1.5 flex-shrink-0"></span>' : '') +
-                            '<div class="min-w-0"><p class="text-[12px] font-semibold text-navy-800 truncate">' + title + '</p>' +
-                            '<p class="text-[11px] text-gray-500 truncate">' + msg + '</p>' +
-                            '<p class="text-[10px] text-gray-400 mt-0.5">' + time + '</p></div></div></a>';
-                    });
-                }).catch(() => {
-                    notifList.innerHTML = '<div class="px-4 py-6 text-center text-gray-400 text-[12px]">Gagal memuat notifikasi</div>';
-                });
-            }
-        });
-    </script>
 </body>
 </html>

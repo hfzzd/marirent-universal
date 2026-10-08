@@ -309,8 +309,6 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/locales/id.global.min.js"></script>
 <script>
 function schedulerApp() {
     return {
@@ -322,9 +320,11 @@ function schedulerApp() {
         init() {
             const self = this;
             const calendarEl = document.getElementById('calendar');
+            const FC = window.FullCalendar;
 
-            this.calendar = new FullCalendar.Calendar(calendarEl, {
-                locale: 'id',
+            this.calendar = new FC.Calendar(calendarEl, {
+                plugins: [FC.dayGridPlugin, FC.timeGridPlugin, FC.interactionPlugin, FC.listPlugin],
+                locale: FC.idLocale,
                 initialView: 'dayGridMonth',
                 headerToolbar: {
                     left: 'prev,next today',

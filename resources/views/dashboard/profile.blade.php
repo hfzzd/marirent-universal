@@ -206,7 +206,7 @@
 
     <div class="glass-card rounded-2xl overflow-hidden">
 
-    @if($user->role === 'owner' && isset($merchant))
+    @if($user->role === 'owner' && ($merchant ?? null))
     {{-- Toko / Company --}}
     <div class="px-6 py-4 border-b border-sky-100/50">
         <h3 class="text-[14px] font-semibold text-navy-800">

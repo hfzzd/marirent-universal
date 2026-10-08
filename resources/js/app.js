@@ -1,7 +1,16 @@
 import Alpine from 'alpinejs';
+import Chart from 'chart.js/auto';
+import { Calendar } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
+import idLocale from '@fullcalendar/core/locales/id';
 import './echo';
 
 window.Alpine = Alpine;
+window.Chart = Chart;
+window.FullCalendar = { Calendar, dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, idLocale };
 
 Alpine.data('searchableSelect', (config = {}) => ({
     open: false,

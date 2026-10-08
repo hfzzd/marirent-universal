@@ -2,51 +2,6 @@
 @section('page-title', 'Beranda Superadmin')
 
 @section('content')
-@php
-    $totalUsers = \App\Models\User::count();
-    $totalVehicles = \App\Models\Vehicle::count();
-    $totalBookings = \App\Models\Booking::count();
-    $pendingBookings = \App\Models\Booking::where('status','pending')->count();
-    $ongoingBookings = \App\Models\Booking::where('status','ongoing')->count();
-    $completedBookings = \App\Models\Booking::where('status','completed')->count();
-    $cancelledBookings = \App\Models\Booking::where('status','cancelled')->count();
-    
-    $revenueThisMonth = \App\Models\Invoice::where('status','paid')->whereMonth('created_at', now()->month)->sum('total_amount');
-    $revenueLastMonth = \App\Models\Invoice::where('status','paid')->whereMonth('created_at', now()->subMonth()->month)->sum('total_amount');
-    $revenueChange = $revenueLastMonth > 0 ? round((($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100) : 0;
-    $totalRevenue = \App\Models\Invoice::where('status','paid')->sum('total_amount');
-    
-    $activeDrivers = \App\Models\Driver::where('status','on_trip')->count();
-    $totalDrivers = \App\Models\Driver::count();
-
-    $mobilCount = \App\Models\Vehicle::whereHas('category', fn($q) => $q->where('slug','mobil'))->count();
-    $motorCount = \App\Models\Vehicle::whereHas('category', fn($q) => $q->where('slug','motor'))->count();
-    $kameraCount = \App\Models\Camera::count();
-    $tendaCount = \App\Models\CampingEquipment::count();
-    $hpCount = \App\Models\Phone::count();
-    $totalAllProducts = $mobilCount + $motorCount + $kameraCount + $tendaCount + $hpCount;
-
-    $availableVehicles = \App\Models\Vehicle::where('status', 'available')->count();
-    $rentedVehicles = \App\Models\Vehicle::where('status', 'rented')->count();
-    $maintenanceCount = \App\Models\Vehicle::where('status', 'maintenance')->count();
-
-    $monthlyRevenue = [];
-    $monthlyBookings = [];
-    for ($i = 5; $i >= 0; $i--) {
-        $month = now()->subMonths($i);
-        $monthlyRevenue[] = [
-            'label' => $month->translatedFormat('M Y'),
-            'value' => (int) \App\Models\Invoice::where('status','paid')->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum('total_amount')
-        ];
-        $monthlyBookings[] = (int) \App\Models\Booking::whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->count();
-    }
-
-    $recentBookings = \App\Models\Booking::with(['user', 'vehicle', 'category'])->latest()->limit(6)->get();
-    $driversOnTrip = \App\Models\Driver::with(['user', 'bookings' => fn($q) => $q->where('status','ongoing')->with('vehicle')])->where('status', 'on_trip')->limit(4)->get();
-
-    $totalInspectors = \App\Models\User::where('role', 'inspector')->count();
-@endphp
-
 {{-- DAdmin Hero Welcome Banner --}}
 <div class="relative overflow-hidden rounded-3xl mb-6 shadow-xl shadow-sky-900/10" style="background: linear-gradient(135deg, #0b1e36 0%, #0f3259 45%, #0284c7 100%);">
     <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -607,109 +562,119 @@ document.addEventListener('DOMContentLoaded', function() {
     // 1. Revenue Chart
     const revCtx = document.getElementById('dadminRevenueChart');
     if (revCtx) {
-        const monthsData = @json($monthlyRevenue);
-        const labels = monthsData.map(m => m.label);
-        const values = monthsData.map(m => m.value);
+        try {
+            const monthsData = @json($monthlyRevenue);
+            const labels = monthsData.map(m => m.label);
+            const values = monthsData.map(m => m.value);
 
-        const gradient = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 240);
-        gradient.addColorStop(0, 'rgba(14, 165, 233, 0.35)');
-        gradient.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
+            const gradient = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 240);
+            gradient.addColorStop(0, 'rgba(14, 165, 233, 0.35)');
+            gradient.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
 
-        new Chart(revCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Pendapatan (Rp)',
-                    data: values,
-                    borderColor: '#0284c7',
-                    borderWidth: 3,
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#0284c7',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        padding: 10,
-                        titleFont: { size: 12, weight: 'bold' },
-                        bodyFont: { size: 12 },
-                        callbacks: {
-                            label: function(context) {
-                                return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+            new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pendapatan (Rp)',
+                        data: values,
+                        borderColor: '#0284c7',
+                        borderWidth: 3,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#0284c7',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            padding: 10,
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 11 }, color: '#64748b' }
                     },
-                    y: {
-                        border: { dash: [4, 4] },
-                        grid: { color: '#e2e8f0' },
-                        ticks: {
-                            font: { size: 10 },
-                            color: '#64748b',
-                            callback: function(val) {
-                                if (val >= 1000000) return (val/1000000).toFixed(1) + 'M';
-                                if (val >= 1000) return (val/1000).toFixed(0) + 'k';
-                                return val;
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11 }, color: '#64748b' }
+                        },
+                        y: {
+                            border: { dash: [4, 4] },
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                font: { size: 10 },
+                                color: '#64748b',
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val/1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val/1000).toFixed(0) + 'k';
+                                    return val;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.error('Revenue chart init failed:', err);
+            revCtx.innerHTML = '<div class="text-center text-red-500 p-4 text-sm">Gagal memuat chart pendapatan</div>';
+        }
     }
 
     // 2. Category Donut Chart
     const catCtx = document.getElementById('dadminCategoryChart');
     if (catCtx) {
-        new Chart(catCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Mobil', 'Motor', 'Kamera', 'Camping', 'HP'],
-                datasets: [{
-                    data: [
-                        {{ $mobilCount }},
-                        {{ $motorCount }},
-                        {{ $kameraCount }},
-                        {{ $tendaCount }},
-                        {{ $hpCount }}
-                    ],
-                    backgroundColor: [
-                        '#3b82f6',
-                        '#f59e0b',
-                        '#a855f7',
-                        '#10b981',
-                        '#ec4899'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff',
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '72%',
-                plugins: {
-                    legend: { display: false }
+        try {
+            new Chart(catCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mobil', 'Motor', 'Kamera', 'Camping', 'HP'],
+                    datasets: [{
+                        data: [
+                            {{ $mobilCount }},
+                            {{ $motorCount }},
+                            {{ $kameraCount }},
+                            {{ $tendaCount }},
+                            {{ $hpCount }}
+                        ],
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#a855f7',
+                            '#10b981',
+                            '#ec4899'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false }
+                    }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.error('Category chart init failed:', err);
+            catCtx.innerHTML = '<div class="text-center text-red-500 p-4 text-sm">Gagal memuat chart kategori</div>';
+        }
     }
 });
 </script>

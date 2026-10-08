@@ -201,7 +201,7 @@
                         <span class="text-amber-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Sedang Disewa</span>
                         <span class="text-navy-800">{{ $ownedRented }} Unit ({{ $pRented }}%)</span>
                     </div>
-                    <div class="w-full h-2 rounded-full bg-amber-500 rounded-full" style="width: {{ $pRented }}%"></div>
+                    <div class="w-full h-2 rounded-full bg-amber-500" style="width: {{ $pRented }}%"></div>
                 </div>
 
                 <div>
@@ -209,7 +209,7 @@
                         <span class="text-red-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Maintenance</span>
                         <span class="text-navy-800">{{ $ownedMaintenance }} Unit ({{ $pMaint }}%)</span>
                     </div>
-                    <div class="w-full h-2 rounded-full bg-red-500 rounded-full" style="width: {{ $pMaint }}%"></div>
+                    <div class="w-full h-2 rounded-full bg-red-500" style="width: {{ $pMaint }}%"></div>
                 </div>
             </div>
         </div>
@@ -329,64 +329,69 @@
 document.addEventListener('DOMContentLoaded', function() {
     const ownerCtx = document.getElementById('ownerRevenueChart');
     if (ownerCtx) {
-        const data = @json($monthlyOwnerRevenue);
-        const labels = data.map(m => m.label);
-        const values = data.map(m => m.value);
+        try {
+            const data = @json($monthlyOwnerRevenue);
+            const labels = data.map(m => m.label);
+            const values = data.map(m => m.value);
 
-        const gradient = ownerCtx.getContext('2d').createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, 'rgba(14, 165, 233, 0.35)');
-        gradient.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
+            const gradient = ownerCtx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+            gradient.addColorStop(0, 'rgba(14, 165, 233, 0.35)');
+            gradient.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
 
-        new Chart(ownerCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Pendapatan (Rp)',
-                    data: values,
-                    borderColor: '#0284c7',
-                    borderWidth: 3,
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#0284c7',
-                    pointBorderWidth: 2,
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        callbacks: {
-                            label: function(ctx) {
-                                return 'Rp ' + ctx.parsed.y.toLocaleString('id-ID');
+            new Chart(ownerCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pendapatan (Rp)',
+                        data: values,
+                        borderColor: '#0284c7',
+                        borderWidth: 3,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#0284c7',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            callbacks: {
+                                label: function(ctx) {
+                                    return 'Rp ' + ctx.parsed.y.toLocaleString('id-ID');
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748b' } },
-                    y: {
-                        border: { dash: [4, 4] },
-                        grid: { color: '#e2e8f0' },
-                        ticks: {
-                            font: { size: 10 },
-                            color: '#64748b',
-                            callback: function(val) {
-                                if (val >= 1000000) return (val/1000000).toFixed(1) + 'M';
-                                if (val >= 1000) return (val/1000).toFixed(0) + 'k';
-                                return val;
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748b' } },
+                        y: {
+                            border: { dash: [4, 4] },
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                font: { size: 10 },
+                                color: '#64748b',
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val/1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val/1000).toFixed(0) + 'k';
+                                    return val;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.error('Owner revenue chart init failed:', err);
+            ownerCtx.innerHTML = '<div class="text-center text-red-500 p-4 text-sm">Gagal memuat chart pendapatan</div>';
+        }
     }
 });
 </script>

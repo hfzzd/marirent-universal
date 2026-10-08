@@ -13,7 +13,14 @@
         "vite": "^6.0"
     },
     "dependencies": {
+        "@fortawesome/fontawesome-free": "^7.3.1",
+        "@fullcalendar/core": "^6.1.21",
+        "@fullcalendar/daygrid": "^6.1.21",
+        "@fullcalendar/interaction": "^6.1.21",
+        "@fullcalendar/list": "^6.1.21",
+        "@fullcalendar/timegrid": "^6.1.21",
         "alpinejs": "^3.17.1",
+        "chart.js": "^4.4.0",
         "laravel-echo": "^2.5.0",
         "leaflet": "^1.9.4",
         "pusher-js": "^8.6.0"
